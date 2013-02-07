@@ -9,10 +9,6 @@ import net.itadinanta.rnkr.node.NodeBuilder
 import net.itadinanta.rnkr.node.DataNode
 
 class NodeTestSuite extends FlatSpec with ShouldMatchers {
-	"HelloWorld" should "work" in {
-		HelloWorld.run();
-	}
-	
 	"A NodeBuilder" should "compare keys" in {
 		val builder = new NodeBuilder[Int, String](_ < _)
 		builder.comparator(1, 1) should equal(0)
@@ -20,7 +16,7 @@ class NodeTestSuite extends FlatSpec with ShouldMatchers {
 		builder.comparator(1, 0) should equal(-1)
 	}
 
-	"A NodeBuilder" should "add keys" in {
+	it should "add keys" in {
 		val builder = new NodeBuilder[Int, String](_ < _)
 
 		builder.updateKeyAndValue(1, "One").index should equal(0)
@@ -41,7 +37,7 @@ class NodeTestSuite extends FlatSpec with ShouldMatchers {
 		node2.size should equal(4)
 	}
 
-	"A NodeBuilder" should "add nodes" in {
+	it should "add nodes" in {
 		val builder = new NodeBuilder[Int, String](_ < _)
 
 		builder.updateNode(0, new DataNode("One")) should equal(0)
@@ -60,4 +56,9 @@ class NodeTestSuite extends FlatSpec with ShouldMatchers {
 		node2.values.toSeq should equal(Seq("One", "Three", "Five", "Seven"));
 	}
 
+	ignore /* "HelloWorld" */ should "be debuggable" in {
+		// added to test breakpoints in tested packages
+		// a IDE breakpoint in HelloWorld should be triggered
+		HelloWorld.run();
+	}
 }

@@ -106,12 +106,12 @@ abstract case class ContainerNode[K, +V] extends Node[K, V] with KeysContainer[K
 	override def size = nodes.map(_.size).fold(nodes.size) { _ + _ }
 }
 
-abstract case class IndexNode[K, +V] extends ContainerNode[K, V] with NodesContainer[K, V] {
+abstract class IndexNode[K, +V] extends ContainerNode[K, V] with NodesContainer[K, V] {
 	override def getNode(i: Int) = nodes(i)
 	override def isLeaf = false
 }
 
-abstract case class LeafNode[K, +V] extends IndexNode[K, V] with NodesContainer[K, V] {
+abstract class LeafNode[K, +V] extends IndexNode[K, V] with NodesContainer[K, V] {
 	override def isLeaf = true
 }
 
@@ -146,7 +146,7 @@ trait MutableContainerNode[K, V] extends ContainerNode[K, V]
 	}
 }
 
-case class NodeBuilder[K: Manifest, V: Manifest](source: ContainerNode[K, V], order: (K, K) => Boolean)
+class NodeBuilder[K: Manifest, V: Manifest](source: ContainerNode[K, V], order: (K, K) => Boolean)
 	extends MutableContainerNode[K, V] {
 	copyFrom(source)
 
