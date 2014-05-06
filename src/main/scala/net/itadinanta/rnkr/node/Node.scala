@@ -1,193 +1,135 @@
 package net.itadinanta.rnkr.node
 
-import collection.mutable.ArrayBuffer
-
-trait NodeOrder[K] {
-	type Order = (K, K) => Boolean
-	type Comparator = (K, K) => Int
+trait Ordering[T] {
+	def lt(a: T, b: T): Boolean
+	final def eq(a: T, b: T) = a == b
+	final def le(a: T, b: T) = eq(a, b) || lt(a, b)
+	final def gt(a: T, b: T) = !le(a, b)
+	final def ge(a: T, b: T) = !lt(a, b)
 }
 
-trait Node[K, +V] extends NodeOrder[K] {
-	def apply(i: Int) = node(i)
-	def apply: Option[V] = value
-	def key(i: Int): Option[K]
-	def node(i: Int): Option[Node[K, V]]
-	def value: Option[V]
-
-	def getKey(i: Int): K
-	def getNode(i: Int): Node[K, V]
-
-	def isLeaf: Boolean
-
-	def count: Int
+trait Node {
 	def size: Int
-	def keyCount = count - 1
-	def createComparator(order: Order): Comparator = {
-		(a: K, b: K) =>
-			if (a == b) 0 else if (order(a, b)) 1 else -1
-	}
 }
 
-class EmptyNode[K, V] extends Node[K, V] {
-	override def key(i: Int) = None
-	override def node(i: Int) = None
-	override def value = None
+trait ChildNode extends Node
 
-	override def getKey(i: Int) = throw new NoSuchElementException
-	override def getNode(i: Int) = throw new NoSuchElementException
-
-	override def isLeaf = false
-
-	override def count = 0
-	override def size = 0
-}
-
-trait KeysContainer[K] extends NodeOrder[K] {
+trait WithChildren[K, T <: ChildNode] {
 	val keys: Seq[K]
-	def getKey(i: Int) = keys(i)
-	def key(i: Int) = if (i >= 0 && i < keySize) Option(getKey(i)) else None
-
-	def keySize: Int = keys.size
-
-	def binarySearch(k: K, compare: Comparator): Int = binarySearch(k, compare, 0, keys.length)
-
-	def binarySearch(k: K, compare: Comparator, a: Int, b: Int): Int = {
-		if (a >= b) {
-			-1
-		} else {
-			val c = (a + b) / 2
-			val cmpz = compare(k, keys(c))
-			if (cmpz == 0) c
-			else if (cmpz < 0) binarySearch(k, compare, a, c - 1)
-			else binarySearch(k, compare, c + 1, a)
-		}
-	}
-
-	def find(k: K): Int = {
-		keys.zipWithIndex.find { p => p._1 == k } match {
-			case Some((_, i)) => i
-			case None => -1
-		}
-	}
+	val children: Seq[T]
+	def indexOfKey(key: K) = keys.indexOf(key)
+	def indexOfChild(child: T) = children.indexOf(child)
+	def childOfKey(key: K) = children(indexOfKey(key))
+	def childAt(index: Int) = children(index)
+	def keyAt(index: Int) = keys(index)
 }
 
-trait MutableKeysContainer[K] extends KeysContainer[K] {
-	override val keys = ArrayBuffer[K]()
-	def setKey(i: Int, key: K) = keys(i) = key
-	def removeKey(i: Int): K = keys.remove(i)
+trait RootNode[K, T <: ChildNode] extends Node with WithChildren[K, T]
+
+trait InternalNode[K, T <: ChildNode] extends ChildNode with WithChildren[K, T]
+
+trait LeafNode[K, V] extends ChildNode with WithChildren[K, Record[V]] {
+	val next: LeafNode[K, V]
+	val prev: LeafNode[K, V]
 }
 
-trait NodesContainer[K, +V] {
-	val nodes: Seq[Node[K, V]]
-	def getNode(i: Int) = nodes(i)
-	def node(i: Int) = if (i >= 0 && i < nodeSize) Option(getNode(i)) else None
-	def values = nodes.flatMap(_.value)
-	def nodeSize = nodes.size
-}
-
-trait MutableNodesContainer[K, V] extends NodesContainer[K, V] {
-	override val nodes = new ArrayBuffer[Node[K, V]]()
-	def setNode(i: Int, node: Node[K, V]) = nodes(i) = node
-	def removeNode(i: Int): Node[K, V] = nodes.remove(i)
-	def updateNode(i: Int, node: Node[K, V]) = {
-		if (i == nodes.length) {
-			nodes += node;
-		} else {
-			nodes(i) = node
-		}
-		i
-	}
-}
-
-abstract case class ContainerNode[K, +V] extends Node[K, V] with KeysContainer[K] with NodesContainer[K, V] {
-	override def count = keys.length;
-	override def value = None
-	def pairs = keys.zip(values)
-	override def size = nodes.map(_.size).fold(nodes.size) { _ + _ }
-}
-
-abstract class IndexNode[K, +V] extends ContainerNode[K, V] with NodesContainer[K, V] {
-	override def getNode(i: Int) = nodes(i)
-	override def isLeaf = false
-}
-
-abstract class LeafNode[K, +V] extends IndexNode[K, V] with NodesContainer[K, V] {
-	override def isLeaf = true
-}
-
-case class DataNode[K, +V](val v: V) extends Node[K, V] {
-	override def key(i: Int) = None
-	override def node(i: Int) = None
-	override val value = Some(v)
-
-	override def getKey(i: Int) = throw new NoSuchElementException
-	override def getNode(i: Int): Node[K, V] = throw new NoSuchElementException
-
-	override def count = 0
+trait Record[V] extends ChildNode {
 	override def size = 1
-
-	override def isLeaf = false
+	def data: V
 }
 
-case class NodePointer[K, V](val node: Node[K, V], val key: K, val value: V, val index: Int) {
-	assert(node.isLeaf)
+trait RecordBuilder[K, V] {
+	def newNode(key: K, data: V): WithChildren[K, Record[V]]
+	def newRecord(data: V): Record[V]
 }
 
-trait MutableContainerNode[K, V] extends ContainerNode[K, V]
-	with MutableKeysContainer[K]
-	with MutableNodesContainer[K, V] {
-
-	def copyFrom(source: ContainerNode[K, V]) = {
-		nodes.clear()
-		nodes ++= source.nodes
-		keys.clear()
-		keys ++= source.keys
-		this
-	}
+trait ChildrenBuilder[K, T <: ChildNode] {
+	def newNode(keys: Seq[K], children: Seq[T]): WithChildren[K, T]
+	def emptyNode(): WithChildren[K, T]
+	def insert(node: WithChildren[K, T], key: K, child: T): NodePointer[K, T]
+	def delete(node: WithChildren[K, T], key: K): NodePointer[K, T]
+	def update(node: WithChildren[K, T], key: K, child: T): NodePointer[K, T]
 }
 
-class NodeBuilder[K: Manifest, V: Manifest](source: ContainerNode[K, V], order: (K, K) => Boolean)
-	extends MutableContainerNode[K, V] {
-	copyFrom(source)
+class NodePointer[K, V](val node: Node, val key: K, val value: V, val index: Int)
 
-	override def isLeaf = source.isLeaf
+object IntAscending extends Ordering[Int] {
+	override def lt(a: Int, b: Int): Boolean = a < b
+}
 
-	def this(anOrder: (K, K) => Boolean) = this(new LeafNode[K, V] with MutableContainerNode[K, V], anOrder)
+object IntDescending extends Ordering[Int] {
+	override def lt(a: Int, b: Int): Boolean = a > b
+}
 
-	val comparator = createComparator(order)
+object StringAscending extends Ordering[String] {
+	override def lt(a: String, b: String): Boolean = a < b
+}
 
-	override def size = 0
+object StringDescending extends Ordering[String] {
+	override def lt(a: String, b: String): Boolean = a > b
+}
 
-	def newDataNode(value: V): DataNode[K, V] = new DataNode[K, V](value)
+object StringCIAscending extends Ordering[String] {
+	override def lt(a: String, b: String): Boolean = a.toLowerCase < b.toLowerCase
+}
 
-	def newLeafNode: LeafNode[K, V] = {
-		val node = new LeafNode[K, V] with MutableContainerNode[K, V]
-		node.copyFrom(this)
-		node
+object StringCIDescending extends Ordering[String] {
+	override def lt(a: String, b: String): Boolean = a.toLowerCase > b.toLowerCase
+}
+
+class NodeBuilder[K, V, T <: ChildNode](val ordering: Ordering[K]) extends ChildrenBuilder[K, T] with RecordBuilder[K, V] {
+
+	private[NodeBuilder] class SimpleRecord[V](val data: V) extends Record[V]
+
+	private[NodeBuilder] class WithChildrenSeq[K, U <: ChildNode](val keys: Seq[K], val children: Seq[U]) extends WithChildren[K, U] with Node {
+		def this() = this(Seq[K](), Seq[U]())
+		override val size = keys.length
 	}
 
-	def newIndexNode: Node[K, V] = {
-		val node = new IndexNode[K, V] with MutableContainerNode[K, V]
-		node.copyFrom(this)
-		node
+	override def emptyNode() = newNode(Seq[K](), Seq[T]())
+	override def newNode(keys: Seq[K], children: Seq[T]) = new WithChildrenSeq[K, T](keys, children)
+	override def newNode(key: K, data: V): WithChildren[K, Record[V]] =
+		new WithChildrenSeq[K, Record[V]](Seq[K](key), Seq[Record[V]](newRecord(data)))
+	override def newRecord(data: V): Record[V] = new SimpleRecord[V](data)
+
+	def insertValue(node: WithChildren[K, T], k: K, value: V) = insert(node, k, newRecord(value))
+	def updateValue(node: WithChildren[K, T], k: K, value: V) = update(node, k, newRecord(value))
+
+	override def insert(node: WithChildren[K, T], k: K, child: T) = insert(node.keys, node.children, k, child)
+	override def delete(node: WithChildren[K, T], k: K) = delete(node.keys, node.children, k)
+	override def update(node: WithChildren[K, T], k: K, child: T) = update(node.keys, node.children, k, child)
+
+	private def insert(keys: Seq[K], children: Seq[T], k: K, child: T): NodePointer[K, T] = {
+		if (keys.isEmpty)
+			new NodePointer[K, T](newNode(Seq[K](k), Seq[T](child)), k, child, 0)
+		else {
+			val position = keys.indexWhere(ordering.lt(k, _))
+			new NodePointer[K, T](newNode(
+				keys.take(position) ++ Seq(k) ++ keys.slice(position, keys.size),
+				children.take(position) ++ Seq(child) ++ children.slice(position, children.size)),
+				k, child, position)
+		}
 	}
 
-	def updateKeyAndValue(k: K, v: V): NodePointer[K, V] = NodePointer(this, k, v,
-		keys.zipWithIndex.find((keyPair) => comparator(keyPair._1, k) <= 0) match {
-			case Some((key, index)) => {
-				if (k == key) {
-					nodes(index) = DataNode(v)
-					index
-				} else {
-					keys.insert(0, k)
-					nodes.insert(0, DataNode(v))
-					0
-				}
-			}
-			case None => {
-				-1
-			}
-		})
+	private def delete(keys: Seq[K], children: Seq[T], key: K): NodePointer[K, T] = {
+		val position = keys.indexOf(key)
+		if (position < 0) throw new IndexOutOfBoundsException("key " + key + " does not exist")
+
+		new NodePointer[K, T](newNode(
+			keys.take(position) ++ keys.slice(position + 1, children.size),
+			children.take(position) ++ children.slice(position + 1, children.size)),
+			key, children(position), position)
+	}
+
+	private def update(keys: Seq[K], children: Seq[T], k: K, child: T): NodePointer[K, T] = {
+		val position = keys.indexOf(k)
+		if (position < 0) throw new IndexOutOfBoundsException("key " + k + " does not exist")
+
+		new NodePointer[K, T](newNode(
+			keys,
+			children.take(position) ++ Seq(child) ++ children.slice(position + 1, children.size)),
+			k, children(position), position)
+	}
 }
 
 object HelloWorld {
