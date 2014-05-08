@@ -84,24 +84,9 @@ object StringCIDescending extends Ordering[String] {
 	override def lt(a: String, b: String): Boolean = a.toLowerCase > b.toLowerCase
 }
 
-class NodeBuilder[K, V](val ordering: Ordering[K]) extends ChildrenBuilder[K, V] with RecordBuilder[K, V] {
-
-	private[NodeBuilder] class SimpleRecord[V](val data: V) extends Record[V]
-
-	private[NodeBuilder] class WithChildrenSeq[K, V](val keys: Seq[K], val children: Seq[ChildNode[V]]) extends WithChildren[K, V] with Node[V] {
-		def this() = this(Seq[K](), Seq[ChildNode[V]]())
-		override val size = keys.length
-		override def values: Seq[V] = {
-			val buf = new ListBuffer[V]
-			children foreach { child => buf.appendAll(child.values) }
-			buf
-		}
-	}
+abstract class NodeBuilder[K, V](val ordering: Ordering[K]) extends ChildrenBuilder[K, V] with RecordBuilder[K, V] {
 
 	override def emptyNode() = newNode(Seq[K](), Seq[ChildNode[V]]())
-	override def newNode(keys: Seq[K], children: Seq[ChildNode[V]]) = new WithChildrenSeq(keys, children)
-	override def newNode(key: K, data: V) = new WithChildrenSeq(Seq(key), Seq(newRecord(data)))
-	override def newRecord(data: V): Record[V] = new SimpleRecord[V](data)
 
 	def insertValue(node: WithChildren[K, V], k: K, value: V): NodeRef[K, V] = insert(node, k, newRecord(value))
 	def updateValue(node: WithChildren[K, V], k: K, value: V): NodeRef[K, V] = update(node, k, newRecord(value))
@@ -143,6 +128,26 @@ class NodeBuilder[K, V](val ordering: Ordering[K]) extends ChildrenBuilder[K, V]
 			k, children(position), position)
 	}
 }
+
+class ListNodeBuilder[K, V](ordering: Ordering[K]) extends NodeBuilder[K,V](ordering) {
+
+	private[ListNodeBuilder] class SimpleRecord[V](val data: V) extends Record[V]
+
+	private[ListNodeBuilder] class WithChildrenSeq[K, V](val keys: Seq[K], val children: Seq[ChildNode[V]]) extends WithChildren[K, V] with Node[V] {
+		def this() = this(Seq[K](), Seq[ChildNode[V]]())
+		override val size = keys.length
+		override def values: Seq[V] = {
+			val buf = new ListBuffer[V]
+			children foreach { child => buf.appendAll(child.values)}
+			buf
+		}
+	}
+
+	override def newNode(keys: Seq[K], children: Seq[ChildNode[V]]) = new WithChildrenSeq(keys, children)
+	override def newNode(key: K, data: V) = new WithChildrenSeq(Seq(key), Seq(newRecord(data)))
+	override def newRecord(data: V): Record[V] = new SimpleRecord[V](data)
+}
+
 
 object HelloWorld {
 	def run() = printf("Hello world!")
