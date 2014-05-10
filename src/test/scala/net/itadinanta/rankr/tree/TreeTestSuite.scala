@@ -5,5 +5,5 @@ import org.scalatest.FlatSpec
 import org.scalatest.ShouldMatchers
 
 class TreeTestSuite extends FlatSpec with ShouldMatchers {
-	 val builder = new ListNodeBuilder[Int, String](IntAscending)
+	 val builder = new SeqNodeBuilder[Int, String]
  }
