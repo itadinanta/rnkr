@@ -3,11 +3,12 @@ package net.itadinanta.rankr.node
 import net.itadinanta.rnkr.node._
 import org.scalatest.FlatSpec
 import org.scalatest.ShouldMatchers
+import net.itadinanta.rnkr.tree.SeqNodeFactory
 
 class NodeTestSuite extends FlatSpec with ShouldMatchers {
-	val builder = new SeqNodeBuilder[Int, String]
+	val builder = new SeqNodeFactory[Int, String]
 	"An empty node" should "contain no entries" in {
-		builder.Data.emptyNode.keys.size should be === 0
+		builder.Data.newNode().keys.size should be === 0
 	}
 
 	"A node after insertion" should "contain 1 entry" in {
