@@ -8,29 +8,28 @@ trait Ordering[T] {
 	final def ge(a: T, b: T) = !lt(a, b)
 }
 
-trait AbstractNode[K, V, ChildType] {
-	val parent: IndexNode[K, V]
-	val keys: Seq[K]
-	val values: Seq[ChildType]
+trait Node[K] {
+	def keys: Seq[K]
 	def size: Int = keys.length
 	def indexOfKey(key: K) = keys.indexOf(key)
-	def indexOfChild(child: ChildType) = values.indexOf(child)
-	def childOfKey(key: K) = values(indexOfKey(key))
-	def childAt(index: Int) = values(index)
 	def keyAt(index: Int) = keys(index)
 }
 
-trait Node[K, V] extends AbstractNode[K, V, Node[K, V]]
-
-trait DataNode[K, V] extends AbstractNode[K, V, V]
-
-trait IndexNode[K, V] extends Node[K, V]
-
-trait LeafNode[K, V] extends DataNode[K, V] {
-	val next: LeafNode[K, V]
-	val prev: LeafNode[K, V]
+trait Children[ChildType] {
+	def values: Seq[ChildType]
+	def indexOfChild(child: ChildType) = values.indexOf(child)
+	def childAt(index: Int) = values(index)
 }
 
+trait DataNode[K, V] extends Node[K] with Children[V]
+
+trait IndexNode[K] extends Node[K] with Children[Node[K]]
+
+trait LeafNode[K, V] extends DataNode[K, V] {
+	var next: LeafNode[K, V]
+	var prev: LeafNode[K, V]
+	def childOfKey(key: K) = childAt(indexOfKey(key))
+}
 
 object IntAscending extends Ordering[Int] {
 	override def lt(a: Int, b: Int): Boolean = a < b

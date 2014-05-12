@@ -2,122 +2,230 @@ package net.itadinanta.rnkr.tree
 
 import net.itadinanta.rnkr.node._
 import scala.annotation.tailrec
+import scala.collection.mutable.ListBuffer
 
-trait NodeFactory[K, V, ChildType, NodeType <: AbstractNode[K, V, ChildType]] {
+trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]] {
 	val ordering: Ordering[K]
+	val fanout: Int
+	def updateNode(input: NodeType, keys: Seq[K], children: Seq[ChildType]): NodeType
 	def newNode(keys: Seq[K], children: Seq[ChildType]): NodeType
 	def newNode(k: K, v: ChildType): NodeType = newNode(Seq(k), Seq(v))
 	def newNode(): NodeType = newNode(Seq(), Seq())
 
 	case class BuildResult(val a: NodeType, val b: NodeType, val key: K, val child: ChildType, val index: Int) {
 		def node = a
+		def split = !(a eq b)
 		def this(a: NodeType, key: K, child: ChildType, index: Int) = this(a, a, key, child, index)
 	}
 
-	def insert(node: NodeType, k: K, child: ChildType): BuildResult = insert(node.keys, node.values, k, child)
-	def delete(node: NodeType, k: K): BuildResult = delete(node.keys, node.values, k)
-	def update(node: NodeType, k: K, child: ChildType): BuildResult = update(node.keys, node.values, k, child)
-	def split(node: NodeType, position: Int): BuildResult = split(node.keys, node.values, position)
-	def join(a: NodeType, b: NodeType): BuildResult = join(a.keys, a.values, b.keys, b.values)
+	def insert(node: NodeType, k: K, child: ChildType): BuildResult = {
+		insert(node, node.keys, node.values, k, child)
+	}
+	def delete(node: NodeType, k: K): BuildResult = delete(node, node.keys, node.values, k)
+	def update(node: NodeType, k: K, child: ChildType): BuildResult = update(node, node.keys, node.values, k, child)
+	def merge(a: NodeType, b: NodeType): BuildResult = merge(a, a.keys, a.values, b.keys, b.values)
 
-	private def join(aKeys: Seq[K], aValues: Seq[ChildType], bKeys: Seq[K], bValues: Seq[ChildType]) =
-		new BuildResult(newNode(aKeys ++ bKeys, aValues ++ bValues), bKeys.head, bValues.head, aKeys.size)
+	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], bKeys: Seq[K], bValues: Seq[ChildType]) =
+		new BuildResult(updateNode(input, aKeys ++ bKeys, aValues ++ bValues), bKeys.head, bValues.head, aKeys.size)
 
-	private def split(keys: Seq[K], children: Seq[ChildType], position: Int) =
-		BuildResult(newNode(keys.slice(0, position), children.slice(0, position)),
-			newNode(keys.slice(position + 1, keys.size), children.slice(position + 1, keys.size)),
-			keys(position), children(position), position)
-
-	private def insert(keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = {
+	private def insert(input: NodeType, keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = {
 		if (keys.isEmpty)
-			new BuildResult(newNode(Seq(k), Seq(child)), k, child, 0)
+			new BuildResult(updateNode(input, Seq(k), Seq(child)), k, child, 0)
 		else {
-			val position = keys.indexWhere(ordering.gt(k, _)) + 1
-			new BuildResult(newNode(
-				keys.take(position) ++ Seq(k) ++ keys.slice(position, keys.size),
-				children.take(position) ++ Seq(child) ++ children.slice(position, children.size)),
-				k, child, position)
+			val position = keys.lastIndexWhere(item => ordering.gt(k, item)) + 1
+			val (keyHead, keyTail) = keys.splitAt(position)
+			val (childHead, childTail) = children.splitAt(position)
+			val newKeys = keyHead ++ Seq(k) ++ keyTail
+			val newChildren = childHead ++ Seq(child) ++ childTail
+			if (newKeys.length <= fanout) {
+				new BuildResult(updateNode(input, newKeys, newChildren), k, child, position)
+			} else {
+				val splitAt = keys.size / 2
+				val (newKeyHead, newKeyTail) = newKeys.splitAt(splitAt)
+				val (newChildHead, newChildTail) = newChildren.splitAt(splitAt)
+				BuildResult(updateNode(input, newKeyHead, newChildHead), newNode(newKeyTail, newChildTail), keys(splitAt), children(splitAt), splitAt)
+			}
 		}
 	}
 
-	private def delete(keys: Seq[K], children: Seq[ChildType], key: K) = {
+	private def delete(input: NodeType, keys: Seq[K], children: Seq[ChildType], key: K) = {
 		val position = keys.indexOf(key)
 		if (position < 0) throw new IndexOutOfBoundsException("key " + key + " does not exist")
 
-		new BuildResult(newNode(
+		new BuildResult(updateNode(
+			input,
 			keys.take(position) ++ keys.slice(position + 1, children.size),
 			children.take(position) ++ children.slice(position + 1, children.size)),
 			key, children(position), position)
 	}
 
-	private def update(keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = {
+	private def update(input: NodeType, keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = {
 		val position = keys.indexOf(k)
 		if (position < 0) throw new IndexOutOfBoundsException("key " + k + " does not exist")
 
-		new BuildResult(newNode(
+		new BuildResult(updateNode(
+			input,
 			keys,
 			children.take(position) ++ Seq(child) ++ children.slice(position + 1, children.size)),
 			k, children(position), position)
 	}
 }
 
-class SeqNodeFactory[K, V](val ordering: Ordering[K] = IntAscending) {
-
-
-	object Index extends NodeFactory[K, V, Node[K, V], AbstractNode[K, V, Node[K, V]]] {
-		class SeqNodeImpl[ChildType](val keys: Seq[K], val values: Seq[ChildType], val parent: IndexNode[K, V] = null)
-			extends AbstractNode[K, V, ChildType]
-		override val ordering = SeqNodeFactory.this.ordering
-		override def newNode(keys: Seq[K], children: Seq[Node[K, V]]) = new SeqNodeImpl(keys, children)
-	}
-
-	object Data extends NodeFactory[K, V, V, LeafNode[K, V]] {
-		class SeqNodeImpl(val keys: Seq[K],
-						  val values: Seq[V],
-						  val parent: IndexNode[K, V] = null,
-						  val prev: LeafNode[K, V] = null,
-						  val next: LeafNode[K, V] = null) extends LeafNode[K, V]
-		override val ordering = SeqNodeFactory.this.ordering
-		override def newNode(keys: Seq[K], children: Seq[V]) = new SeqNodeImpl(keys, children)
-	}
-
+abstract class NodeFactory[K, V](val ordering: Ordering[K], val fanout: Int = 10) {
+	type IndexNodeBuilder = NodeBuilder[K, V, Node[K], IndexNode[K]]
+	type DataNodeBuilder = NodeBuilder[K, V, V, LeafNode[K, V]]
+	val index: IndexNodeBuilder
+	val data: DataNodeBuilder
 }
 
-trait Tree[K, V] {
+class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 10) extends NodeFactory[K, V](ordering, fanout) {
+	override val index = new IndexNodeBuilder {
 
-	case class Cursor(k: K, node: LeafNode[K, V], index: Int)
+		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[Node[K]]) extends IndexNode[K] with Children[Node[K]] {
+			def set(keys: Seq[K], values: Seq[Node[K]]): this.type = {
+				this.keys = keys
+				this.values = values
+				this
+			}
+		}
 
-	val ordering: Ordering[K]
-	val factory = new SeqNodeFactory[K, V](ordering)
-	val b: Int
+		override val fanout = SeqNodeFactory.this.fanout
+		override val ordering = SeqNodeFactory.this.ordering
+		override def newNode(keys: Seq[K], children: Seq[Node[K]]) = new SeqNodeImpl(keys, children)
+		override def updateNode(node: IndexNode[K], keys: Seq[K], children: Seq[Node[K]]) = node.asInstanceOf[SeqNodeImpl].set(keys, children)
+	}
 
-	var root: AbstractNode[K, V, _] = factory.Data.newNode()
-	var head: LeafNode[K, V]
-	var tail: LeafNode[K, V]
+	override val data = new DataNodeBuilder {
 
+		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[V]) extends LeafNode[K, V] {
+			override var prev: LeafNode[K, V] = _
+			override var next: LeafNode[K, V] = _
 
-	def put(k: K, value: V): Cursor = {
-		val targetNode = search(k)
+			def set(keys: Seq[K], values: Seq[V]): this.type = {
+				this.keys = keys
+				this.values = values
+				this
+			}
+		}
+
+		override val fanout = SeqNodeFactory.this.fanout
+		override val ordering = SeqNodeFactory.this.ordering
+		override def newNode(keys: Seq[K], children: Seq[V]) = new SeqNodeImpl(keys, children)
+		override def updateNode(node: LeafNode[K, V], keys: Seq[K], children: Seq[V]) = node.asInstanceOf[SeqNodeImpl] set(keys, children)
+	}
+}
+
+trait BPlusTree[K, V] {
+	def size: Int
+	def get(k: K): V
+	def put(k: K, value: V): V
+	def keys(): Seq[K]
+}
+
+class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V] {
+
+	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Int)
+
+	private[rnkr] var head: LeafNode[K, V] = factory.data.newNode()
+	private[rnkr] var root: Node[K] = head
+	private[rnkr] var tail: LeafNode[K, V] = head
+	private[rnkr] var _size: Int = 0
+	private[rnkr] var leafCount: Int = 1
+	private[rnkr] var indexCount: Int = 0
+	private[rnkr] var level: Int = 1
+
+	def size = _size
+
+	def put(k: K, v: V): V = insert(k, v).value
+	def get(k: K): V = search(k).childOfKey(k)
+	def keys(): Seq[K] = {
+		val buf = new ListBuffer[K]
+		def appendNode(node: LeafNode[K, V]): Unit = if (node != null) {
+			buf ++= node.keys
+			appendNode(node.next)
+		}
+		appendNode(head)
+		buf.toList
+	}
+
+	override def toString(): String = {
+		val buf = new StringBuilder()
+		buf.append("{").append("size=").append(_size)
+		appendNode(buf, head)
+		buf.append("}").toString()
+	}
+
+	@tailrec private def appendNode(buf: StringBuilder, node: LeafNode[K, V]): Unit = {
+		if (node != null) {
+			buf.append("-> [")
+			node.keys zip node.values foreach {
+				buf.append(_).append(", ")
+			}
+			buf.append("Nil]");
+			appendNode(buf, node.next)
+		}
+	}
+
+	private def insert(k: K, value: V): Cursor = {
+		val path = pathTo(k)
+		val targetNode = path.head.asInstanceOf[LeafNode[K, V]]
 		val index = targetNode.indexOfKey(k)
 		if (index >= 0) {
-			val updatedNode = factory.Data.update(targetNode, k, value);
-			Cursor(k, updatedNode.node, index)
+			val updated = factory.data.update(targetNode, k, value)
+			Cursor(k, updated.child, updated.node, index)
 		}
 		else {
-			val updatedNode = factory.Data.update(targetNode, k, value);
-			Cursor(k, updatedNode.node, index)
+			val inserted = factory.data.insert(targetNode, k, value)
+			_size += 1
+			if (inserted.split) {
+				leafCount += 1
+				inserted.b.next = targetNode.next
+				inserted.a.next = inserted.b
+				inserted.b.prev = inserted.a
+				head = if (targetNode eq head) inserted.a else head
+				tail = if (targetNode eq tail) inserted.b else tail
+				propagateToParent(inserted.key, inserted.a, inserted.b, path.tail.asInstanceOf[List[IndexNode[K]]])
+				Cursor(k, value, inserted.b, inserted.index)
+			} else {
+				Cursor(k, value, inserted.node, index)
+			}
 		}
 	}
 
-	def search(k: K): LeafNode[K, V] = search(k, root).asInstanceOf[LeafNode[K, V]];
+	private def propagateToParent(key: K, a: Node[K], b: Node[K], parent: List[IndexNode[K]]): IndexNode[K] = {
+		if (parent == Nil) {
+			val newRoot = factory.index.newNode(Seq(key), Seq(a, b))
+			root = newRoot
+			level += 1
+			newRoot
+		}
+		else {
+			val targetNode = parent.head
+			val inserted = factory.index.insert(targetNode, key, b)
+			if (inserted.split) {
+				indexCount += 1
+				propagateToParent(inserted.key, inserted.a, inserted.b, parent.tail)
+			}
+			else {
+				inserted.a
+			}
+		}
+	}
 
-	private def search(k: K, n: AbstractNode[K, V, _]): AbstractNode[K, V, _] = {
+	def seek(k: K): Cursor = {
+		val leaf = search(k)
+		val index = leaf.indexOfKey(k)
+		Cursor(k, leaf.childAt(index), leaf, index)
+	}
+
+	private def search(k: K): LeafNode[K, V] = pathTo(k, root, Nil).head.asInstanceOf[LeafNode[K, V]]
+	private def pathTo(k: K): List[Node[K]] = pathTo(k, root, Nil)
+	private def pathTo(k: K, n: Node[K], path: List[Node[K]]): List[Node[K]] = {
 		n match {
-			case l: LeafNode[K, V] => l
-			case c: IndexNode[K, V] => search(k, c.childAt(indexBound(0, k, c.keys)))
+			case l: LeafNode[K, V] => l :: path
+			case c: IndexNode[K] => pathTo(k, c.childAt(indexBound(k, c.keys)), c :: path)
 		}
 	}
 
-	@tailrec private def indexBound(n: Int, key: K, keys: Seq[K]): Int =
-		if (keys.isEmpty || ordering.le(key, keys.head)) n else indexBound(n + 1, key, keys.tail)
+	private def indexBound(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.gt(key, _)) + 1
 }

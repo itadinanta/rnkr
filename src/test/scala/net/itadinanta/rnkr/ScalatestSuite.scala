@@ -1,4 +1,4 @@
-package net.itadinanta.rankr;
+package net.itadinanta.rnkr;
 
 import org.scalatest.Spec
 import org.fest.assertions.Assertions._

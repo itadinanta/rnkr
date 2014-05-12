@@ -1,4 +1,4 @@
-package net.itadinanta.rankr
+package net.itadinanta.rnkr
 
 import org.fest.assertions.Assertions._
 import org.junit.Test
