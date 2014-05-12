@@ -7,6 +7,7 @@ import scala.collection.mutable.ListBuffer
 trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]] {
 	val ordering: Ordering[K]
 	val fanout: Int
+	val splitOffset: Int
 	def updateNode(input: NodeType, keys: Seq[K], children: Seq[ChildType]): NodeType
 	def newNode(keys: Seq[K], children: Seq[ChildType]): NodeType
 	def newNode(k: K, v: ChildType): NodeType = newNode(Seq(k), Seq(v))
@@ -34,16 +35,16 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		else {
 			val position = keys.lastIndexWhere(item => ordering.gt(k, item)) + 1
 			val (keyHead, keyTail) = keys.splitAt(position)
-			val (childHead, childTail) = children.splitAt(position)
+			val (childHead, childTail) = children.splitAt(position + splitOffset)
 			val newKeys = keyHead ++ Seq(k) ++ keyTail
 			val newChildren = childHead ++ Seq(child) ++ childTail
 			if (newKeys.length <= fanout) {
-				new BuildResult(updateNode(input, newKeys, newChildren), k, child, position)
+				new BuildResult(updateNode(input, newKeys, newChildren), k, child, position + splitOffset)
 			} else {
 				val splitAt = keys.size / 2
 				val (newKeyHead, newKeyTail) = newKeys.splitAt(splitAt)
-				val (newChildHead, newChildTail) = newChildren.splitAt(splitAt)
-				BuildResult(updateNode(input, newKeyHead, newChildHead), newNode(newKeyTail, newChildTail), keys(splitAt), children(splitAt), splitAt)
+				val (newChildHead, newChildTail) = newChildren.splitAt(splitAt + splitOffset)
+				BuildResult(updateNode(input, newKeyHead, newChildHead), newNode(if (splitOffset == 0) newKeyTail else newKeyTail.tail, newChildTail), newKeys(splitAt), children(splitAt + splitOffset), splitAt + splitOffset)
 			}
 		}
 	}
@@ -89,6 +90,7 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 			}
 		}
 
+		override val splitOffset = 1
 		override val fanout = SeqNodeFactory.this.fanout
 		override val ordering = SeqNodeFactory.this.ordering
 		override def newNode(keys: Seq[K], children: Seq[Node[K]]) = new SeqNodeImpl(keys, children)
@@ -108,6 +110,7 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 			}
 		}
 
+		override val splitOffset = 0
 		override val fanout = SeqNodeFactory.this.fanout
 		override val ordering = SeqNodeFactory.this.ordering
 		override def newNode(keys: Seq[K], children: Seq[V]) = new SeqNodeImpl(keys, children)
@@ -148,21 +151,49 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		buf.toList
 	}
 
+	def keysReverse(): Seq[K] = {
+		val buf = new ListBuffer[K]
+		def appendNode(node: LeafNode[K, V]): Unit = if (node != null) {
+			buf ++= node.keys.reverse
+			appendNode(node.prev)
+		}
+		appendNode(tail)
+		buf.toList
+	}
+
 	override def toString(): String = {
 		val buf = new StringBuilder()
 		buf.append("{").append("size=").append(_size)
-		appendNode(buf, head)
+		appendNode(buf, root)
 		buf.append("}").toString()
 	}
 
-	@tailrec private def appendNode(buf: StringBuilder, node: LeafNode[K, V]): Unit = {
+	private def appendNode(buf: StringBuilder, node: Node[K]): Unit = {
 		if (node != null) {
-			buf.append("-> [")
-			node.keys zip node.values foreach {
-				buf.append(_).append(", ")
+			node match {
+				case n: IndexNode[K] => {
+					var sep = ""
+					buf.append("{")
+					n.values zip n.keys foreach { i =>
+						buf.append(sep)
+						appendNode(buf, i._1)
+						buf.append("<-" + i._2 + " ")
+						sep = " "
+					}
+					buf.append("->")
+					appendNode(buf, n.values.last)
+					buf.append("}");
+				}
+				case l: LeafNode[K, V] => {
+					var sep = ""
+					buf.append("[")
+					l.keys zip l.values foreach { i =>
+						buf.append(sep).append(i._1)
+						sep = " "
+					}
+					buf.append("]");
+				}
 			}
-			buf.append("Nil]");
-			appendNode(buf, node.next)
 		}
 	}
 
@@ -182,6 +213,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 				inserted.b.next = targetNode.next
 				inserted.a.next = inserted.b
 				inserted.b.prev = inserted.a
+				if (inserted.b.next != null) inserted.b.next.prev = inserted.b
 				head = if (targetNode eq head) inserted.a else head
 				tail = if (targetNode eq tail) inserted.b else tail
 				propagateToParent(inserted.key, inserted.a, inserted.b, path.tail.asInstanceOf[List[IndexNode[K]]])
@@ -197,6 +229,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 			val newRoot = factory.index.newNode(Seq(key), Seq(a, b))
 			root = newRoot
 			level += 1
+			indexCount += 1
 			newRoot
 		}
 		else {

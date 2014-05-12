@@ -2,13 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="aa435964-ba77-433c-8f36-e297d0209f12" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rankr/tree/TreeTestSuite.scala" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rankr/JunitSuite.scala" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/JunitSuite.scala" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rankr/ScalatestSuite.scala" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/ScalatestSuite.scala" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rankr/node/NodeTestSuite.scala" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/node/NodeTestSuite.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala" afterPath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" afterPath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="scala_integration_test.iws" />
@@ -40,11 +35,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="TreeTestSuite.scala" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="TreeTestSuite.scala" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="360" max-vertical-offset="1065">
-              <caret line="43" column="0" selection-start-line="43" selection-start-column="0" selection-end-line="43" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.16366906" vertical-offset="914" max-vertical-offset="1470">
+              <caret line="67" column="5" selection-start-line="67" selection-start-column="5" selection-end-line="67" selection-end-column="5" />
               <folding>
                 <element signature="e#34#67#0" expanded="true" />
               </folding>
@@ -52,21 +47,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Transformer.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/Transformer.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="255">
-              <caret line="21" column="0" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Tree.scala" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="Tree.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="3.1935484" vertical-offset="1950" max-vertical-offset="3540">
-              <caret line="229" column="84" selection-start-line="229" selection-start-column="84" selection-end-line="229" selection-end-column="84" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="2682" max-vertical-offset="4035">
+              <caret line="46" column="155" selection-start-line="46" selection-start-column="155" selection-end-line="46" selection-end-column="155" />
               <folding>
                 <element signature="e#34#67#0" expanded="true" />
               </folding>
@@ -97,7 +82,7 @@
       <file leaf-file-name="Node.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="179" max-vertical-offset="945">
+            <state vertical-scroll-proportion="0.0" vertical-offset="340" max-vertical-offset="945">
               <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
               <folding />
             </state>
@@ -147,8 +132,8 @@
         <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rankr/tree/TreeTestSuite.scala" />
         <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/node/NodeTestSuite.scala" />
         <option value="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala" />
-        <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala" />
         <option value="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala" />
       </list>
     </option>
   </component>
@@ -903,7 +888,11 @@
       <created>1399771729949</created>
       <updated>1399771729949</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Basic insert working WIP">
+      <created>1399853738908</created>
+      <updated>1399853738908</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -940,7 +929,7 @@
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32930845" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39517015" sideWeight="0.8269436" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.45993415" sideWeight="0.25452608" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3600439" sideWeight="0.25452608" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24973376" sideWeight="0.5007587" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32930845" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Plugins" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -952,7 +941,7 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19222577" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.45993415" sideWeight="0.7454739" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3600439" sideWeight="0.7454739" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="6" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
@@ -1007,7 +996,8 @@
     <MESSAGE value="Added tree source" />
     <MESSAGE value="Cleaner class hierarchy" />
     <MESSAGE value="Implemented split" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implemented split" />
+    <MESSAGE value="Basic insert working WIP" />
+    <option name="LAST_COMMIT_MESSAGE" value="Basic insert working WIP" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1022,7 +1012,7 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="16" />
+      <option name="time" value="18" />
     </breakpoint-manager>
   </component>
   <component name="antWorkspaceConfiguration">
@@ -1349,14 +1339,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="179" max-vertical-offset="945">
-          <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/node/NodeTestSuite.scala">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="510" max-vertical-offset="975">
@@ -1397,20 +1379,28 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="360" max-vertical-offset="1065">
-          <caret line="43" column="0" selection-start-line="43" selection-start-column="0" selection-end-line="43" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="179" max-vertical-offset="945">
+          <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="2682" max-vertical-offset="4035">
+          <caret line="46" column="155" selection-start-line="46" selection-start-column="155" selection-end-line="46" selection-end-column="155" />
           <folding>
             <element signature="e#34#67#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
+    <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="3.1935484" vertical-offset="1950" max-vertical-offset="3540">
-          <caret line="229" column="84" selection-start-line="229" selection-start-column="84" selection-end-line="229" selection-end-column="84" />
+        <state vertical-scroll-proportion="0.16366906" vertical-offset="914" max-vertical-offset="1470">
+          <caret line="67" column="5" selection-start-line="67" selection-start-column="5" selection-end-line="67" selection-end-column="5" />
           <folding>
             <element signature="e#34#67#0" expanded="true" />
           </folding>
