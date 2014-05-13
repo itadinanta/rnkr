@@ -251,14 +251,53 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		Cursor(k, leaf.childAt(index), leaf, index)
 	}
 
-	private def search(k: K): LeafNode[K, V] = pathTo(k, root, Nil).head.asInstanceOf[LeafNode[K, V]]
-	private def pathTo(k: K): List[Node[K]] = pathTo(k, root, Nil)
-	private def pathTo(k: K, n: Node[K], path: List[Node[K]]): List[Node[K]] = {
-		n match {
-			case l: LeafNode[K, V] => l :: path
-			case c: IndexNode[K] => pathTo(k, c.childAt(indexBound(k, c.keys)), c :: path)
+	def range(k: K, length: Int): Seq[Pair[K, V]] = {
+		val leaf = search(k)
+		val buf = new ListBuffer[Pair[K, V]]
+		if (length >= 0) {
+			val index = after(k, leaf.keys)
+			rangeForwards(buf, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
+		} else {
+			val index = before(k, leaf.keys)
+			rangeBackwards(buf, leaf.keys.take(index).reverse, leaf.values.take(index).reverse, leaf.prev, -length)
+		}
+		buf.toSeq
+	}
+
+	@tailrec private def rangeForwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], next: LeafNode[K, V], leftover: Int) {
+		if (leftover > 0) {
+			if (khead == Nil) {
+				if (next != null) rangeForwards(buf, next.keys, next.values, next.next, leftover)
+			}
+			else {
+				buf.append((khead.head, vhead.head))
+				rangeForwards(buf, khead.tail, vhead.tail, next, leftover - 1)
+			}
 		}
 	}
 
-	private def indexBound(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.gt(key, _)) + 1
+	@tailrec private def rangeBackwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], prev: LeafNode[K, V], leftover: Int) {
+		if (leftover > 0) {
+			if (khead == Nil) {
+				if (prev != null) rangeBackwards(buf, prev.keys.reverse, prev.values.reverse, prev.prev, leftover)
+			}
+			else {
+				buf.append((khead.head, vhead.head))
+				rangeBackwards(buf, khead.tail, vhead.tail, prev, leftover - 1)
+			}
+		}
+	}
+
+	private def searchr(k: K): LeafNode[K, V] = pathTo(k, root, Nil, before).head.asInstanceOf[LeafNode[K, V]]
+	private def search(k: K): LeafNode[K, V] = pathTo(k, root, Nil, after).head.asInstanceOf[LeafNode[K, V]]
+	private def pathTo(k: K): List[Node[K]] = pathTo(k, root, Nil, after)
+	private def pathTo(k: K, n: Node[K], path: List[Node[K]], indexBound: (K, Seq[K]) => Int): List[Node[K]] = {
+		n match {
+			case l: LeafNode[K, V] => l :: path
+			case c: IndexNode[K] => pathTo(k, c.childAt(indexBound(k, c.keys)), c :: path, indexBound)
+		}
+	}
+
+	private def after(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.gt(key, _)) + 1
+	private def before(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.ge(key, _)) + 1
 }
