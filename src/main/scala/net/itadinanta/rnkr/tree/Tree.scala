@@ -123,6 +123,7 @@ trait BPlusTree[K, V] {
 	def get(k: K): V
 	def put(k: K, value: V): V
 	def keys(): Seq[K]
+	def keysReverse(): Seq[K]
 }
 
 class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V] {
@@ -137,11 +138,11 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	private[rnkr] var indexCount: Int = 0
 	private[rnkr] var level: Int = 1
 
-	def size = _size
+	override def size = _size
 
-	def put(k: K, v: V): V = insert(k, v).value
-	def get(k: K): V = search(k).childOfKey(k)
-	def keys(): Seq[K] = {
+	override def put(k: K, v: V): V = insert(k, v).value
+	override def get(k: K): V = search(k).childOfKey(k)
+	override def keys(): Seq[K] = {
 		val buf = new ListBuffer[K]
 		def appendNode(node: LeafNode[K, V]): Unit = if (node != null) {
 			buf ++= node.keys
@@ -151,7 +152,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		buf.toList
 	}
 
-	def keysReverse(): Seq[K] = {
+	override def keysReverse(): Seq[K] = {
 		val buf = new ListBuffer[K]
 		def appendNode(node: LeafNode[K, V]): Unit = if (node != null) {
 			buf ++= node.keys.reverse
@@ -222,25 +223,25 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 				Cursor(k, value, inserted.node, index)
 			}
 		}
-	}
 
-	private def propagateToParent(key: K, a: Node[K], b: Node[K], parent: List[IndexNode[K]]): IndexNode[K] = {
-		if (parent == Nil) {
-			val newRoot = factory.index.newNode(Seq(key), Seq(a, b))
-			root = newRoot
-			level += 1
-			indexCount += 1
-			newRoot
-		}
-		else {
-			val targetNode = parent.head
-			val inserted = factory.index.insert(targetNode, key, b)
-			if (inserted.split) {
+		def propagateToParent(key: K, a: Node[K], b: Node[K], parent: List[IndexNode[K]]): IndexNode[K] = {
+			if (parent == Nil) {
+				val newRoot = factory.index.newNode(Seq(key), Seq(a, b))
+				root = newRoot
+				level += 1
 				indexCount += 1
-				propagateToParent(inserted.key, inserted.a, inserted.b, parent.tail)
+				newRoot
 			}
 			else {
-				inserted.a
+				val targetNode = parent.head
+				val inserted = factory.index.insert(targetNode, key, b)
+				if (inserted.split) {
+					indexCount += 1
+					propagateToParent(inserted.key, inserted.a, inserted.b, parent.tail)
+				}
+				else {
+					inserted.a
+				}
 			}
 		}
 	}
@@ -262,33 +263,34 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 			rangeBackwards(buf, leaf.keys.take(index).reverse, leaf.values.take(index).reverse, leaf.prev, -length)
 		}
 		buf.toSeq
-	}
 
-	@tailrec private def rangeForwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], next: LeafNode[K, V], leftover: Int) {
-		if (leftover > 0) {
-			if (khead == Nil) {
-				if (next != null) rangeForwards(buf, next.keys, next.values, next.next, leftover)
+		@tailrec def rangeForwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], next: LeafNode[K, V], leftover: Int) {
+			if (leftover > 0) {
+				if (khead == Nil) {
+					if (next != null) rangeForwards(buf, next.keys, next.values, next.next, leftover)
+				}
+				else {
+					buf.append((khead.head, vhead.head))
+					rangeForwards(buf, khead.tail, vhead.tail, next, leftover - 1)
+				}
 			}
-			else {
-				buf.append((khead.head, vhead.head))
-				rangeForwards(buf, khead.tail, vhead.tail, next, leftover - 1)
+		}
+
+		@tailrec def rangeBackwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], prev: LeafNode[K, V], leftover: Int) {
+			if (leftover > 0) {
+				if (khead == Nil) {
+					if (prev != null) rangeBackwards(buf, prev.keys.reverse, prev.values.reverse, prev.prev, leftover)
+				}
+				else {
+					buf.append((khead.head, vhead.head))
+					rangeBackwards(buf, khead.tail, vhead.tail, prev, leftover - 1)
+				}
 			}
 		}
 	}
 
-	@tailrec private def rangeBackwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], prev: LeafNode[K, V], leftover: Int) {
-		if (leftover > 0) {
-			if (khead == Nil) {
-				if (prev != null) rangeBackwards(buf, prev.keys.reverse, prev.values.reverse, prev.prev, leftover)
-			}
-			else {
-				buf.append((khead.head, vhead.head))
-				rangeBackwards(buf, khead.tail, vhead.tail, prev, leftover - 1)
-			}
-		}
-	}
-
-	private def searchr(k: K): LeafNode[K, V] = pathTo(k, root, Nil, before).head.asInstanceOf[LeafNode[K, V]]
+	private def after(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.gt(key, _)) + 1
+	private def before(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.ge(key, _)) + 1
 	private def search(k: K): LeafNode[K, V] = pathTo(k, root, Nil, after).head.asInstanceOf[LeafNode[K, V]]
 	private def pathTo(k: K): List[Node[K]] = pathTo(k, root, Nil, after)
 	private def pathTo(k: K, n: Node[K], path: List[Node[K]], indexBound: (K, Seq[K]) => Int): List[Node[K]] = {
@@ -297,7 +299,4 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 			case c: IndexNode[K] => pathTo(k, c.childAt(indexBound(k, c.keys)), c :: path, indexBound)
 		}
 	}
-
-	private def after(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.gt(key, _)) + 1
-	private def before(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.ge(key, _)) + 1
 }
