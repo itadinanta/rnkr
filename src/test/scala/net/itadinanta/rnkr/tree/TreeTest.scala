@@ -99,7 +99,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		val tree = createTestTree()
 		1 to 100 foreach { i => tree.put(2 * i, "Item" + i)}
 		println(tree)
-		tree.get(20) should be("Item10")
+		tree.get(20) should be(Some("Item10"))
 		tree.range(2,100) map(_._1) should be(2 to 200 by 2)
 		tree.range(0,200) map(_._1) should be(2 to 200 by 2)
 		tree.range(20,10) map(_._1) should be(20 to 38 by 2)
