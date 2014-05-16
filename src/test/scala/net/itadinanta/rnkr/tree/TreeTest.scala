@@ -120,4 +120,39 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.range(20,-5) map(_._1) should be(20 to 12 by -2)
 		tree.range(21,-5) map(_._1) should be(20 to 12 by -2)
 	}
+
+	"A simple node deletion" should "contain 1 entry after 2 insertions and 1 deletion" in {
+		val tree = createTestTree()
+		tree.put(1, "Item")
+		tree.put(2, "Item")
+		tree.size should be(2)
+		println(tree)
+		tree.remove(1)
+		println(tree)
+		tree.size should be(1)
+		tree.keys should be(Seq(2))
+	}
+
+
+	"A simple node deletion" should "contain 4 entry after 5 insertions and 1 deletion" in {
+		val tree = createTestTree()
+		tree.put(1, "Item")
+		tree.put(2, "Item")
+		tree.put(3, "Item")
+		tree.put(4, "Item")
+		tree.put(5, "Item")
+		tree.size should be(5)
+		println(tree)
+
+		tree.remove(4)
+		println(tree)
+		tree.size should be(4)
+		tree.keys should be(Seq(1,2,3,5))
+
+		tree.remove(2)
+		println(tree)
+
+		tree.size should be(3)
+	}
+
 }

@@ -1,8 +1,8 @@
 package net.itadinanta.rnkr.tree
 
 import net.itadinanta.rnkr.node._
-import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
+import scala.annotation.tailrec
 
 trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]] {
 	val ordering: Ordering[K]
@@ -38,15 +38,28 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 			val (childHead, childTail) = children.splitAt(position + splitOffset)
 			val newKeys = keyHead ++ Seq(k) ++ keyTail
 			val newChildren = childHead ++ Seq(child) ++ childTail
-			if (newKeys.length <= fanout) {
+
+			if (newKeys.length <= fanout)
 				new BuildResult(updateNode(input, newKeys, newChildren), k, child, position + splitOffset)
-			} else {
-				val splitAt = (keys.size + 1) / 2
-				val (newKeyHead, newKeyTail) = newKeys.splitAt(splitAt)
-				val (newChildHead, newChildTail) = newChildren.splitAt(splitAt + splitOffset)
-				BuildResult(updateNode(input, newKeyHead, newChildHead), newNode(if (splitOffset == 0) newKeyTail else newKeyTail.tail, newChildTail), newKeys(splitAt), children(splitAt + splitOffset), splitAt + splitOffset)
-			}
+			else
+				split(input, keys, children, newKeys, newChildren)
 		}
+	}
+
+	def split(input: NodeType, keys: Seq[K], children: Seq[ChildType], newKeys: Seq[K], newChildren: Seq[ChildType]): BuildResult = {
+		val splitAt = (keys.size + 1) / 2
+		split(input, keys, splitAt, children(splitAt + splitOffset), newKeys, newChildren)
+	}
+
+	def split(input: NodeType, keys: Seq[K], splitAt: Int, child: ChildType, newKeys: Seq[K], newChildren: Seq[ChildType]): BuildResult = {
+		val (newKeyHead, newKeyTail) = newKeys.splitAt(splitAt)
+		val (newChildHead, newChildTail) = newChildren.splitAt(splitAt + splitOffset)
+
+		BuildResult(updateNode(input, newKeyHead, newChildHead),
+			newNode(if (splitOffset == 0) newKeyTail else newKeyTail.tail, newChildTail),
+			newKeys(splitAt),
+			child,
+			splitAt + splitOffset)
 	}
 
 	private def delete(input: NodeType, keys: Seq[K], children: Seq[ChildType], key: K) = {
@@ -77,7 +90,7 @@ abstract class NodeFactory[K, V](val ordering: Ordering[K], val fanout: Int = 10
 	type DataNodeBuilder = NodeBuilder[K, V, V, LeafNode[K, V]]
 	val index: IndexNodeBuilder
 	val data: DataNodeBuilder
-	def balanced(n: Node[K]) = n.size <= (fanout + 1) / 2
+	def balanced(n: Node[K]) = n.size >= (fanout + 1) / 2
 }
 
 class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 10) extends NodeFactory[K, V](ordering, fanout) {
@@ -269,7 +282,27 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	}
 
 	private def delete(k: K): Cursor = {
-		def rebalance(k: K, node: Node[K], path: Seq[IndexNode[K]]): Cursor = ???
+		def rebalance(k: K, node: Node[K], path: Seq[IndexNode[K]]): Cursor = {
+			def parent = path.head
+			def siblings(lv: Option[Node[K]], lk: Option[K], keys: Seq[K], values: Seq[Node[K]]): (Option[Node[K]], Option[K], Seq[K], Seq[Node[K]]) =
+				if (node eq values.head) (lv, lk, keys.tail, values.tail)
+				else siblings(Option(values.head), Option(keys.head), keys.tail, values.tail)
+
+			val lens = siblings(None, None, parent.keys, parent.values)
+			val (ak: K, av: Node[K], bk: K, bv: Node[K]) = lens match {
+				case (None, None, Nil, rv) => (k, node, null, rv.head)
+				case (None, None, rk :: _, rv :: _) => (k, node, rk, rv)
+				case (Some(lv), Some(lk), Nil, Nil) => (lk, lv, k, node)
+				case (Some(lv), Some(lk), rk :: _, rv :: _) => if (lv.size > rv.size) (lk, lv, k, node) else (k, node, rk, rv)
+			}
+
+			(av, bv) match {
+				case (a: IndexNode[K], b: IndexNode[K]) => factory.index.merge(a, b)
+				case (a: LeafNode[K, V], b: LeafNode[K, V]) => factory.data.merge(a, b)
+			}
+
+			???
+		}
 
 		val path = pathTo(k)
 		val targetNode = path.head.asInstanceOf[LeafNode[K, V]]
