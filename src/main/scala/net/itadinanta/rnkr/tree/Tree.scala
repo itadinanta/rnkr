@@ -26,8 +26,15 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 	def update(node: NodeType, k: K, child: ChildType): BuildResult = update(node, node.keys, node.values, k, child)
 	def merge(a: NodeType, b: NodeType): BuildResult = merge(a, a.keys, a.values, b.keys, b.values)
 
-	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], bKeys: Seq[K], bValues: Seq[ChildType]) =
-		new BuildResult(updateNode(input, aKeys ++ bKeys, aValues ++ bValues), bKeys.head, bValues.head, aKeys.size)
+	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], bKeys: Seq[K], bValues: Seq[ChildType]) = {
+		val newKeys = aKeys ++ bKeys
+		val newChildren = aValues ++ bValues
+
+		if (newKeys.length <= fanout)
+			new BuildResult(updateNode(input, aKeys ++ bKeys, aValues ++ bValues), bKeys.head, bValues.head, aKeys.size)
+		else
+			split(input, (fanout + 1) / 2, newKeys, newChildren)
+	}
 
 	private def insert(input: NodeType, keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = {
 		if (keys.isEmpty)
@@ -42,23 +49,17 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 			if (newKeys.length <= fanout)
 				new BuildResult(updateNode(input, newKeys, newChildren), k, child, position + splitOffset)
 			else
-				split(input, keys, children, newKeys, newChildren)
+				split(input, (fanout + 1) / 2, newKeys, newChildren)
 		}
 	}
 
-	def split(input: NodeType, keys: Seq[K], children: Seq[ChildType], newKeys: Seq[K], newChildren: Seq[ChildType]): BuildResult = {
-		val splitAt = (keys.size + 1) / 2
-		split(input, keys, splitAt, children(splitAt + splitOffset), newKeys, newChildren)
-	}
-
-	def split(input: NodeType, keys: Seq[K], splitAt: Int, child: ChildType, newKeys: Seq[K], newChildren: Seq[ChildType]): BuildResult = {
-		val (newKeyHead, newKeyTail) = newKeys.splitAt(splitAt)
-		val (newChildHead, newChildTail) = newChildren.splitAt(splitAt + splitOffset)
+	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType]): BuildResult = {
+		val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
+		val (newChildHead, newChildTail) = children.splitAt(splitAt + splitOffset)
 
 		BuildResult(updateNode(input, newKeyHead, newChildHead),
-			newNode(if (splitOffset == 0) newKeyTail else newKeyTail.tail, newChildTail),
-			newKeys(splitAt),
-			child,
+			newNode(newKeyTail.drop(splitOffset), newChildTail),
+			keys(splitAt), children(splitAt),
 			splitAt + splitOffset)
 	}
 
@@ -284,19 +285,19 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	private def delete(k: K): Cursor = {
 		def rebalance(k: K, node: Node[K], path: Seq[IndexNode[K]]): Cursor = {
 			def parent = path.head
-			def siblings(lv: Option[Node[K]], lk: Option[K], keys: Seq[K], values: Seq[Node[K]]): (Option[Node[K]], Option[K], Seq[K], Seq[Node[K]]) =
-				if (node eq values.head) (lv, lk, keys.tail, values.tail)
-				else siblings(Option(values.head), Option(keys.head), keys.tail, values.tail)
+			def siblings(index: Int, lv: Option[Node[K]], values: Seq[Node[K]]): (Int, Option[Node[K]], Seq[Node[K]]) =
+				if (node eq values.head) (index, lv, values.tail)
+				else siblings(index + 1, Option(values.head), values.tail)
 
-			val lens = siblings(None, None, parent.keys, parent.values)
-			val (ak: K, av: Node[K], bk: K, bv: Node[K]) = lens match {
-				case (None, None, Nil, rv) => (k, node, null, rv.head)
-				case (None, None, rk :: _, rv :: _) => (k, node, rk, rv)
-				case (Some(lv), Some(lk), Nil, Nil) => (lk, lv, k, node)
-				case (Some(lv), Some(lk), rk :: _, rv :: _) => if (lv.size > rv.size) (lk, lv, k, node) else (k, node, rk, rv)
+			val lens = siblings(1, None, parent.values)
+			println(lens)
+			val (i, av, bv) = lens match {
+				case (i, None, rv) => (i, node, rv.head)
+				case (i, Some(lv), rv) => if (lv.size > rv.size) (i - 1, lv, node) else (i, node, rv)
+				case (i, None, Nil) => (i, node, null)
 			}
 
-			(av, bv) match {
+			val built = (av, bv) match {
 				case (a: IndexNode[K], b: IndexNode[K]) => factory.index.merge(a, b)
 				case (a: LeafNode[K, V], b: LeafNode[K, V]) => factory.data.merge(a, b)
 			}

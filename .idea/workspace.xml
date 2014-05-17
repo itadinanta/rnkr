@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="aa435964-ba77-433c-8f36-e297d0209f12" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" afterPath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="scala_integration_test.iws" />
@@ -35,21 +34,21 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="TreeTest.scala" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="TreeTest.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.4745223" vertical-offset="1757" max-vertical-offset="2385">
-              <caret line="141" column="27" selection-start-line="141" selection-start-column="27" selection-end-line="141" selection-end-column="27" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1757" max-vertical-offset="2385">
+              <caret line="136" column="4" selection-start-line="136" selection-start-column="4" selection-end-line="136" selection-end-column="4" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Tree.scala" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="Tree.scala" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="4238" max-vertical-offset="5640">
-              <caret line="344" column="17" selection-start-line="344" selection-start-column="17" selection-end-line="344" selection-end-column="17" />
+            <state vertical-scroll-proportion="0.57165605" vertical-offset="4216" max-vertical-offset="5655">
+              <caret line="305" column="9" selection-start-line="305" selection-start-column="9" selection-end-line="305" selection-end-column="9" />
               <folding>
                 <element signature="e#34#67#0" expanded="true" />
               </folding>
@@ -60,9 +59,52 @@
       <file leaf-file-name="OutcomeOf.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/OutcomeOf.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="861" max-vertical-offset="1455">
-              <caret line="93" column="3" selection-start-line="93" selection-start-column="3" selection-end-line="93" selection-end-column="3" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="884" max-vertical-offset="1455">
+              <caret line="83" column="0" selection-start-line="83" selection-start-column="0" selection-end-line="83" selection-end-column="0" />
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Transformer.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/Transformer.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="255">
+              <caret line="21" column="0" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="FlatSpecLike.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/FlatSpecLike.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="24064" max-vertical-offset="26430">
+              <caret line="1638" column="0" selection-start-line="1638" selection-start-column="0" selection-end-line="1638" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Suite.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/Suite.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="15634" max-vertical-offset="38100">
+              <caret line="1120" column="0" selection-start-line="1120" selection-start-column="0" selection-end-line="1120" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="FlatSpec.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/FlatSpec.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="24732" max-vertical-offset="25185">
+              <caret line="1682" column="0" selection-start-line="1682" selection-start-column="0" selection-end-line="1682" selection-end-column="0" />
+              <folding>
+                <element signature="n#!!doc" expanded="false" />
+                <element signature="e#624#736#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -527,7 +569,7 @@
       <recent name="net.itadinanta.rankr.tree" />
     </key>
   </component>
-  <component name="RunManager" selected="ScalaTest.TreeTest">
+  <component name="RunManager" selected="ScalaTest.TreeTest.A simple node deletion should contain 4 entry after 5 insertions and 1 deletion">
     <configuration default="false" name="TreeTest" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
       <module name="scala_integration_test" />
       <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
@@ -824,8 +866,8 @@
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="ScalaTest.TreeTest" />
-        <item index="1" class="java.lang.String" itemvalue="ScalaTest.TreeTest.A simple node deletion should contain 4 entry after 5 insertions and 1 deletion" />
+        <item index="0" class="java.lang.String" itemvalue="ScalaTest.TreeTest.A simple node deletion should contain 4 entry after 5 insertions and 1 deletion" />
+        <item index="1" class="java.lang.String" itemvalue="ScalaTest.TreeTest" />
         <item index="2" class="java.lang.String" itemvalue="ScalaTest.TreeTest.A simple node deletion should contain 1 entry after 2 insertions and 1 deletion" />
         <item index="3" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 100 entries in reverse after 100 insertions" />
         <item index="4" class="java.lang.String" itemvalue="ScalaTest.NodeTest" />
@@ -894,7 +936,11 @@
       <created>1400197435340</created>
       <updated>1400197435340</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Refactored Split">
+      <created>1400282839823</created>
+      <updated>1400282839823</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -926,13 +972,13 @@
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Problems" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.28320527" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32930845" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32893288" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32930845" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32893288" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4719472" sideWeight="0.82673794" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.27942795" sideWeight="0.19465241" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24973376" sideWeight="0.5007587" order="0" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32930845" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32893288" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Plugins" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40154016" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32930845" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
@@ -1005,28 +1051,23 @@
     <MESSAGE value="Range and incomplete range queries from key up and down" />
     <MESSAGE value="Cleanup" />
     <MESSAGE value="Started work on delete" />
-    <option name="LAST_COMMIT_MESSAGE" value="Started work on delete" />
+    <MESSAGE value="Refactored Split" />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactored Split" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala</url>
-          <line>298</line>
+          <line>294</line>
           <properties />
-          <option name="timeStamp" value="27" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala</url>
-          <line>287</line>
-          <properties />
-          <option name="timeStamp" value="30" />
+          <option name="timeStamp" value="34" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="31" />
+      <option name="time" value="35" />
     </breakpoint-manager>
   </component>
   <component name="antWorkspaceConfiguration">
@@ -1334,54 +1375,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/FlatSpecLike.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.338257" vertical-offset="23996" max-vertical-offset="26430">
-          <caret line="1639" column="44" selection-start-line="1639" selection-start-column="44" selection-end-line="1639" selection-end-column="44" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/Transformer.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.10869565" vertical-offset="0" max-vertical-offset="690">
-          <caret line="19" column="0" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/Suite.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="15611" max-vertical-offset="38100">
-          <caret line="1120" column="0" selection-start-line="1120" selection-start-column="0" selection-end-line="1120" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/FlatSpec.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.0652174" vertical-offset="24180" max-vertical-offset="25185">
-          <caret line="1682" column="0" selection-start-line="1682" selection-start-column="0" selection-end-line="1682" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$MAVEN_REPOSITORY$/org/scala-lang/scala-library/2.10.2/scala-library-2.10.2-sources.jar!/scala/collection/mutable/BufferLike.scala">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="956" max-vertical-offset="3945">
           <caret line="141" column="6" selection-start-line="141" selection-start-column="6" selection-end-line="141" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/node/NodeTest.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="270" max-vertical-offset="960">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/OutcomeOf.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="861" max-vertical-offset="1455">
-          <caret line="93" column="3" selection-start-line="93" selection-start-column="3" selection-end-line="93" selection-end-column="3" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1393,21 +1390,72 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
+    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/FlatSpecLike.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="4238" max-vertical-offset="5640">
-          <caret line="344" column="17" selection-start-line="344" selection-start-column="17" selection-end-line="344" selection-end-column="17" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="24064" max-vertical-offset="26430">
+          <caret line="1638" column="0" selection-start-line="1638" selection-start-column="0" selection-end-line="1638" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/Suite.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="15634" max-vertical-offset="38100">
+          <caret line="1120" column="0" selection-start-line="1120" selection-start-column="0" selection-end-line="1120" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/FlatSpec.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="24732" max-vertical-offset="25185">
+          <caret line="1682" column="0" selection-start-line="1682" selection-start-column="0" selection-end-line="1682" selection-end-column="0" />
           <folding>
-            <element signature="e#34#67#0" expanded="true" />
+            <element signature="n#!!doc" expanded="false" />
+            <element signature="e#624#736#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/Transformer.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="255">
+          <caret line="21" column="0" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/org/scalatest/scalatest_2.10/2.1.3/scalatest_2.10-2.1.3-sources.jar!/org/scalatest/OutcomeOf.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="884" max-vertical-offset="1455">
+          <caret line="83" column="0" selection-start-line="83" selection-start-column="0" selection-end-line="83" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/node/NodeTest.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="270" max-vertical-offset="960">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.4745223" vertical-offset="1757" max-vertical-offset="2385">
-          <caret line="141" column="27" selection-start-line="141" selection-start-column="27" selection-end-line="141" selection-end-column="27" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="1829" max-vertical-offset="2385">
+          <caret line="136" column="4" selection-start-line="136" selection-start-column="4" selection-end-line="136" selection-end-column="4" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.57165605" vertical-offset="4216" max-vertical-offset="5655">
+          <caret line="305" column="9" selection-start-line="305" selection-start-column="9" selection-end-line="305" selection-end-column="9" />
+          <folding>
+            <element signature="e#34#67#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
