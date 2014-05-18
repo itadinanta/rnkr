@@ -148,13 +148,39 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		println(tree)
 		tree.size should be(4)
 		tree.keys should be(Seq(1,2,3,5))
+		tree.keysReverse should be(Seq(5,3,2,1))
 
 		tree.remove(2)
 		println(tree)
-
 		tree.size should be(3)
 		tree.keys should be(Seq(1,3,5))
+		tree.keysReverse should be(Seq(5,3,1))
+		tree.root should be (tree.head)
+
+		tree.remove(1)
+		println(tree)
+		tree.size should be(2)
+		tree.keys should be(Seq(3,5))
+		tree.keysReverse should be(Seq(5,3))
+		tree.root should be (tree.head)
 
 	}
+
+	"An indexed populated tree" should "contain 0 entry after 100 insertions and 100 deletions" in {
+		val tree = createTestTree()
+		1 to 100 foreach {
+			i => tree.put(i, "Item" + i);
+				tree.keys() should be(1 to i)
+		}
+		println(tree)
+		1 to 100 foreach {
+			i => tree.remove(i);
+			println(tree)
+			tree.keys() should be((i + 1) to 10)
+		}
+		tree.level should be(1)
+		tree.size should be(0)
+	}
+
 
 }
