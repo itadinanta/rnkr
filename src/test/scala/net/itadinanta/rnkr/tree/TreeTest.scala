@@ -153,6 +153,8 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		println(tree)
 
 		tree.size should be(3)
+		tree.keys should be(Seq(1,3,5))
+
 	}
 
 }

@@ -11,6 +11,7 @@ trait Ordering[T] {
 trait Node[K] {
 	def keys: Seq[K]
 	def size: Int = keys.length
+	def isEmpty: Boolean
 	def indexOfKey(key: K) = keys.indexOf(key)
 	def keyAt(index: Int) = keys(index)
 }
@@ -19,6 +20,7 @@ trait Children[ChildType] {
 	def values: Seq[ChildType]
 	def indexOfChild(child: ChildType) = values.indexOf(child)
 	def childAt(index: Int) = values(index)
+	def childOption(index: Int) = if (0 <= index && index < values.length) Some(childAt(index)) else None
 }
 
 trait DataNode[K, V] extends Node[K] with Children[V]
