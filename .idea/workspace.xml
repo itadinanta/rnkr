@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="aa435964-ba77-433c-8f36-e297d0209f12" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" afterPath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="scala_integration_test.iws" />
@@ -958,7 +956,11 @@
       <created>1400545951712</created>
       <updated>1400545951712</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Couple of bug fixes in delete">
+      <created>1400623646990</created>
+      <updated>1400623646990</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
