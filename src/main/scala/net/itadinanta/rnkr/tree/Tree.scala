@@ -109,14 +109,14 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 
 	private def replaceKey(input: NodeType, keys: Seq[K], k: K, newKey: K): NodeType = {
 		val position = keys.indexOf(k)
-		if (position < 0) throw new IndexOutOfBoundsException("key " + k + " does not exist")
+		if (position < 0) throw new IndexOutOfBoundsException("key " + k + " does not exist in " + (keys mkString(",")))
 
-		updateKeys(input, keys.take(position) ++ Seq(newKey))
+		updateKeys(input, keys.take(position) ++ Seq(newKey) ++ keys.drop(position + 1))
 	}
 
 	private def update(input: NodeType, keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = {
 		val position = keys.indexOf(k)
-		if (position < 0) throw new IndexOutOfBoundsException("key " + k + " does not exist")
+		if (position < 0) throw new IndexOutOfBoundsException("key " + k + " does not exist in " + (keys mkString(",")))
 
 		new BuildResult(updateNode(input, keys, children.take(position) ++ Seq(child) ++ children.drop(position + 1)),
 			k, children(position), position)
@@ -246,14 +246,16 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					case n: IndexNode[K] => {
 						var sep = ""
 						buf.append("{")
-						n.values zip n.keys foreach { i =>
-							buf.append(sep)
-							appendNode(buf, i._1)
-							buf.append("<" + i._2 + " ")
-							sep = " "
+						if (!n.isEmpty) {
+							n.values zip n.keys foreach { i =>
+								buf.append(sep)
+								appendNode(buf, i._1)
+								buf.append("<" + i._2)
+								sep = ">"
+							}
+							buf.append(">")
+							appendNode(buf, n.values.last)
 						}
-						buf.append(">")
-						appendNode(buf, n.values.last)
 						buf.append("}");
 					}
 					case l: LeafNode[K, V] => {
@@ -334,12 +336,13 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 	private def delete(k: K): Cursor = {
 
-		def deleteFromParent(path: Seq[IndexNode[K]], k: K): Node[K] = {
+		def deleteFromParent(path: Seq[IndexNode[K]], child: Node[K]): Node[K] = {
+			val k = path.head.keyAt(path.head.indexOfChild(child) - 1)
 			val deleted = factory.index.delete(path.head, k)
 			val node = deleted.a
-			indexCount -= 1
 			if (node.isEmpty) {
 				root = node.childAt(0)
+				indexCount -= 1
 				level -= 1
 			}
 			else if (!factory.index.balanced(node)) {
@@ -358,9 +361,12 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					}
 
 					val initialSize = av.size
-					val balanced = factory.index.redistribute(av.asInstanceOf[IndexNode[K]], Seq(bv.asInstanceOf[IndexNode[K]].values.head.keys.head), bv.asInstanceOf[IndexNode[K]])
-					if (balanced.b.isEmpty)
-						deleteFromParent(path.tail, balanced.key)
+					val pivot = bv.asInstanceOf[IndexNode[K]].values.head.keys.head
+					val balanced = factory.index.redistribute(av.asInstanceOf[IndexNode[K]], Seq(pivot), bv.asInstanceOf[IndexNode[K]])
+					if (balanced.b.isEmpty) {
+						deleteFromParent(path.tail, balanced.b)
+						indexCount -= 1
+					}
 					else if (balanced.a.size != initialSize)
 						factory.index.replaceKey(parent, balanced.key, balanced.b.keys.head)
 				}
@@ -395,7 +401,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					if (path.tail == Nil)
 						root = path.head
 					else
-						deleteFromParent(parent, balanced.key)
+						deleteFromParent(parent, balanced.b)
 				}
 				else if (balanced.a.size != initialSize)
 					factory.index.replaceKey(parent.head, balanced.key, balanced.b.keys.head)
@@ -403,8 +409,10 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 				Cursor(k, balanced.child, balanced.node, balanced.index)
 			}
 		}
-		else null
-
+		else {
+			printf("not found " + k + " in " + targetNode.keys.mkString(","))
+			null
+		}
 	}
 
 	override def range(k: K, length: Int): Seq[Pair[K, V]] = {
@@ -448,7 +456,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	private def after(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.gt(key, _)) + 1
 	private def before(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.ge(key, _)) + 1
 	private def search(k: K): LeafNode[K, V] = pathTo(k, root, Nil, after).head.asInstanceOf[LeafNode[K, V]]
-	private def pathTo(k: K): List[Node[K]] = pathTo(k, root, Nil, after)
+	private def pathTo(k: K): List[Node[K]] = pathTo(k, root, Nil, before)
 	private def pathTo(k: K, n: Node[K], path: List[Node[K]], indexBound: (K, Seq[K]) => Int): List[Node[K]] = {
 		n match {
 			case l: LeafNode[K, V] => l :: path
