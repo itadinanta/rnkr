@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="aa435964-ba77-433c-8f36-e297d0209f12" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala" afterPath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" afterPath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="scala_integration_test.iws" />
@@ -38,8 +38,8 @@
       <file leaf-file-name="TreeTest.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1600" max-vertical-offset="3675">
-              <caret line="123" column="92" selection-start-line="123" selection-start-column="92" selection-end-line="123" selection-end-column="92" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="3194" max-vertical-offset="3750">
+              <caret line="215" column="20" selection-start-line="215" selection-start-column="20" selection-end-line="215" selection-end-column="20" />
               <folding />
             </state>
           </provider>
@@ -58,8 +58,8 @@
       <file leaf-file-name="Tree.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="3629" max-vertical-offset="8115">
-              <caret line="267" column="0" selection-start-line="267" selection-start-column="0" selection-end-line="267" selection-end-column="0" />
+            <state vertical-scroll-proportion="-1.4285715" vertical-offset="6175" max-vertical-offset="7425">
+              <caret line="417" column="39" selection-start-line="417" selection-start-column="39" selection-end-line="417" selection-end-column="39" />
               <folding>
                 <element signature="e#34#67#0" expanded="true" />
               </folding>
@@ -100,8 +100,8 @@
       <file leaf-file-name="Node.scala" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.80755395" vertical-offset="301" max-vertical-offset="1410">
-              <caret line="50" column="53" selection-start-line="50" selection-start-column="53" selection-end-line="50" selection-end-column="53" />
+            <state vertical-scroll-proportion="0.45683452" vertical-offset="481" max-vertical-offset="1410">
+              <caret line="49" column="28" selection-start-line="49" selection-start-column="28" selection-end-line="49" selection-end-column="28" />
               <folding />
             </state>
           </provider>
@@ -151,8 +151,8 @@
         <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/node/NodeTestSuite.scala" />
         <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTestSuite.scala" />
         <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/node/NodeTest.scala" />
-        <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" />
         <option value="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" />
         <option value="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" />
       </list>
     </option>
@@ -567,7 +567,7 @@
       <recent name="net.itadinanta.rankr.tree" />
     </key>
   </component>
-  <component name="RunManager" selected="ScalaTest.TreeTest.An indexed populated tree should contain 0 entries after 100 random insertions and 100 random deletions">
+  <component name="RunManager" selected="ScalaTest.TreeTest">
     <configuration default="false" name="TreeTest" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
       <module name="scala_integration_test" />
       <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
@@ -589,67 +589,6 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
-      <module name="scala_integration_test" />
-      <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
-      <setting name="package" value="" />
-      <setting name="vmparams" value="" />
-      <setting name="params" value="" />
-      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <setting name="searchForTest" value="Across module dependencies" />
-      <setting name="testName" value="An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions" />
-      <setting name="testKind" value="Test name" />
-      <setting name="showProgressMessages" value="true" />
-      <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
-        <option name="TRANSPORT" value="0" />
-        <option name="LOCAL" value="true" />
-      </RunnerSettings>
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Debug" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
-    <configuration default="false" name="TreeTest.An indexed populated tree should contain 0 entries after 1000 random insertions and 1000 random deletions" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
-      <module name="scala_integration_test" />
-      <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
-      <setting name="package" value="" />
-      <setting name="vmparams" value="" />
-      <setting name="params" value="" />
-      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <setting name="searchForTest" value="Across module dependencies" />
-      <setting name="testName" value="An indexed populated tree should contain 0 entries after 1000 random insertions and 1000 random deletions" />
-      <setting name="testKind" value="Test name" />
-      <setting name="showProgressMessages" value="true" />
-      <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
-        <option name="TRANSPORT" value="0" />
-        <option name="LOCAL" value="true" />
-      </RunnerSettings>
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Debug" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
-    <configuration default="false" name="TreeTest.Deleting an item from the leaf should propagate to the root if necessary" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
-      <module name="scala_integration_test" />
-      <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
-      <setting name="package" value="" />
-      <setting name="vmparams" value="" />
-      <setting name="params" value="" />
-      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <setting name="searchForTest" value="Across module dependencies" />
-      <setting name="testName" value="Deleting an item from the leaf should propagate to the root if necessary" />
-      <setting name="testKind" value="Test name" />
-      <setting name="showProgressMessages" value="true" />
-      <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
-        <option name="TRANSPORT" value="0" />
-        <option name="LOCAL" value="true" />
-      </RunnerSettings>
-      <ConfigurationWrapper RunnerId="Debug" />
-      <method />
-    </configuration>
     <configuration default="false" name="TreeTest.An indexed populated tree should contain 0 entries after 100 random insertions and 100 random deletions" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
       <module name="scala_integration_test" />
       <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
@@ -668,6 +607,51 @@
       </RunnerSettings>
       <RunnerSettings RunnerId="Run" />
       <ConfigurationWrapper RunnerId="Debug" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions in reverse" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
+      <module name="scala_integration_test" />
+      <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
+      <setting name="package" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <setting name="searchForTest" value="Across module dependencies" />
+      <setting name="testName" value="An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions in reverse" />
+      <setting name="testKind" value="Test name" />
+      <setting name="showProgressMessages" value="true" />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
+      <module name="scala_integration_test" />
+      <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
+      <setting name="package" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <setting name="searchForTest" value="Across module dependencies" />
+      <setting name="testName" value="An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions" />
+      <setting name="testKind" value="Test name" />
+      <setting name="showProgressMessages" value="true" />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="TreeTest.Deleting an item from the leaf should propagate to the root if necessary" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
+      <module name="scala_integration_test" />
+      <setting name="path" value="net.itadinanta.rnkr.tree.TreeTest" />
+      <setting name="package" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <setting name="searchForTest" value="Across module dependencies" />
+      <setting name="testName" value="Deleting an item from the leaf should propagate to the root if necessary" />
+      <setting name="testKind" value="Test name" />
+      <setting name="showProgressMessages" value="true" />
+      <RunnerSettings RunnerId="Run" />
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
@@ -863,18 +847,18 @@
     <list size="6">
       <item index="0" class="java.lang.String" itemvalue="ScalaTest.TreeTestSuite.An indexed populated tree should contain 6 entry after 6 insertions" />
       <item index="1" class="java.lang.String" itemvalue="ScalaTest.TreeTest" />
-      <item index="2" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions" />
-      <item index="3" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entries after 1000 random insertions and 1000 random deletions" />
-      <item index="4" class="java.lang.String" itemvalue="ScalaTest.TreeTest.Deleting an item from the leaf should propagate to the root if necessary" />
-      <item index="5" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entries after 100 random insertions and 100 random deletions" />
+      <item index="2" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entries after 100 random insertions and 100 random deletions" />
+      <item index="3" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions in reverse" />
+      <item index="4" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions" />
+      <item index="5" class="java.lang.String" itemvalue="ScalaTest.TreeTest.Deleting an item from the leaf should propagate to the root if necessary" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entries after 100 random insertions and 100 random deletions" />
-        <item index="1" class="java.lang.String" itemvalue="ScalaTest.TreeTest" />
-        <item index="2" class="java.lang.String" itemvalue="ScalaTest.TreeTest.Deleting an item from the leaf should propagate to the root if necessary" />
-        <item index="3" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entries after 1000 random insertions and 1000 random deletions" />
-        <item index="4" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions" />
+        <item index="0" class="java.lang.String" itemvalue="ScalaTest.TreeTest" />
+        <item index="1" class="java.lang.String" itemvalue="ScalaTest.TreeTest.Deleting an item from the leaf should propagate to the root if necessary" />
+        <item index="2" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entries after 100 random insertions and 100 random deletions" />
+        <item index="3" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions" />
+        <item index="4" class="java.lang.String" itemvalue="ScalaTest.TreeTest.An indexed populated tree should contain 0 entry after 100 insertions and 100 deletions in reverse" />
       </list>
     </recent_temporary>
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
@@ -972,7 +956,11 @@
       <created>1400633423161</created>
       <updated>1400633423161</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="Recursive implementation of insert">
+      <created>1400791744786</created>
+      <updated>1400791744786</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -1007,7 +995,7 @@
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32893288" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32893288" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3677278" sideWeight="0.82673794" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4862788" sideWeight="0.82673794" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40154016" sideWeight="0.17326203" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24973376" sideWeight="0.5007587" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32893288" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -1087,7 +1075,8 @@
     <MESSAGE value="Delete WIP" />
     <MESSAGE value="Buggy delete propagation" />
     <MESSAGE value="Couple of bug fixes in delete" />
-    <option name="LAST_COMMIT_MESSAGE" value="Couple of bug fixes in delete" />
+    <MESSAGE value="Recursive implementation of insert" />
+    <option name="LAST_COMMIT_MESSAGE" value="Recursive implementation of insert" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1459,8 +1448,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="3629" max-vertical-offset="8115">
-          <caret line="267" column="0" selection-start-line="267" selection-start-column="0" selection-end-line="267" selection-end-column="0" />
+        <state vertical-scroll-proportion="-1.4285715" vertical-offset="6175" max-vertical-offset="7425">
+          <caret line="417" column="39" selection-start-line="417" selection-start-column="39" selection-end-line="417" selection-end-column="39" />
           <folding>
             <element signature="e#34#67#0" expanded="true" />
           </folding>
@@ -1469,16 +1458,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1600" max-vertical-offset="3675">
-          <caret line="123" column="92" selection-start-line="123" selection-start-column="92" selection-end-line="123" selection-end-column="92" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="3194" max-vertical-offset="3750">
+          <caret line="215" column="20" selection-start-line="215" selection-start-column="20" selection-end-line="215" selection-end-column="20" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.80755395" vertical-offset="301" max-vertical-offset="1410">
-          <caret line="50" column="53" selection-start-line="50" selection-start-column="53" selection-end-line="50" selection-end-column="53" />
+        <state vertical-scroll-proportion="0.45683452" vertical-offset="481" max-vertical-offset="1410">
+          <caret line="49" column="28" selection-start-line="49" selection-start-column="28" selection-end-line="49" selection-end-column="28" />
           <folding />
         </state>
       </provider>

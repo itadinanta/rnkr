@@ -286,13 +286,13 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					_size += 1
 					val cursor = Cursor(k, v, leaf, inserted.index)
 					if (inserted.split) {
-						leafCount += 1
 						inserted.b.next = leaf.next
 						inserted.a.next = inserted.b
 						inserted.b.prev = inserted.a
 						if (inserted.b.next != null) inserted.b.next.prev = inserted.b
 						head = if (leaf eq head) inserted.a else head
 						tail = if (leaf eq tail) inserted.b else tail
+						leafCount += 1
 						InsertedResult(inserted.a, inserted.key, Some(inserted.b), cursor)
 					} else
 						InsertedResult(inserted.a, inserted.key, None, cursor)
@@ -303,8 +303,8 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 				insertRecursively(index.childAt(i), k, v) match {
 					case InsertedResult(a, newKey, None, cursor) => InsertedResult(index, newKey, None, cursor)
 					case InsertedResult(a, newKey, Some(b), cursor) => {
-						indexCount += 1
 						val inserted = factory.index.insert(index, newKey, b)
+						indexCount += (if (inserted.split) 1 else 0)
 						InsertedResult(inserted.a, inserted.key, if (inserted.split) Some(inserted.b) else None, cursor)
 					}
 				}
@@ -315,63 +315,13 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		root = inserted match {
 			case InsertedResult(a, key, Some(b), cursor) => {
 				level += 1
-				indexCount += 1
+				this.indexCount += 1
 				factory.index.newNode(Seq(key), Seq(a, b))
 			}
 			case _ => root
 		}
 
 		inserted.cursor
-	}
-
-	private def insertForward(k: K, value: V): Cursor = {
-		val path = pathTo(k)
-		val targetNode = path.head.asInstanceOf[LeafNode[K, V]]
-		val index = targetNode.indexOfKey(k)
-
-		def propagateToParent(key: K, a: Node[K], b: Node[K], parent: List[IndexNode[K]]): IndexNode[K] = {
-			if (parent == Nil) {
-				val newRoot = factory.index.newNode(Seq(key), Seq(a, b))
-				root = newRoot
-				level += 1
-				indexCount += 1
-				newRoot
-			}
-			else {
-				val targetNode = parent.head
-				val inserted = factory.index.insert(targetNode, key, b)
-				if (inserted.split) {
-					indexCount += 1
-					propagateToParent(inserted.key, inserted.a, inserted.b, parent.tail)
-				}
-				else {
-					inserted.a
-				}
-			}
-		}
-
-		if (index >= 0) {
-			val updated = factory.data.update(targetNode, k, value)
-			Cursor(k, updated.child, updated.node, index)
-		}
-		else {
-			val inserted = factory.data.insert(targetNode, k, value)
-			_size += 1
-			if (inserted.split) {
-				leafCount += 1
-				inserted.b.next = targetNode.next
-				inserted.a.next = inserted.b
-				inserted.b.prev = inserted.a
-				if (inserted.b.next != null) inserted.b.next.prev = inserted.b
-				head = if (targetNode eq head) inserted.a else head
-				tail = if (targetNode eq tail) inserted.b else tail
-				propagateToParent(inserted.key, inserted.a, inserted.b, path.tail.asInstanceOf[List[IndexNode[K]]])
-				Cursor(k, value, inserted.b, inserted.index)
-			} else {
-				Cursor(k, value, inserted.node, index)
-			}
-		}
-
 	}
 
 	private def delete(k: K): Cursor = {
@@ -463,10 +413,14 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					balanced.a.next = balanced.b.next
 					if (balanced.a.next != null) balanced.a.next.prev = balanced.a
 					if (balanced.b eq tail) tail = balanced.a
-					if (path.tail == Nil)
+					if (path.tail == Nil) {
+						level -= 1
+						indexCount -= 1
 						root = path.head
+					}
 					else {
 						parent foreach (factory.index.replaceKey(_, oldA, balanced.a.keys.head))
+						leafCount -= 1
 						deleteFromParent(parent, balanced.b)
 					}
 				}

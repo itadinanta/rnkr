@@ -181,6 +181,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		}
 		tree.level should be(1)
 		tree.size should be(0)
+		tree.indexCount should be(0)
 	}
 
 	"An indexed populated tree" should "contain 0 entry after 100 insertions and 100 deletions in reverse" in {
@@ -219,6 +220,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 			tree.keys() should be(ordered.toList)
 		}
 		tree.size should be(0)
+		tree.indexCount should be(0)
 	}
 
 	"Deleting an item from the leaf" should "propagate to the root if necessary" in {
@@ -231,6 +233,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 			tree.keys() should be(ordered.toList)
 		}
 		println(tree)
+		tree.leafCount should be(6)
 		Seq(11, 7, 5, 9, 1, 6, 12) foreach { i =>
 			print(i)
 			tree.remove(i)
@@ -239,6 +242,8 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 			tree.keys() should be(ordered.toList)
 		}
 		tree.size should be(ordered.size)
+		tree.leafCount should be(2)
+		tree.indexCount should be(1)
 	}
 
 }
