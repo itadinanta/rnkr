@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="aa435964-ba77-433c-8f36-e297d0209f12" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" afterPath="$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" afterPath="$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="scala_integration_test.iws" />
@@ -38,7 +37,7 @@
       <file leaf-file-name="TreeTest.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/test/scala/net/itadinanta/rnkr/tree/TreeTest.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="3194" max-vertical-offset="3750">
+            <state vertical-scroll-proportion="0.0" vertical-offset="3069" max-vertical-offset="3750">
               <caret line="215" column="20" selection-start-line="215" selection-start-column="20" selection-end-line="215" selection-end-column="20" />
               <folding />
             </state>
@@ -55,11 +54,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Tree.scala" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="Tree.scala" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-1.4285715" vertical-offset="6175" max-vertical-offset="7425">
-              <caret line="417" column="39" selection-start-line="417" selection-start-column="39" selection-end-line="417" selection-end-column="39" />
+            <state vertical-scroll-proportion="0.8237885" vertical-offset="4914" max-vertical-offset="8205">
+              <caret line="365" column="28" selection-start-line="365" selection-start-column="28" selection-end-line="365" selection-end-column="28" />
               <folding>
                 <element signature="e#34#67#0" expanded="true" />
               </folding>
@@ -97,11 +96,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Node.scala" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="Node.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.45683452" vertical-offset="481" max-vertical-offset="1410">
-              <caret line="49" column="28" selection-start-line="49" selection-start-column="28" selection-end-line="49" selection-end-column="28" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1410">
+              <caret line="53" column="20" selection-start-line="53" selection-start-column="20" selection-end-line="53" selection-end-column="20" />
               <folding />
             </state>
           </provider>
@@ -960,7 +959,11 @@
       <created>1400791744786</created>
       <updated>1400791744786</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="Fixed insert counters">
+      <created>1400794158227</created>
+      <updated>1400794158227</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -1008,7 +1011,7 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.1629393" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3600439" sideWeight="0.8053476" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.22283205" sideWeight="0.8053476" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24973261" sideWeight="0.5" order="6" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
@@ -1076,7 +1079,8 @@
     <MESSAGE value="Buggy delete propagation" />
     <MESSAGE value="Couple of bug fixes in delete" />
     <MESSAGE value="Recursive implementation of insert" />
-    <option name="LAST_COMMIT_MESSAGE" value="Recursive implementation of insert" />
+    <MESSAGE value="Fixed insert counters" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed insert counters" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1446,13 +1450,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-1.4285715" vertical-offset="6175" max-vertical-offset="7425">
-          <caret line="417" column="39" selection-start-line="417" selection-start-column="39" selection-end-line="417" selection-end-column="39" />
-          <folding>
-            <element signature="e#34#67#0" expanded="true" />
-          </folding>
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1410">
+          <caret line="53" column="20" selection-start-line="53" selection-start-column="20" selection-end-line="53" selection-end-column="20" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -1464,11 +1466,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/node/Node.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/net/itadinanta/rnkr/tree/Tree.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.45683452" vertical-offset="481" max-vertical-offset="1410">
-          <caret line="49" column="28" selection-start-line="49" selection-start-column="28" selection-end-line="49" selection-end-column="28" />
-          <folding />
+        <state vertical-scroll-proportion="0.8237885" vertical-offset="4914" max-vertical-offset="8205">
+          <caret line="365" column="28" selection-start-line="365" selection-start-column="28" selection-end-line="365" selection-end-column="28" />
+          <folding>
+            <element signature="e#34#67#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

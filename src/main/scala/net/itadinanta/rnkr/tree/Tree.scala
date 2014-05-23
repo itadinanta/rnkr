@@ -325,6 +325,58 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	}
 
 	private def delete(k: K): Cursor = {
+		case class DeletedResult(pos: Int, a: Node[K], b: Option[Node[K]], cursor: Cursor)
+
+		def deleteRecursively(k: K, targetNode: Node[K], parent: Option[IndexNode[K]], pos: Int): DeletedResult = {
+
+			val lv = parent.get.childOption(pos - 1)
+			val rv = parent.get.childOption(pos + 1)
+
+			// find siblings
+			val (i, av, bv) = (lv, rv) match {
+				case (None, Some(rv)) => (pos, targetNode, rv)
+				case (Some(lv), None) => (pos - 1, lv, targetNode)
+				case (Some(lv), Some(rv)) => if (lv.size > rv.size) (pos - 1, lv, targetNode) else (pos, targetNode, rv)
+				case (None, None) => throw new IllegalArgumentException
+			}
+
+			targetNode match {
+				case leaf: LeafNode[K, V] => {
+					val deleted = factory.data.delete(leaf, k)
+					if (factory.data.balanced(leaf))
+						DeletedResult(pos, leaf, None, Cursor(k, deleted.child, leaf, deleted.index))
+					else (av, bv) match {
+						case (a: LeafNode[K, V], b: LeafNode[K, V]) => {
+							val balanced = factory.data.redistribute(a, Seq(), b)
+							if (balanced.b.isEmpty) {
+								// special case for LeafNode
+								balanced.a.next = balanced.b.next
+								if (balanced.a.next != null) balanced.a.next.prev = balanced.a
+								if (balanced.b eq tail) tail = balanced.a
+								leafCount -= 1
+							}
+							DeletedResult(i, balanced.a, Some(balanced.b), Cursor(k, deleted.child, leaf, deleted.index))
+						}
+					}
+				}
+				case index: IndexNode[K] => {
+					val dig = index.keys.lastIndexWhere(factory.ordering.ge(k, _)) + 1
+					deleteRecursively(k, index.childAt(i), Some(index), dig) match {
+						case DeletedResult(u, a, Some(b), cursor) => {
+
+						}
+						case DeletedResult(u, a, None, cursor) => DeletedResult(pos, index, None, cursor)
+					}
+				}
+			}
+		}
+
+		deleteRecursively(k, root, None, -1) match {
+			case DeletedResult(_, _, _, cursor) => cursor
+		}
+	}
+
+	private def deleteForward(k: K): Cursor = {
 
 		def deleteFromParent(path: Seq[IndexNode[K]], child: Node[K]): Node[K] = {
 			val childIndex = path.head.indexOfChild(child)
