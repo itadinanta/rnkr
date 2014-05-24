@@ -14,6 +14,7 @@ trait Node[K] {
 	def isEmpty: Boolean
 	def indexOfKey(key: K) = keys.indexOf(key)
 	def keyAt(index: Int) = keys(index)
+	def keyOption(index: Int) = if (0 <= index && index < keys.length) Some(keyAt(index)) else None
 }
 
 trait Children[ChildType] {

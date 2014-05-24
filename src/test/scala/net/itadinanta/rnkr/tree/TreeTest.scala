@@ -7,21 +7,24 @@ import scala.util.Random
 import scala.collection.mutable
 
 class TreeTest extends FlatSpec with ShouldMatchers {
-	def createTestTree(): SeqBPlusTree[Int, String] =
-		new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, 4))
+	def createTestTree(items: Pair[Int, String]*): SeqBPlusTree[Int, String] = {
+		val tree = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, 4))
+		items foreach { i => tree.put(i._1, i._2)}
+		tree
+	}
 
 	"An empty tree" should "contain no entries" in {
 		createTestTree().size should be(0)
 	}
 
-	"A simple populated tree" should "contain 1 entry after 1 insertion" in {
+	"A tree with one entry" should "have a head and some items in" in {
 		val tree = createTestTree()
 		tree.put(1, "Item")
 		tree.size should be(1)
 		tree.head should not be (null)
 	}
-
-	"A simple populated tree" should "contain 3 entry after 3 insertions" in {
+	
+	"A tree with less than fanout entries" should "have one leaf and no index" in {
 		val tree = createTestTree()
 		1 to 3 foreach { i => tree.put(i, "Item" + i)}
 		tree.size should be(3)
@@ -32,7 +35,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.indexCount should be(0)
 	}
 
-	"An indexed populated tree" should "contain 7 after 7 insertions" in {
+	"After 7 insertions" should "contain 7 entries" in {
 		val tree = createTestTree()
 		1 to 7 foreach { i => tree.put(i, "Item" + i); println(tree)}
 		tree.size should be(7)
@@ -42,7 +45,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.head.size should be(2)
 	}
 
-	"An indexed populated tree" should "contain 7 entry after 7 insertions in reverse" in {
+	"After 7 insertions in reverse" should "contain 7 entries" in {
 		val tree = createTestTree()
 		7 to 1 by -1 foreach { i => tree.put(i, "Item" + i); println(tree)}
 		tree.size should be(7)
@@ -52,7 +55,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.head.size should be(4)
 	}
 
-	"An indexed populated tree" should "contain 100 entry after 100 insertions" in {
+	"After 100 insertion" should "contain 100 entries in order" in {
 		val tree = createTestTree()
 		1 to 100 foreach {
 			i => tree.put(i, "Item" + i);
@@ -64,7 +67,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.level should be(4)
 	}
 
-	"An indexed populated tree" should "contain 100 entries after 100 insertions in reverse" in {
+	"After 100 insertions in reverse" should "contain 100 entries in order" in {
 		val tree = createTestTree()
 		100 to 1 by -1 foreach { i => tree.put(i, "Item" + i)}
 		println(tree)
@@ -73,7 +76,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.size should be(100)
 	}
 
-	"An indexed populated tree" should "contain 1000 entries after 1000 random insertions" in {
+	"After 1000 random insertions" should "contain 1000 entries in order" in {
 		val tree = createTestTree()
 		val ordered = new mutable.TreeSet[Int]
 		Random.shuffle(1 to 1000 map { i => i}) foreach { i =>
@@ -86,7 +89,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.size should be(1000)
 	}
 
-	"An indexed decreasing populated tree" should "contain 100 entries in reverse after 100 insertions" in {
+	"After 100 insertions in reverse" should "contain 100 entries in reverse" in {
 		val tree = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntDescending, 9))
 		1 to 100 foreach { i => tree.put(i, "Item" + i)}
 		println(tree)
@@ -121,26 +124,40 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.range(21, -5) map (_._1) should be(20 to 12 by -2)
 	}
 
-	"A simple node deletion" should "contain 1 entry after 2 insertions and 1 deletion" in {
-		val tree = createTestTree()
-		tree.put(1, "Item")
-		tree.put(2, "Item")
-		tree.size should be(2)
-		println(tree)
-		tree.remove(1)
-		println(tree)
-		tree.size should be(1)
-		tree.keys should be(Seq(2))
+	"After 3 insertions and 1 deletions" should "contain 2 entries in the root" in {
+		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
+			println(t)
+			t.remove(1)
+			println(t)
+			t.size should be(2)
+			t.keys should be(Seq(2, 3))
+		}
+
+		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
+			println(t)
+			t.remove(2)
+			println(t)
+			t.size should be(2)
+			t.keys should be(Seq(1, 3))
+		}
+
+		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
+			println(t)
+			t.remove(3)
+			println(t)
+			t.size should be(2)
+			t.keys should be(Seq(1, 2))
+		}
 	}
 
 
-	"A simple node deletion" should "contain 4 entry after 5 insertions and 1 deletion" in {
-		val tree = createTestTree()
-		tree.put(1, "Item")
-		tree.put(2, "Item")
-		tree.put(3, "Item")
-		tree.put(4, "Item")
-		tree.put(5, "Item")
+	"A after 5 insertions and 1 deletion" should "contain 1 entry" in {
+		val tree = createTestTree(
+			(1, "Item"),
+			(2, "Item"),
+			(3, "Item"),
+			(4, "Item"),
+			(5, "Item"))
 		tree.size should be(5)
 		println(tree)
 
@@ -166,7 +183,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 
 	}
 
-	"An indexed populated tree" should "contain 0 entry after 100 insertions and 100 deletions" in {
+	"After 100 insertions and 100 deletions" should "be empty" in {
 		val tree = createTestTree()
 		val n = 100
 		1 to n foreach { i =>
@@ -184,7 +201,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.indexCount should be(0)
 	}
 
-	"An indexed populated tree" should "contain 0 entry after 100 insertions and 100 deletions in reverse" in {
+	"After 100 insertions and 100 deletions in reverse" should "be empty" in {
 		val tree = createTestTree()
 		val n = 100
 		1 to n foreach { i =>
@@ -202,17 +219,17 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		tree.size should be(0)
 	}
 
-	"An indexed populated tree" should "contain 0 entries after 100 random insertions and 100 random deletions" in {
+	"After 100 random insertions and 100 random deletions" should "be empty" in {
 		val tree = createTestTree()
 		val ordered = new mutable.TreeSet[Int]
 		val n = 33
-		Random.shuffle(1 to n map { i => i }) foreach { i =>
+		Random.shuffle(1 to n map { i => i}) foreach { i =>
 			tree.put(i, "Item" + i)
 			ordered += i
 			tree.keys() should be(ordered.toList)
 		}
 		println(tree)
-		Random.shuffle(1 to n map { i => i }) foreach { i =>
+		Random.shuffle(1 to n map { i => i}) foreach { i =>
 			print(i)
 			tree.remove(i)
 			println(" - " + tree)
@@ -234,6 +251,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		}
 		println(tree)
 		tree.leafCount should be(6)
+
 		Seq(11, 7, 5, 9, 1, 6, 12) foreach { i =>
 			print(i)
 			tree.remove(i)
