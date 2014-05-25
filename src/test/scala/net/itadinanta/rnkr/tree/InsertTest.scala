@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory
 
 class InsertTest extends FlatSpec with ShouldMatchers {
 	val log = LoggerFactory.getLogger(classOf[InsertTest])
-	def createTreeWithFanout(fanout: Int): SeqBPlusTree[Int, String] = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, fanout))
-
-	def createTestTree(items: Pair[Int, String]*): SeqBPlusTree[Int, String] = {
+	def createTreeWithFanout(fanout: Int) = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, fanout))
+	def createTestTree() = createTreeWithFanout(4)
+	def createTestTree(items: Pair[Int, String]*) = {
 		val tree = createTreeWithFanout(4)
 		items foreach { i => tree.put(i._1, i._2) }
 		tree
@@ -47,6 +47,16 @@ class InsertTest extends FlatSpec with ShouldMatchers {
 		tree.level should be(2)
 		tree.root.size should be(2)
 		tree.head.size should be(2)
+	}
+
+	"After 100 insertions with String keys" should "contain 100 entries" in {
+		val tree = new SeqBPlusTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
+		1 to 100 foreach { i => tree.put("Key" + i, "Item" + i) }
+		log.debug("Tree with Strings: {}", tree)
+		tree.size should be(100)
+		tree.factory.fanout should be(4)
+		tree.level should be(4)
+		tree.consistent should be(true)
 	}
 
 	"After 7 insertions in reverse" should "contain 7 entries" in {
