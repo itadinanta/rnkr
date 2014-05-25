@@ -23,9 +23,8 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		def this(a: NodeType, key: K, child: ChildType, index: Int) = this(a, a, key, child, index)
 	}
 
-	def insert(node: NodeType, k: K, child: ChildType): BuildResult = {
-		insert(node, node.keys, node.values, k, child)
-	}
+	def append(node: NodeType, k: K, child: ChildType): BuildResult = append(node, node.keys, node.values, k, child)
+	def insert(node: NodeType, k: K, child: ChildType): BuildResult = insert(node, node.keys, node.values, k, child)
 	def deleteAt(node: NodeType, i: Int): BuildResult = deleteAt(node, node.keys, node.values, i)
 	def delete(node: NodeType, k: K): BuildResult = delete(node, node.keys, node.values, k)
 	def update(node: NodeType, k: K, child: ChildType): BuildResult = update(node, node.keys, node.values, k, child)
@@ -41,6 +40,20 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 			new BuildResult(updateNode(input, aKeys ++ bKeys, aValues ++ bValues), bKeys.head, bValues.head, aKeys.size)
 		else
 			split(input, minout, newKeys, newChildren)
+	}
+
+	private def append(input: NodeType, keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = {
+		if (keys.isEmpty)
+			new BuildResult(updateNode(input, Seq(k), Seq(child)), k, child, 0)
+		else {
+			val newKeys = keys ++ Seq(k)
+			val newChildren = children ++ Seq(child)
+
+			if (newKeys.length <= fanout)
+				new BuildResult(updateNode(input, newKeys, newChildren), k, child, children.size)
+			else
+				split(input, minout, newKeys, newChildren)
+		}
 	}
 
 	private def insert(input: NodeType, keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = {
@@ -192,6 +205,7 @@ trait BPlusTree[K, V] {
 	def get(k: K): Option[V]
 	def remove(k: K): Option[V]
 	def put(k: K, value: V): V
+	def append(k: K, value: V): V
 	def keys(): Seq[K]
 	def keysReverse(): Seq[K]
 	def range(k: K, length: Int): Seq[Pair[K, V]]
@@ -211,6 +225,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 	override def size = _size
 
+	override def append(k: K, v: V): V = insertAtEnd(k, v).value
 	override def put(k: K, v: V): V = insert(k, v).value
 	override def get(k: K): Option[V] = {
 		val node = search(k)
@@ -282,6 +297,49 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		Cursor(k, leaf.childAt(index), leaf, index)
 	}
 
+	private def insertAtEnd(k: K, v: V): Cursor = {
+		case class AppendedResult(a: Node[K], key: K, b: Option[Node[K]], cursor: Cursor)
+
+		def appendRecursively(targetNode: Node[K], k: K, v: V): AppendedResult = targetNode match {
+			case leaf: LeafNode[K, V] => {
+				if (leaf.isEmpty || factory.ordering.gt(k, leaf.keys.last)) {
+					val appended = factory.data.append(leaf, k, v)
+					_size += 1
+					val cursor = Cursor(k, v, leaf, appended.index)
+					if (appended.split) {
+						appended.b.next = appended.a.next
+						appended.a.next = appended.b
+						tail = appended.b
+						tail.prev = appended.a
+						leafCount += 1
+						AppendedResult(appended.a, appended.key, Some(appended.b), cursor)
+					} else
+						AppendedResult(appended.a, appended.key, None, cursor)
+				} else throw new IllegalArgumentException("Key " + k + " out of order")
+			}
+			case index: IndexNode[K] => {
+				if (factory.ordering.gt(k, index.keys.last)) {
+					appendRecursively(index.values.last, k, v) match {
+						case AppendedResult(a, newKey, None, cursor) => AppendedResult(index, newKey, None, cursor)
+						case AppendedResult(a, newKey, Some(b), cursor) => {
+							val inserted = factory.index.append(index, newKey, b)
+							indexCount += (if (inserted.split) 1 else 0)
+							AppendedResult(inserted.a, inserted.key, if (inserted.split) Some(inserted.b) else None, cursor)
+						}
+					}
+				} else throw new IllegalArgumentException("Key " + k + " out of order")
+			}
+		}
+
+		val appended = appendRecursively(root, k, v)
+		root = appended match {
+			case AppendedResult(a, key, Some(b), cursor) => newRoot(key, a, b)
+			case _ => root
+		}
+
+		appended.cursor
+	}
+
 	private def insert(k: K, v: V): Cursor = {
 		case class InsertedResult(a: Node[K], key: K, b: Option[Node[K]], cursor: Cursor)
 
@@ -322,15 +380,17 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 		val inserted = insertRecursively(root, k, v)
 		root = inserted match {
-			case InsertedResult(a, key, Some(b), cursor) => {
-				level += 1
-				this.indexCount += 1
-				factory.index.newNode(Seq(key), Seq(a, b))
-			}
+			case InsertedResult(a, key, Some(b), cursor) => newRoot(key, a, b)
 			case _ => root
 		}
 
 		inserted.cursor
+	}
+
+	private def newRoot(key: K, a: Node[K], b: Node[K]) = {
+		level += 1
+		indexCount += 1
+		factory.index.newNode(Seq(key), Seq(a, b))
 	}
 
 	private def delete(k: K): Cursor = {
