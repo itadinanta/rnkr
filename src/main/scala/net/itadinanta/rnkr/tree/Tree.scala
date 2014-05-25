@@ -3,8 +3,10 @@ package net.itadinanta.rnkr.tree
 import net.itadinanta.rnkr.node._
 import scala.collection.mutable.ListBuffer
 import scala.annotation.tailrec
+import org.slf4j.LoggerFactory
 
 trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]] {
+	val LOG = LoggerFactory.getLogger(this.getClass())
 	val ordering: Ordering[K]
 	val fanout: Int
 	def minout = (fanout + 1) / 2
@@ -28,8 +30,8 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 	def delete(node: NodeType, k: K): BuildResult = delete(node, node.keys, node.values, k)
 	def update(node: NodeType, k: K, child: ChildType): BuildResult = update(node, node.keys, node.values, k, child)
 	def merge(a: NodeType, b: NodeType): BuildResult = merge(a, a.keys, a.values, b.keys, b.values)
-	def replaceKey(node: NodeType, oldKey: K, newKey: K): NodeType = if (oldKey != newKey) replaceKey(node, node.keys, oldKey, newKey) else node
-	def replaceKeyAt(node: NodeType, position: Int, newKey: K): NodeType = replaceKeyAt(node, node.keys, position, newKey)
+	def renameKey(node: NodeType, oldKey: K, newKey: K): NodeType = if (oldKey != newKey) renameKey(node, node.keys, oldKey, newKey) else node
+	def renameKeyAt(node: NodeType, position: Int, newKey: K): NodeType = renameKeyAt(node, node.keys, position, newKey)
 
 	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], bKeys: Seq[K], bValues: Seq[ChildType]) = {
 		val newKeys = aKeys ++ bKeys
@@ -74,7 +76,7 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		val removedKey = b.keys.head
 		val removedValue = b.values.head
 		if (balanced(a) && balanced(b))
-		// do nothing
+			// do nothing
 			BuildResult(a, b, removedKey, removedValue, a.size)
 		else if (aSize + bSize < fanout) {
 			// migrate everything to the first node
@@ -82,8 +84,7 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 				updateNode(b, Seq(), Seq()),
 				removedKey, removedValue,
 				a.keys.size)
-		}
-		else {
+		} else {
 			val children = a.values ++ b.values
 			val keys = a.keys ++ pivot ++ b.keys
 			val splitAt = (children.size + 1) / 2
@@ -91,31 +92,24 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 				// merge and split evenly
 				val (newChildHead, newChildTail) = children.splitAt(splitAt)
 				val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
-
-				println(" ...reshuffling " + (a.keys.mkString(",")) + " ++ " + (b.keys.mkString(",")))
-
+				val mergeKey = b.keys.head
+				LOG.info("Reshuffling {} ++ {}", a.keys, b.keys)
 				val r = BuildResult(updateNode(a, newKeyHead, newChildHead),
 					updateNode(b, newKeyTail, newChildTail),
-					newKeyTail.head, removedValue,
+					mergeKey, removedValue,
 					splitAt)
-
-				print(" -> " + (a.keys.mkString(",")) + " ++ " + (b.keys.mkString(",")))
-
+				LOG.info("-> {} ++ {}", a.keys, b.keys)
 				r
-			}
-			else {
+			} else {
 				val (newChildHead, newChildTail) = children.splitAt(splitAt)
 				val (newKeyHead, newKeyTail) = keys.splitAt(splitAt - 1)
-
-				println(" ...reshuffling " + (a.keys.mkString(",")) + " ++ " + pivot.head + " ++ " + (b.keys.mkString(",")))
-
+				val mergeKey = newKeyTail.head
+				LOG.debug("Reshuffling {} ++ {} ++ {}", Array[Object](a.keys, pivot.head.toString, b.keys))
 				val r = BuildResult(updateNode(a, newKeyHead, newChildHead),
 					updateNode(b, newKeyTail.tail, newChildTail),
-					newKeyTail.head, removedValue,
+					mergeKey, removedValue,
 					splitAt)
-
-				print(" -> " + (a.keys.mkString(",")) + " ++ " + r.key + " ++ " + (b.keys.mkString(",")))
-
+				LOG.debug("-> {} ++ {} ++ {}", Array[Object](a.keys, r.key.toString, b.keys))
 				r
 			}
 		}
@@ -131,8 +125,8 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 			keys(position), children(position + splitOffset), position)
 	}
 
-	private def replaceKey(input: NodeType, keys: Seq[K], k: K, newKey: K): NodeType = replaceKeyAt(input, keys, keys.indexOf(k), newKey)
-	private def replaceKeyAt(input: NodeType, keys: Seq[K], position: Int, newKey: K): NodeType =
+	private def renameKey(input: NodeType, keys: Seq[K], k: K, newKey: K): NodeType = renameKeyAt(input, keys, keys.indexOf(k), newKey)
+	private def renameKeyAt(input: NodeType, keys: Seq[K], position: Int, newKey: K): NodeType =
 		if (position < 0 || position >= keys.size || keys(position) == newKey) input
 		else updateKeys(input, keys.take(position) ++ Seq(newKey) ++ keys.drop(position + 1))
 
@@ -216,7 +210,7 @@ trait BPlusTree[K, V] {
 }
 
 class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V] {
-
+	val LOG = LoggerFactory.getLogger(this.getClass())
 	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Int)
 
 	private[rnkr] var head: LeafNode[K, V] = factory.data.newNode()
@@ -267,6 +261,29 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		buf.append(root)
 		buf.append("}").toString()
 	}
+
+	def min(node: Node[K]): K = node match {
+		case data: LeafNode[K, V] =>
+			data.keys.reduceLeft { factory.data.ordering.min }
+		case index: IndexNode[K] =>
+			index.values map (min(_)) reduceLeft { factory.data.ordering.min }
+	}
+
+	def consistent(node: Node[K]): Boolean = node match {
+		case data: LeafNode[K, V] =>
+			(data.keys.size == data.values.size) &&
+				((data.next eq null) && (tail eq data)) || ((data.next ne null) && (data.next.prev eq data)) &&
+				((data.prev eq null) && (head eq data)) || ((data.prev ne null) && (data.prev.next eq data))
+
+		case index: IndexNode[K] =>
+			(index.keys.size == (index.values.size - 1)) &&
+				(index.isEmpty ||
+					(factory.index.ordering.lt(min(index.values.head), index.keys.head) &&
+						index.keys.zip(index.values.tail.map(min)).foldLeft(true) { (a, b) => a && (b._1 == b._2) } &&
+						index.values.foldLeft(true) { (a, b) => (a && consistent(b)) }))
+	}
+
+	def consistent: Boolean = consistent(root)
 
 	private def seek(k: K): Cursor = {
 		val leaf = search(k)
@@ -326,10 +343,16 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	}
 
 	private def delete(k: K): Cursor = {
-		case class DeletedResult(pos: Int, ak: Option[K], a: Node[K], bk: Option[K], b: Option[Node[K]], cursor: Cursor)
+		case class DeletedResult(pos: Int,
+			ak: K,
+			oldAk: K,
+			a: Node[K],
+			bk: Option[K],
+			oldBk: Option[K],
+			cursor: Cursor)
 
 		def deleteRecursively(k: K, pos: Int, left: Option[Node[K]], targetNode: Node[K], right: Option[Node[K]]): DeletedResult = {
-
+			LOG.debug("Removing {} from {}", k, targetNode)
 			// choose siblings
 			lazy val (i, av, bv) = (left, right) match {
 				case (None, Some(rv)) => (pos, targetNode, rv)
@@ -340,14 +363,21 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 			targetNode match {
 				case leaf: LeafNode[K, V] => {
+					val leafK = leaf.keys.head
 					val deleted = factory.data.delete(leaf, k)
+					assert(consistent(deleted.a), deleted.a.toString)
 					_size -= 1
 					val cursor = Cursor(k, deleted.child, leaf, deleted.index)
 					if (factory.data.balanced(leaf) || (av eq bv))
-						DeletedResult(i, leaf.keyOption(0), leaf, None, None, cursor)
+						DeletedResult(i, if (leaf.isEmpty) k else leaf.keyAt(0), leafK, leaf, None, None, cursor)
 					else (av, bv) match {
 						case (a: LeafNode[K, V], b: LeafNode[K, V]) => {
+							val oldAk = if (a eq leaf) leafK else a.keys.head
+							val oldBk = if (b eq leaf) leafK else b.keys.head 
 							val balanced = factory.data.redistribute(a, Seq(), b)
+							assert(consistent(balanced.a), balanced.a.toString)
+							assert(consistent(balanced.b), balanced.b.toString)
+
 							if (balanced.b.isEmpty) {
 								// special case for LeafNode
 								balanced.a.next = balanced.b.next
@@ -355,34 +385,59 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 								if (balanced.b eq tail) tail = balanced.a
 								leafCount -= 1
 							}
-							DeletedResult(i, balanced.a.keyOption(0), balanced.a, balanced.b.keyOption(0), Some(balanced.b), cursor)
+							DeletedResult(i, balanced.a.keyAt(0), oldAk, balanced.a, balanced.b.keyOption(0), Some(oldBk), cursor)
 						}
 					}
 				}
 				case index: IndexNode[K] => {
 					val sub = index.keys.lastIndexWhere(factory.ordering.ge(k, _)) + 1
 					deleteRecursively(k, sub, index.childOption(sub - 1), index.childAt(sub), index.childOption(sub + 1)) match {
-						case DeletedResult(u, Some(ka), a, None, Some(b), cursor) => {
+						case DeletedResult(u, ak, oldAk, a, None, Some(oldPivot), cursor) => {
+							if (sub > 0 && index.keyAt(sub - 1) == oldAk) factory.index.renameKeyAt(index, sub - 1, ak)
 							val deleted = factory.index.deleteAt(index, u)
+							assert(consistent(index), index.toString)
 							if (factory.data.balanced(index) || (av eq bv)) {
-								if (deleted.index == 0) factory.index.replaceKeyAt(index, sub, deleted.key)
-								DeletedResult(pos, index.keyOption(0), index, None, None, cursor)
-							}
-							else (av, bv) match {
+								DeletedResult(pos, ak, oldAk, index, None, None, cursor)
+							} else (av, bv) match {
 								case (a: IndexNode[K], b: IndexNode[K]) => {
-									val balanced = factory.index.redistribute(a, Seq(ka), b) // nope!
-									if (balanced.b.isEmpty) indexCount -= 1
-									DeletedResult(i, balanced.a.keyOption(0), balanced.a, balanced.b.keyOption(0), Some(balanced.b), cursor)
+									val pivot = min(b)
+									val oldBk = if (b eq index) oldPivot else b.keys.head
+									val balanced = factory.index.redistribute(a, Seq(pivot), b)
+									assert(consistent(balanced.a), balanced.a.toString)
+									if (balanced.b.isEmpty) {
+										indexCount -= 1 
+										DeletedResult(i, ak, oldAk, balanced.a, None, Some(pivot), cursor)
+									}
+									else {
+										assert(consistent(balanced.b), balanced.b.toString)
+										DeletedResult(i, ak, oldAk, balanced.a, Some(balanced.key), Some(pivot), cursor)
+									}
 								}
 							}
 						}
 
-						case DeletedResult(u, Some(ka), a, Some(kb), Some(b), cursor) => {
-							DeletedResult(i, Some(ka), index, None, None, cursor)
+						case DeletedResult(u, ak, oldAk, a, Some(bk), oldBk, cursor) => {
+							LOG.debug("Checking for key changes: {} -> {}, {} -> {}", Array[Object](oldAk.toString, ak.toString, oldBk.toString, bk.toString));
+							LOG.debug("Before substitutions {}", index.toString);
+							if (ak != oldAk && sub > 0 && index.keyAt(sub - 1) == oldAk) factory.index.renameKeyAt(index, sub - 1, ak)
+							oldBk foreach { k =>
+								if (bk != k) {
+									if (sub > 0 && index.keyAt(sub - 1) == k) factory.index.renameKeyAt(index, sub - 1, bk)
+									else if (index.keyAt(sub) == k) factory.index.renameKeyAt(index, sub, bk)
+								}
+							}
+							LOG.debug("After substitutions {}", index.toString);
+							assert(consistent(index), index.toString)
+							DeletedResult(sub - 1, ak, oldAk, index, None, None, cursor)
 						}
 
-						case DeletedResult(u, k, a, None, None, cursor) => {
-							DeletedResult(pos, k, index, None, None, cursor)
+						case DeletedResult(u, k, oldK, node, None, None, cursor) => {
+							LOG.debug("Checking for key changes: {} -> {}", Array[Object](oldK.toString, k.toString));
+							LOG.debug("Before substitutions {}", index.toString);
+							if (k != oldK && sub > 0 && index.keyAt(sub - 1) == oldK) factory.index.renameKeyAt(index, sub - 1, k)
+							LOG.debug("After substitutions {}", index.toString);
+							assert(consistent(index), index.toString)
+							DeletedResult(sub - 1, k, oldK, index, None, None, cursor)
 						}
 					}
 				}
@@ -390,7 +445,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		}
 
 		deleteRecursively(k, 0, None, root, None) match {
-			case DeletedResult(_, _, _, _, _, cursor) => {
+			case DeletedResult(_, _, _, _, _, _, cursor) => {
 				root = root match {
 					case index: IndexNode[K] => if (index.isEmpty) {
 						indexCount -= 1;
@@ -404,129 +459,13 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		}
 	}
 
-	private def deleteForward(k: K): Cursor = {
-
-		def deleteFromParent(path: Seq[IndexNode[K]], child: Node[K]): Node[K] = {
-			val childIndex = path.head.indexOfChild(child)
-			assert(childIndex > 0, "Could not find " + (child) + "in" + (path.head.keys mkString (",")))
-			val k = path.head.keyAt(childIndex - 1)
-			println("Matched index " + (childIndex - 1) + " for " + (path.head.keys mkString (",")))
-			val deleted = factory.index.delete(path.head, k)
-			val node = deleted.a
-			if (node.isEmpty) {
-				root = node.childAt(0)
-				indexCount -= 1
-				level -= 1
-				node
-			}
-			else if (factory.index.balanced(node)) {
-				path.tail foreach (factory.index.replaceKey(_, k, node.keys.head))
-				node
-			}
-			else if (path.tail != Nil) {
-				val parent = path.tail.head
-
-				val index = parent.values.indexOf(node)
-				val lv = parent.childOption(index - 1)
-				val rv = parent.childOption(index + 1)
-
-				val (av, bv) = (lv, rv) match {
-					case (None, Some(rv)) => (node, rv)
-					case (Some(lv), None) => (lv, node)
-					case (Some(lv), Some(rv)) => if (lv.size > rv.size) (lv, node) else (node, rv)
-					case (None, None) => throw new IllegalArgumentException
-				}
-
-				val initialSize = av.size
-				val pivot = bv.asInstanceOf[IndexNode[K]].values.head.keys.head
-				val oldB = bv.keys.head
-				val balanced = factory.index.redistribute(av.asInstanceOf[IndexNode[K]], Seq(pivot), bv.asInstanceOf[IndexNode[K]])
-				if (balanced.b.isEmpty) {
-					path.tail foreach (factory.index.replaceKey(_, k, balanced.a.keys.head))
-					deleteFromParent(path.tail, balanced.b)
-					indexCount -= 1
-					balanced.a
-				}
-				else if (balanced.a.size != initialSize) {
-					println("Will replace: " + pivot + " with " + balanced.key)
-					path.tail foreach (factory.index.replaceKey(_, pivot, balanced.key))
-					println("Will replace: " + k + " with " + balanced.a.keys.head)
-					path.tail foreach (factory.index.replaceKey(_, k, balanced.a.keys.head))
-				}
-			}
-
-			deleted.child
-		}
-
-		val path = pathTo(k)
-		val targetNode = path.head.asInstanceOf[LeafNode[K, V]]
-
-		val index = targetNode.indexOfKey(k)
-		assert(index >= 0, "not found " + k + " in " + targetNode.keys.mkString(","))
-		if (index >= 0) {
-			val updated = factory.data.delete(targetNode, k)
-			_size -= 1
-			if (updated.a == root)
-				Cursor(k, updated.child, updated.node, index)
-			else if (factory.data.balanced(updated.a)) {
-				path.tail.asInstanceOf[Seq[IndexNode[K]]] foreach (factory.index.replaceKey(_, k, updated.a.keys.head))
-				Cursor(k, updated.child, updated.node, index)
-			}
-			else {
-				val parent = path.tail.asInstanceOf[Seq[IndexNode[K]]]
-
-				val index = parent.head.values.indexOf(updated.a)
-				val lv = parent.head.childOption(index - 1).asInstanceOf[Option[LeafNode[K, V]]]
-				val rv = parent.head.childOption(index + 1).asInstanceOf[Option[LeafNode[K, V]]]
-				val (av, bv) = (lv, rv) match {
-					case (None, Some(rv)) => (updated.a, rv)
-					case (Some(lv), None) => (lv, updated.a)
-					case (Some(lv), Some(rv)) => if (lv.size > rv.size) (lv, updated.a) else (updated.a, rv)
-					case (None, None) => throw new IllegalArgumentException
-				}
-				val initialSize = av.size
-				val oldA = av.keys.head
-				val oldB = bv.keys.head
-				val balanced = factory.data.redistribute(av, Seq(), bv)
-				if (balanced.b.isEmpty) {
-					// special case for LeafNode
-					balanced.a.next = balanced.b.next
-					if (balanced.a.next != null) balanced.a.next.prev = balanced.a
-					if (balanced.b eq tail) tail = balanced.a
-					if (path.tail == Nil) {
-						level -= 1
-						indexCount -= 1
-						root = path.head
-					}
-					else {
-						parent foreach (factory.index.replaceKey(_, oldA, balanced.a.keys.head))
-						leafCount -= 1
-						deleteFromParent(parent, balanced.b)
-					}
-				}
-				else if (balanced.a.size != initialSize) {
-					println("Will replace: " + oldB + " with " + balanced.b.keys.head)
-					parent foreach (factory.index.replaceKey(_, oldB, balanced.b.keys.head))
-					println("Will replace: " + oldA + " with " + balanced.a.keys.head)
-					parent foreach (factory.index.replaceKey(_, oldA, balanced.a.keys.head))
-				}
-
-				Cursor(k, balanced.child, balanced.node, balanced.index)
-			}
-		}
-		else {
-			null
-		}
-	}
-
 	override def range(k: K, length: Int): Seq[Pair[K, V]] = {
 
 		@tailrec def rangeForwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], next: LeafNode[K, V], leftover: Int) {
 			if (leftover > 0) {
 				if (khead == Nil) {
 					if (next != null) rangeForwards(buf, next.keys, next.values, next.next, leftover)
-				}
-				else {
+				} else {
 					buf.append((khead.head, vhead.head))
 					rangeForwards(buf, khead.tail, vhead.tail, next, leftover - 1)
 				}
@@ -537,8 +476,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 			if (leftover > 0) {
 				if (khead == Nil) {
 					if (prev != null) rangeBackwards(buf, prev.keys.reverse, prev.values.reverse, prev.prev, leftover)
-				}
-				else {
+				} else {
 					buf.append((khead.head, vhead.head))
 					rangeBackwards(buf, khead.tail, vhead.tail, prev, leftover - 1)
 				}

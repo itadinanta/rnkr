@@ -6,6 +6,8 @@ trait Ordering[T] {
 	final def le(a: T, b: T) = eq(a, b) || lt(a, b)
 	final def gt(a: T, b: T) = !le(a, b)
 	final def ge(a: T, b: T) = !lt(a, b)
+	final def min(a: T, b: T): T = if (lt(a,b)) a else b
+	final def max(a: T, b: T): T = if (lt(a,b)) b else a
 }
 
 trait Node[K] {
