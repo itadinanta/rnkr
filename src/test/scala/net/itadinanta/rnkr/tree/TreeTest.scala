@@ -7,13 +7,12 @@ import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
 
-object TreeTest {
-	val log = LoggerFactory.getLogger(classOf[TreeTest])
-}
 class TreeTest extends FlatSpec with ShouldMatchers {
-	import TreeTest.log
+	val log = LoggerFactory.getLogger(classOf[TreeTest])
+	def createTreeWithFanout(fanout: Int): SeqBPlusTree[Int, String] = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, fanout))
+
 	def createTestTree(items: Pair[Int, String]*): SeqBPlusTree[Int, String] = {
-		val tree = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, 4))
+		val tree = createTreeWithFanout(4)
 		items foreach { i => tree.put(i._1, i._2) }
 		tree
 	}
@@ -42,7 +41,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 
 	"After 7 insertions" should "contain 7 entries" in {
 		val tree = createTestTree()
-		1 to 7 foreach { i => tree.put(i, "Item" + i); log.debug("{}", tree) }
+		1 to 7 foreach { i => tree.put(i, "Item" + i); log.debug("Added {} to {}", i, tree) }
 		tree.size should be(7)
 		tree.factory.fanout should be(4)
 		tree.level should be(2)
@@ -52,7 +51,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 
 	"After 7 insertions in reverse" should "contain 7 entries" in {
 		val tree = createTestTree()
-		7 to 1 by -1 foreach { i => tree.put(i, "Item" + i); log.debug("{}", tree) }
+		7 to 1 by -1 foreach { i => tree.put(i, "Item" + i); log.debug("Added {} to {}", i, tree) }
 		tree.size should be(7)
 		tree.factory.fanout should be(4)
 		tree.level should be(2)
@@ -86,6 +85,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 	"After 1000 random insertions" should "contain 1000 entries in order" in {
 		val tree = createTestTree()
 		val ordered = new mutable.TreeSet[Int]
+		Random.setSeed(1234L)
 		Random.shuffle(1 to 1000 map { i => i }) foreach { i =>
 			tree.put(i, "Item" + i)
 			ordered += i
@@ -232,6 +232,7 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		val tree = createTestTree()
 		val ordered = new mutable.TreeSet[Int]
 		val n = 100
+		Random.setSeed(1234L)
 		Random.shuffle(1 to n map { i => i }) foreach { i =>
 			tree.put(i, "Item" + i)
 			ordered += i
@@ -240,11 +241,11 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		Random.shuffle(1 to n map { i => i }) foreach { i =>
 			log.debug("Removing {} from {}", i, tree)
 			tree.remove(i)
-			tree.consistent should be(true)			
-			log.debug("{}", " - " + tree)
+			tree.consistent should be(true)
 			ordered -= i
 			tree.keys() should be(ordered.toList)
 		}
+		log.debug("Result {}", tree)
 		tree.size should be(0)
 		tree.indexCount should be(0)
 		tree.consistent should be(true)
@@ -264,14 +265,36 @@ class TreeTest extends FlatSpec with ShouldMatchers {
 		Seq(11, 7, 5, 9, 1, 6, 12) foreach { i =>
 			log.debug("Removing {} from {}", i, tree)
 			tree.remove(i)
-			log.debug("{}", " - " + tree)
 			ordered -= i
 			tree.keys() should be(ordered.toList)
 			tree.consistent should be(true)
 		}
+		log.debug("Result {}", tree)
 		tree.size should be(ordered.size)
-		//		tree.leafCount should be(2)
-		//		tree.indexCount should be(1)
+		tree.leafCount should be(2)
+		tree.indexCount should be(1)
+	}
+
+	"After 1000 random insertions and 10000 random deletions" should "be empty" in {
+		val tree = createTreeWithFanout(32)
+		val ordered = new mutable.TreeSet[Int]
+		val n = 1000
+		Random.setSeed(1234L)
+		Random.shuffle(1 to n map { i => i }) foreach { i =>
+			tree.put(i, "Item" + i)
+			ordered += i
+			tree.keys() should be(ordered.toList)
+		}
+		Random.shuffle(1 to n map { i => i }) foreach { i =>
+			tree.remove(i)
+			tree.consistent should be(true)
+			ordered -= i
+			tree.keys() should be(ordered.toList)
+		}
+		log.debug("Result {}", tree)
+		tree.size should be(0)
+		tree.indexCount should be(0)
+		tree.consistent should be(true)
 	}
 
 }

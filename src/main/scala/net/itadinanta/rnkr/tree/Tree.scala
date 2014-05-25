@@ -93,37 +93,27 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 				val (newChildHead, newChildTail) = children.splitAt(splitAt)
 				val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
 				val mergeKey = b.keys.head
-				LOG.info("Reshuffling {} ++ {}", a.keys, b.keys)
-				val r = BuildResult(updateNode(a, newKeyHead, newChildHead),
+				BuildResult(updateNode(a, newKeyHead, newChildHead),
 					updateNode(b, newKeyTail, newChildTail),
 					mergeKey, removedValue,
 					splitAt)
-				LOG.info("-> {} ++ {}", a.keys, b.keys)
-				r
 			} else {
 				val (newChildHead, newChildTail) = children.splitAt(splitAt)
 				val (newKeyHead, newKeyTail) = keys.splitAt(splitAt - 1)
 				val mergeKey = newKeyTail.head
-				LOG.debug("Reshuffling {} ++ {} ++ {}", Array[Object](a.keys, pivot.head.toString, b.keys))
-				val r = BuildResult(updateNode(a, newKeyHead, newChildHead),
+				BuildResult(updateNode(a, newKeyHead, newChildHead),
 					updateNode(b, newKeyTail.tail, newChildTail),
 					mergeKey, removedValue,
 					splitAt)
-				LOG.debug("-> {} ++ {} ++ {}", Array[Object](a.keys, r.key.toString, b.keys))
-				r
 			}
 		}
 	}
 
 	private def delete(input: NodeType, keys: Seq[K], children: Seq[ChildType], key: K) = deleteAt(input, keys, children, keys.indexOf(key))
-	private def deleteAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], position: Int) = {
-		assert(position >= 0, "key does not exist in " + (keys mkString (",")))
-		new BuildResult(updateNode(
-			input,
-			keys.take(position) ++ keys.drop(position + 1),
-			children.take(position + splitOffset) ++ children.drop(position + splitOffset + 1)),
-			keys(position), children(position + splitOffset), position)
-	}
+	private def deleteAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], position: Int) = new BuildResult(updateNode(input,
+		keys.take(position) ++ keys.drop(position + 1),
+		children.take(position + splitOffset) ++ children.drop(position + splitOffset + 1)),
+		keys(position), children(position + splitOffset), position)
 
 	private def renameKey(input: NodeType, keys: Seq[K], k: K, newKey: K): NodeType = renameKeyAt(input, keys, keys.indexOf(k), newKey)
 	private def renameKeyAt(input: NodeType, keys: Seq[K], position: Int, newKey: K): NodeType =
@@ -131,12 +121,10 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		else updateKeys(input, keys.take(position) ++ Seq(newKey) ++ keys.drop(position + 1))
 
 	private def update(input: NodeType, keys: Seq[K], children: Seq[ChildType], k: K, child: ChildType) = updateAt(input, keys, children, keys.indexOf(k), child)
-	private def updateAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], position: Int, child: ChildType) = {
-		assert(position >= 0, "key does not exist in " + (keys mkString (",")))
-
-		new BuildResult(updateNode(input, keys, children.take(position) ++ Seq(child) ++ children.drop(position + 1)),
-			keys(position), children(position), position)
-	}
+	private def updateAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], position: Int, child: ChildType) = new BuildResult(updateNode(input,
+		keys,
+		children.take(position) ++ Seq(child) ++ children.drop(position + 1)),
+		keys(position), children(position), position)
 
 	def balanced(n: Node[K]) = n.size >= minout
 }
@@ -257,16 +245,19 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 	override def toString(): String = {
 		val buf = new StringBuilder()
-		buf.append("{").append("size=").append(_size)
+		buf.append("{").append("size=").append(_size).append("/").append(leafCount).append("/").append(indexCount)
 		buf.append(root)
 		buf.append("}").toString()
 	}
 
 	def min(node: Node[K]): K = node match {
-		case data: LeafNode[K, V] =>
-			data.keys.reduceLeft { factory.data.ordering.min }
-		case index: IndexNode[K] =>
-			index.values map (min(_)) reduceLeft { factory.data.ordering.min }
+		case data: LeafNode[K, V] => data.keys.reduceLeft { factory.data.ordering.min }
+		case index: IndexNode[K] => index.values map (min(_)) reduceLeft { factory.data.ordering.min }
+	}
+
+	def first(node: Node[K]): K = node match {
+		case data: LeafNode[K, V] => data.keys.head
+		case index: IndexNode[K] => first(index.values.head)
 	}
 
 	def consistent(node: Node[K]): Boolean = node match {
@@ -352,7 +343,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 			cursor: Cursor)
 
 		def deleteRecursively(k: K, pos: Int, left: Option[Node[K]], targetNode: Node[K], right: Option[Node[K]]): DeletedResult = {
-			LOG.debug("Removing {} from {}", k, targetNode)
+			// LOG.debug("Removing {} from {}", k, targetNode)
 			// choose siblings
 			lazy val (i, av, bv) = (left, right) match {
 				case (None, Some(rv)) => (pos, targetNode, rv)
@@ -365,7 +356,6 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 				case leaf: LeafNode[K, V] => {
 					val leafK = leaf.keys.head
 					val deleted = factory.data.delete(leaf, k)
-					assert(consistent(deleted.a), deleted.a.toString)
 					_size -= 1
 					val cursor = Cursor(k, deleted.child, leaf, deleted.index)
 					if (factory.data.balanced(leaf) || (av eq bv))
@@ -373,10 +363,8 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					else (av, bv) match {
 						case (a: LeafNode[K, V], b: LeafNode[K, V]) => {
 							val oldAk = if (a eq leaf) leafK else a.keys.head
-							val oldBk = if (b eq leaf) leafK else b.keys.head 
+							val oldBk = if (b eq leaf) leafK else b.keys.head
 							val balanced = factory.data.redistribute(a, Seq(), b)
-							assert(consistent(balanced.a), balanced.a.toString)
-							assert(consistent(balanced.b), balanced.b.toString)
 
 							if (balanced.b.isEmpty) {
 								// special case for LeafNode
@@ -395,21 +383,17 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 						case DeletedResult(u, ak, oldAk, a, None, Some(oldPivot), cursor) => {
 							if (sub > 0 && index.keyAt(sub - 1) == oldAk) factory.index.renameKeyAt(index, sub - 1, ak)
 							val deleted = factory.index.deleteAt(index, u)
-							assert(consistent(index), index.toString)
 							if (factory.data.balanced(index) || (av eq bv)) {
 								DeletedResult(pos, ak, oldAk, index, None, None, cursor)
 							} else (av, bv) match {
 								case (a: IndexNode[K], b: IndexNode[K]) => {
-									val pivot = min(b)
+									val pivot = first(b)
 									val oldBk = if (b eq index) oldPivot else b.keys.head
 									val balanced = factory.index.redistribute(a, Seq(pivot), b)
-									assert(consistent(balanced.a), balanced.a.toString)
 									if (balanced.b.isEmpty) {
-										indexCount -= 1 
+										indexCount -= 1
 										DeletedResult(i, ak, oldAk, balanced.a, None, Some(pivot), cursor)
-									}
-									else {
-										assert(consistent(balanced.b), balanced.b.toString)
+									} else {
 										DeletedResult(i, ak, oldAk, balanced.a, Some(balanced.key), Some(pivot), cursor)
 									}
 								}
@@ -417,8 +401,6 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 						}
 
 						case DeletedResult(u, ak, oldAk, a, Some(bk), oldBk, cursor) => {
-							LOG.debug("Checking for key changes: {} -> {}, {} -> {}", Array[Object](oldAk.toString, ak.toString, oldBk.toString, bk.toString));
-							LOG.debug("Before substitutions {}", index.toString);
 							if (ak != oldAk && sub > 0 && index.keyAt(sub - 1) == oldAk) factory.index.renameKeyAt(index, sub - 1, ak)
 							oldBk foreach { k =>
 								if (bk != k) {
@@ -426,17 +408,11 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 									else if (index.keyAt(sub) == k) factory.index.renameKeyAt(index, sub, bk)
 								}
 							}
-							LOG.debug("After substitutions {}", index.toString);
-							assert(consistent(index), index.toString)
 							DeletedResult(sub - 1, ak, oldAk, index, None, None, cursor)
 						}
 
 						case DeletedResult(u, k, oldK, node, None, None, cursor) => {
-							LOG.debug("Checking for key changes: {} -> {}", Array[Object](oldK.toString, k.toString));
-							LOG.debug("Before substitutions {}", index.toString);
 							if (k != oldK && sub > 0 && index.keyAt(sub - 1) == oldK) factory.index.renameKeyAt(index, sub - 1, k)
-							LOG.debug("After substitutions {}", index.toString);
-							assert(consistent(index), index.toString)
 							DeletedResult(sub - 1, k, oldK, index, None, None, cursor)
 						}
 					}
