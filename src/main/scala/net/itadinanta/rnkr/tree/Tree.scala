@@ -4,6 +4,11 @@ import net.itadinanta.rnkr.node._
 import scala.collection.mutable.ListBuffer
 import scala.annotation.tailrec
 import org.slf4j.LoggerFactory
+import net.itadinanta.rnkr.tree.Ordering
+import net.itadinanta.rnkr.tree.Node
+import net.itadinanta.rnkr.tree.LeafNode
+import net.itadinanta.rnkr.tree.IndexNode
+import net.itadinanta.rnkr.tree.Children
 
 trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]] {
 	val LOG = LoggerFactory.getLogger(this.getClass())
@@ -84,13 +89,13 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 	}
 
 	def redistribute(a: NodeType, pivot: Seq[K], b: NodeType): BuildResult = {
-		val aSize = a.size
-		val bSize = b.size
+		val aSize = a.keys.size
+		val bSize = b.keys.size
 		val removedKey = b.keys.head
 		val removedValue = b.values.head
 		if (balanced(a) && balanced(b))
 			// do nothing
-			BuildResult(a, b, removedKey, removedValue, a.size)
+			BuildResult(a, b, removedKey, removedValue, a.keys.size)
 		else if (aSize + bSize < fanout) {
 			// migrate everything to the first node
 			BuildResult(updateNode(a, a.keys ++ pivot ++ b.keys, a.values ++ b.values),
@@ -139,7 +144,7 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		children.take(position) ++ Seq(child) ++ children.drop(position + 1)),
 		keys(position), children(position), position)
 
-	def balanced(n: Node[K]) = n.size >= minout
+	def balanced(n: Node[K]) = n.keys.size >= minout
 }
 
 abstract class NodeFactory[K, V](val ordering: Ordering[K], val fanout: Int = 10) {
@@ -408,7 +413,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 			lazy val (i, av, bv) = (left, right) match {
 				case (None, Some(rv)) => (pos, targetNode, rv)
 				case (Some(lv), None) => (pos - 1, lv, targetNode)
-				case (Some(lv), Some(rv)) => if (lv.size > rv.size) (pos - 1, lv, targetNode) else (pos, targetNode, rv)
+				case (Some(lv), Some(rv)) => if (lv.keys.size > rv.keys.size) (pos - 1, lv, targetNode) else (pos, targetNode, rv)
 				case (None, None) => (pos, targetNode, targetNode)
 			}
 

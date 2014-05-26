@@ -3,6 +3,7 @@ package net.itadinanta.rnkr.node
 import org.scalatest.FlatSpec
 import org.scalatest.ShouldMatchers
 import net.itadinanta.rnkr.tree.SeqNodeFactory
+import net.itadinanta.rnkr.tree.IntAscending
 
 class NodeTest extends FlatSpec with ShouldMatchers {
 	val builder = new SeqNodeFactory[Int, String]

@@ -1,4 +1,4 @@
-package net.itadinanta.rnkr.node
+package net.itadinanta.rnkr.tree
 
 trait Ordering[T] {
 	def lt(a: T, b: T): Boolean
@@ -12,7 +12,6 @@ trait Ordering[T] {
 
 trait Node[K] {
 	def keys: Seq[K]
-	def size: Int = keys.length
 	def isEmpty: Boolean
 	def indexOfKey(key: K) = keys.indexOf(key)
 	def keyAt(index: Int) = keys(index)

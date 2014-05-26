@@ -6,6 +6,9 @@ import org.scalatest.ShouldMatchers
 import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
+import net.itadinanta.rnkr.tree.StringAscending
+import net.itadinanta.rnkr.tree.IntDescending
+import net.itadinanta.rnkr.tree.IntAscending
 
 class InsertTest extends FlatSpec with ShouldMatchers {
 	val log = LoggerFactory.getLogger(classOf[InsertTest])
@@ -32,9 +35,9 @@ class InsertTest extends FlatSpec with ShouldMatchers {
 		val tree = createTestTree()
 		1 to 3 foreach { i => tree.put(i, "Item" + i) }
 		tree.size should be(3)
-		tree.root.size should be(3)
-		tree.head.size should be(3)
-		tree.tail.size should be(3)
+		tree.root.keys.size should be(3)
+		tree.head.keys.size should be(3)
+		tree.tail.keys.size should be(3)
 		tree.leafCount should be(1)
 		tree.indexCount should be(0)
 	}
@@ -45,8 +48,8 @@ class InsertTest extends FlatSpec with ShouldMatchers {
 		tree.size should be(7)
 		tree.factory.fanout should be(4)
 		tree.level should be(2)
-		tree.root.size should be(2)
-		tree.head.size should be(2)
+		tree.root.keys.size should be(2)
+		tree.head.keys.size should be(2)
 	}
 
 	"After 100 insertions with String keys" should "contain 100 entries" in {
@@ -65,8 +68,8 @@ class InsertTest extends FlatSpec with ShouldMatchers {
 		tree.size should be(7)
 		tree.factory.fanout should be(4)
 		tree.level should be(2)
-		tree.root.size should be(1)
-		tree.head.size should be(4)
+		tree.root.keys.size should be(1)
+		tree.head.keys.size should be(4)
 	}
 
 	"After 100 insertion" should "contain 100 entries in order" in {
