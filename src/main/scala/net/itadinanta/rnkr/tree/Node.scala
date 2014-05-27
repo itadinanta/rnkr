@@ -19,10 +19,13 @@ trait Node[K] {
 }
 
 trait Children[ChildType] {
+	type Countable = Long
 	def values: Seq[ChildType]
+	def counts: Seq[Countable]
 	def indexOfChild(child: ChildType) = values.indexOf(child)
 	def childAt(index: Int) = values(index)
 	def childOption(index: Int) = if (0 <= index && index < values.length) Some(childAt(index)) else None
+	def countAt(index: Int) = counts(index)
 }
 
 trait DataNode[K, V] extends Node[K] with Children[V]

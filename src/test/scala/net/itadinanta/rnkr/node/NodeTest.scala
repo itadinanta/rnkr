@@ -36,15 +36,15 @@ class NodeTest extends FlatSpec with ShouldMatchers {
 
 	"A node after value insertion" should "contain 1 entry" in {
 		val newNode = builder.data.newNode(1, "Value")
-		val addition = builder.data.insert(newNode, 2, "AnotherValue")
+		val addition = builder.data.insert(newNode, 2, "AnotherValue", 1)
 		addition.node.keys.length should be === 2
 		addition.node.keys should be === Seq(1, 2)
 	}
 
 	"A node after value insertions" should "contain entries in order" in {
 		val one = builder.data.newNode(1, "One")
-		val two = builder.data.insert(one, 2, "Two")
-		val three = builder.data.insert(two.node, 3, "Three")
+		val two = builder.data.insert(one, 2, "Two", 1)
+		val three = builder.data.insert(two.node, 3, "Three", 1)
 		three.node.keys.length should be === 3
 		three.node.keys should be === Seq(1, 2, 3)
 		three.node.values should be === Seq("One", "Two", "Three")
@@ -52,8 +52,8 @@ class NodeTest extends FlatSpec with ShouldMatchers {
 
 	"A node after value insertions not in order" should "contain entries in order" in {
 		val one = builder.data.newNode(1, "One")
-		val two = builder.data.insert(one, 3, "Three")
-		val three = builder.data.insert(two.node, 2, "Two")
+		val two = builder.data.insert(one, 3, "Three", 1)
+		val three = builder.data.insert(two.node, 2, "Two", 1)
 		three.node.keys.length should be === 3
 		three.node.keys should be === Seq(1, 2, 3)
 		three.node.values should be === Seq("One", "Two", "Three")

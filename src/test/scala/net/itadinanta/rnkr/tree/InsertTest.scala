@@ -6,9 +6,6 @@ import org.scalatest.ShouldMatchers
 import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
-import net.itadinanta.rnkr.tree.StringAscending
-import net.itadinanta.rnkr.tree.IntDescending
-import net.itadinanta.rnkr.tree.IntAscending
 
 class InsertTest extends FlatSpec with ShouldMatchers {
 	val log = LoggerFactory.getLogger(classOf[InsertTest])

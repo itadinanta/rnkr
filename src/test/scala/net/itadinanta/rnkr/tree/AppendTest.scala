@@ -6,8 +6,6 @@ import org.scalatest.ShouldMatchers
 import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
-import net.itadinanta.rnkr.tree.StringAscending
-import net.itadinanta.rnkr.tree.IntAscending
 
 class AppendTest extends FlatSpec with ShouldMatchers {
 	val log = LoggerFactory.getLogger(classOf[InsertTest])
@@ -85,7 +83,7 @@ class AppendTest extends FlatSpec with ShouldMatchers {
 		tree.level should be(4)
 	}
 
-	"After 100000 insertion" should "contain 1000000 entries in order" in {
+	"After 1000000 appends" should "contain 1000000 entries in order" in {
 		val tree = this.createTreeWithFanout(100)
 		1 to 1000000 foreach { i => tree.append(i, "Item" + i); }
 		tree.size should be(1000000)

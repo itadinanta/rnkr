@@ -6,7 +6,6 @@ import org.scalatest.ShouldMatchers
 import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
-import net.itadinanta.rnkr.tree.IntAscending
 
 class DeleteTest extends FlatSpec with ShouldMatchers {
 	val log = LoggerFactory.getLogger(classOf[DeleteTest])
