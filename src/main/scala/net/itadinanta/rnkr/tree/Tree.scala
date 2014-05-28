@@ -6,15 +6,14 @@ import scala.collection.mutable.ListBuffer
 import org.slf4j.LoggerFactory
 
 trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]] {
-	type Countable = Children[Node[K]]#Countable
 	val LOG = LoggerFactory.getLogger(this.getClass())
 	val ordering: Ordering[K]
 	val fanout: Int
 	def minout = (fanout + 1) / 2
 	val splitOffset: Int
-	def updateNode(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable]): NodeType
+	def updateNode(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position]): NodeType
 	def updateKeys(node: NodeType, keys: Seq[K]): NodeType
-	def newNode(keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable]): NodeType
+	def newNode(keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position]): NodeType
 	def newNode(k: K, v: ChildType): NodeType = newNode(Seq(k), Seq(v), Seq(1))
 	def newNode(): NodeType = newNode(Seq(), Seq(), Seq())
 
@@ -24,16 +23,16 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		def this(a: NodeType, key: K, child: ChildType, index: Int) = this(a, a, key, child, index)
 	}
 
-	def append(node: NodeType, k: K, child: ChildType, count: Countable): BuildResult = append(node, node.keys, node.values, node.counts, k, child, count)
-	def insert(node: NodeType, k: K, child: ChildType, count: Countable): BuildResult = insert(node, node.keys, node.values, node.counts, k, child, count)
+	def append(node: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = append(node, node.keys, node.values, node.counts, k, child, count)
+	def insert(node: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = insert(node, node.keys, node.values, node.counts, k, child, count)
 	def deleteAt(node: NodeType, i: Int): BuildResult = deleteAt(node, node.keys, node.values, node.counts, i)
 	def delete(node: NodeType, k: K): BuildResult = delete(node, node.keys, node.values, node.counts, k)
-	def update(node: NodeType, k: K, child: ChildType, count: Countable): BuildResult = update(node, node.keys, node.values, node.counts, k, child, count)
+	def update(node: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = update(node, node.keys, node.values, node.counts, k, child, count)
 	def merge(a: NodeType, b: NodeType): BuildResult = merge(a, a.keys, a.values, a.counts, b.keys, b.values, b.counts)
 	def renameKey(node: NodeType, oldKey: K, newKey: K): NodeType = if (oldKey != newKey) renameKey(node, node.keys, oldKey, newKey) else node
 	def renameKeyAt(node: NodeType, position: Int, newKey: K): NodeType = renameKeyAt(node, node.keys, position, newKey)
 
-	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], aCounts: Seq[Countable], bKeys: Seq[K], bValues: Seq[ChildType], bCounts: Seq[Countable]) = {
+	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], aCounts: Seq[Rank#Position], bKeys: Seq[K], bValues: Seq[ChildType], bCounts: Seq[Rank#Position]) = {
 		val newKeys = aKeys ++ bKeys
 		val newChildren = aValues ++ bValues
 		val newCounts = aCounts ++ bCounts
@@ -44,7 +43,7 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 			split(input, minout, newKeys, newChildren, newCounts)
 	}
 
-	private def append(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable], k: K, child: ChildType, count: Countable) = {
+	private def append(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], k: K, child: ChildType, count: Rank#Position) = {
 		if (keys.isEmpty)
 			new BuildResult(updateNode(input, Seq(k), Seq(child), Seq(count)), k, child, 0)
 		else {
@@ -59,7 +58,7 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		}
 	}
 
-	private def insert(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable], k: K, child: ChildType, count: Countable) = {
+	private def insert(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], k: K, child: ChildType, count: Rank#Position) = {
 		if (keys.isEmpty)
 			new BuildResult(updateNode(input, Seq(k), Seq(child), Seq(count)), k, child, 0)
 		else {
@@ -78,7 +77,7 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		}
 	}
 
-	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable]): BuildResult = {
+	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position]): BuildResult = {
 		val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
 		val (newChildHead, newChildTail) = children.splitAt(splitAt + splitOffset)
 		val (newCountHead, newCountTail) = counts.splitAt(splitAt + splitOffset)
@@ -133,8 +132,8 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		}
 	}
 
-	private def delete(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable], key: K) = deleteAt(input, keys, children, counts, keys.indexOf(key))
-	private def deleteAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable], position: Int) = new BuildResult(updateNode(input,
+	private def delete(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], key: K) = deleteAt(input, keys, children, counts, keys.indexOf(key))
+	private def deleteAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], position: Int) = new BuildResult(updateNode(input,
 		keys.take(position) ++ keys.drop(position + 1),
 		children.take(position + splitOffset) ++ children.drop(position + splitOffset + 1),
 		counts.take(position + splitOffset) ++ counts.drop(position + splitOffset + 1)),
@@ -145,14 +144,14 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		if (position < 0 || position >= keys.size || keys(position) == newKey) input
 		else updateKeys(input, keys.take(position) ++ Seq(newKey) ++ keys.drop(position + 1))
 
-	private def update(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable], k: K, child: ChildType, count: Countable) =
+	private def update(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], k: K, child: ChildType, count: Rank#Position) =
 		updateAt(input, keys, children, counts, keys.indexOf(k), child, count)
-	private def updateAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Countable], position: Int, child: ChildType, count: Countable) = 
+	private def updateAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], position: Int, child: ChildType, count: Rank#Position) =
 		new BuildResult(updateNode(input,
-		keys,
-		children.take(position) ++ Seq(child) ++ children.drop(position + 1),
-		counts.take(position) ++ Seq(count) ++ counts.drop(position + 1)),
-		keys(position), children(position), position)
+			keys,
+			children.take(position) ++ Seq(child) ++ children.drop(position + 1),
+			counts.take(position) ++ Seq(count) ++ counts.drop(position + 1)),
+			keys(position), children(position), position)
 
 	def balanced(n: Node[K]) = n.keys.size >= minout
 }
@@ -165,10 +164,9 @@ abstract class NodeFactory[K, V](val ordering: Ordering[K], val fanout: Int = 10
 }
 
 class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 10) extends NodeFactory[K, V](ordering, fanout) {
-	type Countable = Children[Node[K]]#Countable
 	override val index = new IndexNodeBuilder {
 
-		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[Node[K]], var counts: Seq[Countable]) extends IndexNode[K] with Children[Node[K]] {
+		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[Node[K]], var counts: Seq[Rank#Position]) extends IndexNode[K] with Children[Node[K]] {
 			override def isEmpty = this.keys.isEmpty
 			def set(keys: Seq[K], values: Seq[Node[K]], counts: Seq[Long]): this.type = {
 				this.keys = keys
@@ -181,8 +179,8 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 		override val splitOffset = 1
 		override val fanout = SeqNodeFactory.this.fanout
 		override val ordering = SeqNodeFactory.this.ordering
-		override def newNode(keys: Seq[K], children: Seq[Node[K]], counts: Seq[Countable]) = new SeqNodeImpl(keys, children, counts)
-		override def updateNode(node: IndexNode[K], keys: Seq[K], children: Seq[Node[K]], counts: Seq[Countable]) = node match {
+		override def newNode(keys: Seq[K], children: Seq[Node[K]], counts: Seq[Rank#Position]) = new SeqNodeImpl(keys, children, counts)
+		override def updateNode(node: IndexNode[K], keys: Seq[K], children: Seq[Node[K]], counts: Seq[Rank#Position]) = node match {
 			case n: SeqNodeImpl => n.set(keys, children, counts)
 		}
 		override def updateKeys(node: IndexNode[K], keys: Seq[K]) = node match {
@@ -208,8 +206,8 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 		override val splitOffset = 0
 		override val fanout = SeqNodeFactory.this.fanout
 		override val ordering = SeqNodeFactory.this.ordering
-		override def newNode(keys: Seq[K], children: Seq[V], counts: Seq[Countable]) = new SeqNodeImpl(keys, children)
-		override def updateNode(node: LeafNode[K, V], keys: Seq[K], children: Seq[V], counts: Seq[Countable]) = node match {
+		override def newNode(keys: Seq[K], children: Seq[V], counts: Seq[Rank#Position]) = new SeqNodeImpl(keys, children)
+		override def updateNode(node: LeafNode[K, V], keys: Seq[K], children: Seq[V], counts: Seq[Rank#Position]) = node match {
 			case n: SeqNodeImpl => n.set(keys, children)
 		}
 		override def updateKeys(node: LeafNode[K, V], keys: Seq[K]) = node match {
@@ -220,17 +218,17 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 
 trait BPlusTree[K, V] {
 	def size: Int
-	def get(k: K): Option[V]
-	def remove(k: K): Option[V]
-	def put(k: K, value: V): V
-	def append(k: K, value: V): V
+	def get(k: K): Option[Row[K, V]]
+	def remove(k: K): Option[Row[K, V]]
+	def put(k: K, value: V): Row[K, V]
+	def append(k: K, value: V): Row[K, V]
 	def keys(): Seq[K]
 	def keysReverse(): Seq[K]
-	def range(k: K, length: Int): Seq[Pair[K, V]]
+	def rank(k: K): Rank#Position
+	def range(k: K, length: Int): Seq[Row[K, V]]
 }
 
 class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V] {
-	type Countable = Children[Node[K]]#Countable
 	val LOG = LoggerFactory.getLogger(this.getClass())
 	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Int)
 
@@ -243,16 +241,26 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	private[rnkr] var level: Int = 1
 
 	override def size = _size
-
-	override def append(k: K, v: V): V = insertAtEnd(k, v).value
-	override def put(k: K, v: V): V = insert(k, v).value
-	override def get(k: K): Option[V] = {
-		val node = search(k)
-		val index = node.indexOfKey(k)
-		if (index >= 0) Some(node.childAt(index)) else None
+	override def rank(k: K): Rank#Position = ???
+	override def append(k: K, v: V) = {
+		val inserted = insertAtEnd(k, v)
+		Row(k, inserted.value, size)
+	}
+	override def put(k: K, v: V) = {
+		val inserted = insert(k, v)
+		Row(k, v, inserted.index)
 	}
 
-	override def keys(): Seq[K] = {
+	override def get(k: K) = {
+		val node = search(k)
+		val index = node.indexOfKey(k)
+		if (index >= 0) {
+			val value = node.childAt(index)
+			Some(Row(k, value, index))
+		} else None
+	}
+
+	override def keys() = {
 		val buf = new ListBuffer[K]
 		def appendNode(node: LeafNode[K, V]): Unit = if (node != null) {
 			buf ++= node.keys
@@ -262,7 +270,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		buf.toList
 	}
 
-	override def keysReverse(): Seq[K] = {
+	override def keysReverse() = {
 		val buf = new ListBuffer[K]
 		def appendNode(node: LeafNode[K, V]): Unit = if (node != null) {
 			buf ++= node.keys.reverse
@@ -272,8 +280,8 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		buf.toList
 	}
 
-	override def remove(k: K): Option[V] = delete(k) match {
-		case Cursor(_, child, _, _) => Some(child)
+	override def remove(k: K) = delete(k) match {
+		case Cursor(key, child, _, index) => Some(Row(key, child, index))
 		case _ => None
 	}
 
@@ -514,38 +522,38 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		}
 	}
 
-	override def range(k: K, length: Int): Seq[Pair[K, V]] = {
+	override def range(k: K, length: Int): Seq[Row[K, V]] = {
 
-		@tailrec def rangeForwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], next: LeafNode[K, V], leftover: Int) {
+		@tailrec def rangeForwards(buf: ListBuffer[Row[K, V]], position: Rank#Position, khead: Seq[K], vhead: Seq[V], next: LeafNode[K, V], leftover: Int) {
 			if (leftover > 0) {
 				if (khead == Nil) {
-					if (next != null) rangeForwards(buf, next.keys, next.values, next.next, leftover)
+					if (next != null) rangeForwards(buf, position, next.keys, next.values, next.next, leftover)
 				} else {
-					buf.append((khead.head, vhead.head))
-					rangeForwards(buf, khead.tail, vhead.tail, next, leftover - 1)
+					buf.append(Row(khead.head, vhead.head, position))
+					rangeForwards(buf, position + 1, khead.tail, vhead.tail, next, leftover - 1)
 				}
 			}
 		}
 
-		@tailrec def rangeBackwards(buf: ListBuffer[Pair[K, V]], khead: Seq[K], vhead: Seq[V], prev: LeafNode[K, V], leftover: Int) {
+		@tailrec def rangeBackwards(buf: ListBuffer[Row[K, V]], position: Rank#Position, khead: Seq[K], vhead: Seq[V], prev: LeafNode[K, V], leftover: Int) {
 			if (leftover > 0) {
 				if (khead == Nil) {
-					if (prev != null) rangeBackwards(buf, prev.keys.reverse, prev.values.reverse, prev.prev, leftover)
+					if (prev != null) rangeBackwards(buf, position, prev.keys.reverse, prev.values.reverse, prev.prev, leftover)
 				} else {
-					buf.append((khead.head, vhead.head))
-					rangeBackwards(buf, khead.tail, vhead.tail, prev, leftover - 1)
+					buf.append(Row(khead.head, vhead.head, position))
+					rangeBackwards(buf, position - 1, khead.tail, vhead.tail, prev, leftover - 1)
 				}
 			}
 		}
 
 		val leaf = search(k)
-		val buf = new ListBuffer[Pair[K, V]]
+		val buf = new ListBuffer[Row[K, V]]
 		if (length >= 0) {
 			val index = after(k, leaf.keys)
-			rangeForwards(buf, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
+			rangeForwards(buf, index, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
 		} else {
 			val index = before(k, leaf.keys)
-			rangeBackwards(buf, leaf.keys.take(index).reverse, leaf.values.take(index).reverse, leaf.prev, -length)
+			rangeBackwards(buf, index, leaf.keys.take(index).reverse, leaf.values.take(index).reverse, leaf.prev, -length)
 		}
 		buf.toSeq
 	}

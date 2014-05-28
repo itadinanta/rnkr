@@ -119,25 +119,25 @@ class InsertTest extends FlatSpec with ShouldMatchers {
 		val tree = createTestTree()
 		1 to 100 foreach { i => tree.put(2 * i, "Item" + i) }
 		log.debug("{}", tree)
-		tree.get(20) should be(Some("Item10"))
-		tree.range(2, 100) map (_._1) should be(2 to 200 by 2)
-		tree.range(0, 200) map (_._1) should be(2 to 200 by 2)
-		tree.range(20, 10) map (_._1) should be(20 to 38 by 2)
-		tree.range(19, 10) map (_._1) should be(20 to 38 by 2)
-		tree.range(21, 10) map (_._1) should be(22 to 40 by 2)
-		tree.range(200, 0) map (_._1) should be(Seq())
-		tree.range(200, 1) map (_._1) should be(Seq(200))
-		tree.range(200, 100) map (_._1) should be(Seq(200))
-		tree.range(201, 100) map (_._1) should be(Seq())
+		tree.get(20) map (_.value) should be(Some("Item10"))
+		tree.range(2, 100) map (_.key) should be(2 to 200 by 2)
+		tree.range(0, 200) map (_.key) should be(2 to 200 by 2)
+		tree.range(20, 10) map (_.key) should be(20 to 38 by 2)
+		tree.range(19, 10) map (_.key) should be(20 to 38 by 2)
+		tree.range(21, 10) map (_.key) should be(22 to 40 by 2)
+		tree.range(200, 0) map (_.key) should be(Seq())
+		tree.range(200, 1) map (_.key) should be(Seq(200))
+		tree.range(200, 100) map (_.key) should be(Seq(200))
+		tree.range(201, 100) map (_.key) should be(Seq())
 	}
 
 	"An ordered range" should "count N keys backwards from a given pivot" in {
 		val tree = createTestTree()
 		1 to 100 foreach { i => tree.put(2 * i, "Item" + i) }
 
-		tree.range(1, -1) map (_._1) should be(Seq())
-		tree.range(2, -1) map (_._1) should be(Seq(2))
-		tree.range(20, -5) map (_._1) should be(20 to 12 by -2)
-		tree.range(21, -5) map (_._1) should be(20 to 12 by -2)
+		tree.range(1, -1) map (_.key) should be(Seq())
+		tree.range(2, -1) map (_.key) should be(Seq(2))
+		tree.range(20, -5) map (_.key) should be(20 to 12 by -2)
+		tree.range(21, -5) map (_.key) should be(20 to 12 by -2)
 	}
 }

@@ -18,10 +18,13 @@ trait Node[K] {
 	def keyOption(index: Int) = if (0 <= index && index < keys.length) Some(keyAt(index)) else None
 }
 
+trait Rank {
+	type Position = Long
+}
+
 trait Children[ChildType] {
-	type Countable = Long
 	def values: Seq[ChildType]
-	def counts: Seq[Countable]
+	def counts: Seq[Rank#Position]
 	def indexOfChild(child: ChildType) = values.indexOf(child)
 	def childAt(index: Int) = values(index)
 	def childOption(index: Int) = if (0 <= index && index < values.length) Some(childAt(index)) else None
@@ -29,6 +32,8 @@ trait Children[ChildType] {
 }
 
 trait DataNode[K, V] extends Node[K] with Children[V]
+
+case class Row[K, V](val key: K, val value: V, val rank: Rank#Position)
 
 trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 	override def toString = {
