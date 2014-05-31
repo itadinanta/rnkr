@@ -31,9 +31,9 @@ trait Children[ChildType] {
 	def countAt(index: Int) = counts(index)
 }
 
-trait DataNode[K, V] extends Node[K] with Children[V]
-
 case class Row[K, V](val key: K, val value: V, val rank: Rank#Position)
+
+trait DataNode[K, V] extends Node[K] with Children[V]
 
 trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 	override def toString = {

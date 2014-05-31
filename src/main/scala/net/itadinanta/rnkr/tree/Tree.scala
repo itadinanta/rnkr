@@ -24,28 +24,10 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		def this(a: NodeType, key: K, child: ChildType, index: Int) = this(a, a, key, child, index)
 	}
 
-	def append(node: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = append(node, node.keys, node.values, node.counts, k, child, count)
-	def insert(node: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = insert(node, node.keys, node.values, node.counts, k, child, count)
-	def deleteAt(node: NodeType, i: Int): BuildResult = deleteAt(node, node.keys, node.values, node.counts, i)
-	def delete(node: NodeType, k: K): BuildResult = delete(node, node.keys, node.values, node.counts, k)
-	def update(node: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = update(node, node.keys, node.values, node.counts, k, child, count)
-	def merge(a: NodeType, b: NodeType): BuildResult = merge(a, a.keys, a.values, a.counts, b.keys, b.values, b.counts)
-	def grow(node: NodeType, i: Int, increment: Rank#Position): NodeType = if (increment != 0) growAt(node, node.counts, i, increment) else node
-	def renameKey(node: NodeType, oldKey: K, newKey: K): NodeType = if (oldKey != newKey) renameKey(node, node.keys, oldKey, newKey) else node
-	def renameKeyAt(node: NodeType, position: Int, newKey: K): NodeType = renameKeyAt(node, node.keys, position, newKey)
-
-	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], aCounts: Seq[Rank#Position], bKeys: Seq[K], bValues: Seq[ChildType], bCounts: Seq[Rank#Position]) = {
-		val newKeys = aKeys ++ bKeys
-		val newChildren = aValues ++ bValues
-		val newCounts = aCounts ++ bCounts
-
-		if (newKeys.length <= fanout)
-			new BuildResult(updateNode(input, newKeys, newChildren, newCounts), bKeys.head, bValues.head, aKeys.size)
-		else
-			split(input, minout, newKeys, newChildren, newCounts)
-	}
-
-	private def append(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], k: K, child: ChildType, count: Rank#Position) = {
+	def append(input: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = {
+		val keys = input.keys
+		val children = input.values
+		val counts = input.counts
 		if (keys.isEmpty)
 			new BuildResult(updateNode(input, Seq(k), Seq(child), Seq(count)), k, child, 0)
 		else {
@@ -60,7 +42,10 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		}
 	}
 
-	private def insert(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], k: K, child: ChildType, count: Rank#Position) = {
+	def insert(input: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = {
+		val keys = input.keys
+		val children = input.values
+		val counts = input.counts
 		if (keys.isEmpty)
 			new BuildResult(updateNode(input, Seq(k), Seq(child), Seq(count)), k, child, 0)
 		else {
@@ -79,16 +64,49 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		}
 	}
 
-	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position]): BuildResult = {
-		val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
-		val (newChildHead, newChildTail) = children.splitAt(splitAt + splitOffset)
-		val (newCountHead, newCountTail) = counts.splitAt(splitAt + splitOffset)
+	def delete(node: NodeType, k: K): BuildResult = deleteAt(node, node.indexOfKey(k))
 
-		BuildResult(updateNode(input, newKeyHead, newChildHead, newCountHead),
-			newNode(newKeyTail.drop(splitOffset), newChildTail, newCountTail),
-			keys(splitAt), children(splitAt),
-			splitAt + splitOffset)
+	def deleteAt(input: NodeType, position: Int): BuildResult = {
+		val keys = input.keys
+		val children = input.values
+		val counts = input.counts
+		new BuildResult(updateNode(input,
+			keys.take(position) ++ keys.drop(position + 1),
+			children.take(position + splitOffset) ++ children.drop(position + splitOffset + 1),
+			counts.take(position + splitOffset) ++ counts.drop(position + splitOffset + 1)),
+			keys(position), children(position + splitOffset), position)
 	}
+
+	def update(node: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = updateAt(node, node.indexOfKey(k), child, count)
+
+	def updateAt(input: NodeType, position: Int, child: ChildType, count: Rank#Position) = {
+		val keys = input.keys
+		val children = input.values
+		val counts = input.counts
+
+		new BuildResult(updateNode(input,
+			keys,
+			children.take(position) ++ Seq(child) ++ children.drop(position + 1),
+			counts.take(position) ++ Seq(count) ++ counts.drop(position + 1)),
+			keys(position), children(position), position)
+	}
+
+	def renameKey(node: NodeType, oldKey: K, newKey: K): NodeType = if (oldKey != newKey) renameKeyAt(node, node.indexOfKey(oldKey), newKey) else node
+	def renameKeyAt(input: NodeType, position: Int, newKey: K): NodeType = {
+		val keys = input.keys
+		if (position < 0 || position >= keys.size || keys(position) == newKey) input
+		else updateKeys(input, keys.take(position) ++ Seq(newKey) ++ keys.drop(position + 1))
+	}
+
+	def grow(node: NodeType, position: Int, increment: Rank#Position): NodeType = {
+		if (increment == 0) node
+		else {
+			val counts = node.counts
+			updateCounts(node, counts.take(position) ++ Seq(counts(position) + increment) ++ counts.drop(position + 1))
+		}
+	}
+
+	def merge(a: NodeType, b: NodeType): BuildResult = merge(a, a.keys, a.values, a.counts, b.keys, b.values, b.counts)
 
 	def redistribute(a: NodeType, pivot: Seq[K], b: NodeType): BuildResult = {
 		val aSize = a.keys.size
@@ -134,29 +152,27 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		}
 	}
 
-	private def delete(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], key: K) = deleteAt(input, keys, children, counts, keys.indexOf(key))
-	private def deleteAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], position: Int) = new BuildResult(updateNode(input,
-		keys.take(position) ++ keys.drop(position + 1),
-		children.take(position + splitOffset) ++ children.drop(position + splitOffset + 1),
-		counts.take(position + splitOffset) ++ counts.drop(position + splitOffset + 1)),
-		keys(position), children(position + splitOffset), position)
+	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], aCounts: Seq[Rank#Position], bKeys: Seq[K], bValues: Seq[ChildType], bCounts: Seq[Rank#Position]) = {
+		val newKeys = aKeys ++ bKeys
+		val newChildren = aValues ++ bValues
+		val newCounts = aCounts ++ bCounts
 
-	private def renameKey(input: NodeType, keys: Seq[K], k: K, newKey: K): NodeType = renameKeyAt(input, keys, keys.indexOf(k), newKey)
-	private def renameKeyAt(input: NodeType, keys: Seq[K], position: Int, newKey: K): NodeType =
-		if (position < 0 || position >= keys.size || keys(position) == newKey) input
-		else updateKeys(input, keys.take(position) ++ Seq(newKey) ++ keys.drop(position + 1))
+		if (newKeys.length <= fanout)
+			new BuildResult(updateNode(input, newKeys, newChildren, newCounts), bKeys.head, bValues.head, aKeys.size)
+		else
+			split(input, minout, newKeys, newChildren, newCounts)
+	}
 
-	private def growAt(input: NodeType, counts: Seq[Rank#Position], position: Int, increment: Rank#Position): NodeType =
-		updateCounts(input, counts.take(position) ++ Seq(counts(position) + increment) ++ counts.drop(position + 1))
+	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position]): BuildResult = {
+		val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
+		val (newChildHead, newChildTail) = children.splitAt(splitAt + splitOffset)
+		val (newCountHead, newCountTail) = counts.splitAt(splitAt + splitOffset)
 
-	private def update(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], k: K, child: ChildType, count: Rank#Position) =
-		updateAt(input, keys, children, counts, keys.indexOf(k), child, count)
-	private def updateAt(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position], position: Int, child: ChildType, count: Rank#Position) =
-		new BuildResult(updateNode(input,
-			keys,
-			children.take(position) ++ Seq(child) ++ children.drop(position + 1),
-			counts.take(position) ++ Seq(count) ++ counts.drop(position + 1)),
-			keys(position), children(position), position)
+		BuildResult(updateNode(input, newKeyHead, newChildHead, newCountHead),
+			newNode(newKeyTail.drop(splitOffset), newChildTail, newCountTail),
+			keys(splitAt), children(splitAt),
+			splitAt + splitOffset)
+	}
 
 	def balanced(n: Node[K]) = n.keys.size >= minout
 }
@@ -188,7 +204,7 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 		override def updateNode(node: IndexNode[K], keys: Seq[K], children: Seq[Node[K]], counts: Seq[Rank#Position]) = node match {
 			case n: SeqNodeImpl => n.set(keys, children, counts)
 		}
-		
+
 		override def updateCounts(node: IndexNode[K], counts: Seq[Rank#Position]) = node match {
 			case n: SeqNodeImpl => n.set(n.keys, n.values, counts)
 		}
