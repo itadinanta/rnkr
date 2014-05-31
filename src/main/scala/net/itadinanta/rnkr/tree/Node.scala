@@ -6,8 +6,8 @@ trait Ordering[T] {
 	final def le(a: T, b: T) = eq(a, b) || lt(a, b)
 	final def gt(a: T, b: T) = !le(a, b)
 	final def ge(a: T, b: T) = !lt(a, b)
-	final def min(a: T, b: T): T = if (lt(a,b)) a else b
-	final def max(a: T, b: T): T = if (lt(a,b)) b else a
+	final def min(a: T, b: T): T = if (lt(a, b)) a else b
+	final def max(a: T, b: T): T = if (lt(a, b)) b else a
 }
 
 trait Node[K] {
@@ -24,11 +24,9 @@ trait Rank {
 
 trait Children[ChildType] {
 	def values: Seq[ChildType]
-	def counts: Seq[Rank#Position]
 	def indexOfChild(child: ChildType) = values.indexOf(child)
 	def childAt(index: Int) = values(index)
 	def childOption(index: Int) = if (0 <= index && index < values.length) Some(childAt(index)) else None
-	def countAt(index: Int) = counts(index)
 }
 
 case class Row[K, V](val key: K, val value: V, val rank: Rank#Position)
@@ -36,6 +34,9 @@ case class Row[K, V](val key: K, val value: V, val rank: Rank#Position)
 trait DataNode[K, V] extends Node[K] with Children[V]
 
 trait IndexNode[K] extends Node[K] with Children[Node[K]] {
+	def counts: Seq[Rank#Position]
+	def countAt(index: Int) = counts(index)
+
 	override def toString = {
 		val buf = new StringBuilder
 		var sep = ""
