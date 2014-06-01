@@ -262,8 +262,8 @@ abstract class DataNodeBuilder[K, V] extends NodeBuilder[K, V, V, LeafNode[K, V]
 			// merge and split evenly
 			val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
 			val (newChildHead, newChildTail) = children.splitAt(splitAt)
-
 			val mergeKey = b.keys.head
+
 			BuildResult(updateNode(a, newKeyHead, newChildHead),
 				updateNode(b, newKeyTail, newChildTail),
 				mergeKey, removedValue,
@@ -291,7 +291,7 @@ abstract class NodeFactory[K, V](val ordering: Ordering[K], val fanout: Int = 10
 class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 10) extends NodeFactory[K, V](ordering, fanout) {
 	override val index = new IndexNodeBuilder[K, V] {
 
-		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[Node[K]], var counts: Seq[Rank#Position]) extends IndexNode[K] with Children[Node[K]] {
+		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[Node[K]], var counts: Seq[Rank#Position]) extends IndexNode[K] {
 			override def isEmpty = this.keys.isEmpty
 			def set(keys: Seq[K], values: Seq[Node[K]], counts: Seq[Long]): this.type = {
 				this.keys = keys
@@ -304,17 +304,14 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 		override val fanout = SeqNodeFactory.this.fanout
 		override val ordering = SeqNodeFactory.this.ordering
 		override def newNode(keys: Seq[K], children: Seq[Node[K]], counts: Seq[Rank#Position]) = new SeqNodeImpl(keys, children, counts)
-		override def updateNode(node: IndexNode[K], keys: Seq[K], children: Seq[Node[K]], counts: Seq[Rank#Position]) = node match {
-			case n: SeqNodeImpl => n.set(keys, children, counts)
-		}
+		override def updateNode(node: IndexNode[K], keys: Seq[K], children: Seq[Node[K]], counts: Seq[Rank#Position]) =
+			node match { case n: SeqNodeImpl => n.set(keys, children, counts) }
 
-		override def updateCounts(node: IndexNode[K], counts: Seq[Rank#Position]) = node match {
-			case n: SeqNodeImpl => n.set(n.keys, n.values, counts)
-		}
+		override def updateCounts(node: IndexNode[K], counts: Seq[Rank#Position]) =
+			node match { case n: SeqNodeImpl => n.set(n.keys, n.values, counts) }
 
-		override def updateKeys(node: IndexNode[K], keys: Seq[K]) = node match {
-			case n: SeqNodeImpl => n.set(keys, n.values, n.counts)
-		}
+		override def updateKeys(node: IndexNode[K], keys: Seq[K]) =
+			node match { case n: SeqNodeImpl => n.set(keys, n.values, n.counts) }
 	}
 
 	override val data = new DataNodeBuilder[K, V] {
@@ -334,12 +331,10 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 		override val fanout = SeqNodeFactory.this.fanout
 		override val ordering = SeqNodeFactory.this.ordering
 		override def newNode(keys: Seq[K], children: Seq[V]) = new SeqNodeImpl(keys, children)
-		override def updateNode(node: LeafNode[K, V], keys: Seq[K], children: Seq[V]) = node match {
-			case n: SeqNodeImpl => n.set(keys, children)
-		}
-		override def updateKeys(node: LeafNode[K, V], keys: Seq[K]) = node match {
-			case n: SeqNodeImpl => n.set(keys, n.values)
-		}
+		override def updateNode(node: LeafNode[K, V], keys: Seq[K], children: Seq[V]) =
+			node match { case n: SeqNodeImpl => n.set(keys, children) }
+
+		override def updateKeys(node: LeafNode[K, V], keys: Seq[K]) =
+			node match { case n: SeqNodeImpl => n.set(keys, n.values) }
 	}
 }
-

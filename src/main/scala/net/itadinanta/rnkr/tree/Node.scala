@@ -13,6 +13,7 @@ trait Ordering[T] {
 trait Node[K] {
 	def keys: Seq[K]
 	def isEmpty: Boolean
+	def count: Rank#Position
 	def indexOfKey(key: K) = keys.indexOf(key)
 	def keyAt(index: Int) = keys(index)
 	def keyOption(index: Int) = if (0 <= index && index < keys.length) Some(keyAt(index)) else None
@@ -31,12 +32,14 @@ trait Children[ChildType] {
 
 case class Row[K, V](val key: K, val value: V, val rank: Rank#Position)
 
-trait DataNode[K, V] extends Node[K] with Children[V]
+trait DataNode[K, V] extends Node[K] with Children[V] {
+	override def count: Rank#Position = values.size
+}
 
 trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 	def counts: Seq[Rank#Position]
 	def countAt(index: Int) = counts(index)
-
+	override def count: Rank#Position = counts.reduceLeft(_ + _)
 	override def toString = {
 		val buf = new StringBuilder
 		var sep = ""

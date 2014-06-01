@@ -30,7 +30,18 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	private[rnkr] var level: Int = 1
 
 	override def size = _size
-	override def rank(k: K): Rank#Position = ???
+	override def rank(k: K): Rank#Position = {
+		def rank(n: Node[K]): Rank#Position = {
+			n match {
+				case l: LeafNode[K, V] => l.indexOfKey(k)
+				case c: IndexNode[K] => {
+					val index = after(k, c.keys)
+					c.countAt(index) + rank(c.childAt(index))
+				}
+			}
+		}
+		rank(root)
+	}
 	override def append(k: K, v: V) = {
 		val inserted = insertAtEnd(k, v)
 		Row(k, inserted.value, size)
