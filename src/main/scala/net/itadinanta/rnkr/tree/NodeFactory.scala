@@ -2,8 +2,8 @@ package net.itadinanta.rnkr.tree
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
-
 import org.slf4j.LoggerFactory
+import scala.collection.mutable.ArraySeq
 
 trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]] {
 	val LOG = LoggerFactory.getLogger(this.getClass())
@@ -316,14 +316,18 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 
 	override val data = new DataNodeBuilder[K, V] {
 
-		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[V]) extends LeafNode[K, V] {
+		private[SeqNodeFactory] class SeqNodeImpl(k: Seq[K], v: Seq[V]) extends LeafNode[K, V] {
+			var _keys: ArraySeq[K] = k.to[ArraySeq]
+			var _values: ArraySeq[V] = v.to[ArraySeq]
+			def keys = _keys
+			def values = _values
 			override var prev: LeafNode[K, V] = _
 			override var next: LeafNode[K, V] = _
 			override def isEmpty = this.keys.isEmpty
 
 			def set(keys: Seq[K], values: Seq[V]): this.type = {
-				this.keys = keys
-				this.values = values
+				this._keys = keys.to[ArraySeq]
+				this._values = values.to[ArraySeq]
 				this
 			}
 		}

@@ -47,6 +47,7 @@ class InsertTest extends FlatSpec with ShouldMatchers {
 		tree.level should be(2)
 		tree.root.keys.size should be(2)
 		tree.head.keys.size should be(2)
+		tree.consistent should be(true)
 	}
 
 	"After 100 insertions with String keys" should "contain 100 entries" in {

@@ -45,13 +45,15 @@ trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 		var sep = ""
 		buf.append("{")
 		if (!isEmpty) {
-			values zip keys foreach { i =>
+			(values, keys, counts).zipped.toList foreach { i =>
 				buf.append(sep)
+				buf.append("(").append(i._3).append(")")
 				buf.append(i._1)
 				buf.append("<" + i._2)
 				sep = ">"
 			}
 			buf.append(">")
+			buf.append("(").append(counts.last).append(")")
 			buf.append(values.last)
 		}
 		buf.append("}");
