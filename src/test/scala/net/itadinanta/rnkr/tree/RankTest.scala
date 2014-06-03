@@ -39,19 +39,30 @@ class RankTest extends FlatSpec with ShouldMatchers {
 	}
 
 	"A tree with more entries" should "have higher ranks" in {
-		val tree = createTestTree((1, "Item"), (2, "Item"), (3, "Item"), (4, "Item"), (5, "Item"), (6, "Item"))
+		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (4, "Item4"), (5, "Item5"), (6, "Item6"))
 		log.debug("{}", tree)
 		tree.size should be(6)
 		tree.consistent should be(true)
 
+		tree.rank(-1) should be(-1)
+		tree.rank(0) should be(-1)
 		tree.rank(1) should be(0)
 		tree.rank(2) should be(1)
 		tree.rank(3) should be(2)
 		tree.rank(4) should be(3)
 		tree.rank(5) should be(4)
 		tree.rank(6) should be(5)
+		tree.rank(7) should be(6)
 
-		tree.page(1, 1) should be(Seq(Row(2, "Item", 1)))
+		tree.page(-1, 1) should be(Seq())
+		tree.page(0, 1) should be(Seq(Row(1, "Item1", 0)))
+		tree.page(1, 1) should be(Seq(Row(2, "Item2", 1)))
+		tree.page(2, 1) should be(Seq(Row(3, "Item3", 2)))
+		tree.page(3, 1) should be(Seq(Row(4, "Item4", 3)))
+		tree.page(4, 1) should be(Seq(Row(5, "Item5", 4)))
+		tree.page(5, 1) should be(Seq(Row(6, "Item6", 5)))
+		tree.page(6, 1) should be(Seq())
+
 	}
 
 }

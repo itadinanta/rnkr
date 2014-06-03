@@ -33,16 +33,19 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	override def size = valueCount
 	override def rank(k: K): Rank#Position = {
 		@tailrec def rank(n: Node[K], p: Rank#Position): Rank#Position = {
-			def roughRank(i: Int, keys: Seq[K], partial: Rank#Position, counts: Seq[Rank#Position]): Pair[Int, Rank#Position] =
-				if (keys == Nil) (-1, partial)
-				else if (factory.ordering.ge(k, keys.head)) (i, partial)
-				else roughRank(i + 1, keys.tail, partial + counts.head, counts.tail)
+			def roughRank(i: Int, keys: Seq[K], partial: Rank#Position, counts: Seq[Rank#Position], found: Int, foundPartial: Rank#Position): Pair[Int, Rank#Position] =
+				if (keys == Nil)
+					(found, foundPartial)
+				else if (factory.ordering.ge(k, keys.head))
+					roughRank(i + 1, keys.tail, partial + counts.head, counts.tail, i, partial + counts.head)
+				else
+					roughRank(i + 1, keys.tail, partial + counts.head, counts.tail, found, foundPartial)
 
 			n match {
 				case l: LeafNode[K, V] => p + l.indexOfKey(k)
 				case c: IndexNode[K] => {
-					val (index, partial) = roughRank(0, c.keys, 0, c.counts)
-					rank(c.childAt(index), partial)
+					val (index, partial) = roughRank(0, c.keys, 0, c.counts, -1, 0)
+					rank(c.childAt(index + 1), partial)
 				}
 			}
 		}
@@ -367,7 +370,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		val leaf = cursor.node
 		val buf = new ListBuffer[Row[K, V]]
 		val index = cursor.index.intValue
-		rangeForwards(buf, index, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
+		rangeForwards(buf, start, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
 		buf.toSeq
 	}
 
@@ -412,14 +415,18 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		@tailrec def searchByRank(n: Node[K], remainder: Rank#Position): Cursor = n match {
 			case l: LeafNode[K, V] => {
 				val index = remainder.intValue
-				Cursor(l.keyAt(index), l.childAt(index), l, remainder)
+				Cursor(l.keyAt(index), l.childAt(index), l, index)
 			}
 			case c: IndexNode[K] => {
-				@tailrec def lastIndexWhereCount(pos: Int, counts: Seq[Rank#Position], total: Rank#Position, leftover: Rank#Position): Pair[Int, Rank#Position] =
-					if (counts == Nil || total > counts.head + leftover) (pos, leftover)
-					else lastIndexWhereCount(pos + 1, counts.tail, total + counts.head, leftover)
+				@tailrec def lastIndexWhereCount(i: Int, counts: Seq[Rank#Position], total: Rank#Position, found: Int, foundPartial: Rank#Position): Pair[Int, Rank#Position] =
+					if (counts == Nil)
+						(found, foundPartial)
+					else if (remainder >= total)
+						lastIndexWhereCount(i + 1, counts.tail, total + counts.head, i, total)
+					else
+						lastIndexWhereCount(i + 1, counts.tail, total + counts.head, found, foundPartial)
 
-				val (next, total) = lastIndexWhereCount(0, c.counts, 0, remainder)
+				val (next, total) = lastIndexWhereCount(0, c.counts, 0, -1, 0)
 				searchByRank(c.childAt(next), remainder - total)
 			}
 		}
