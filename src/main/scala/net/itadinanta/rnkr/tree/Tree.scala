@@ -42,7 +42,12 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					roughRank(i + 1, keys.tail, partial + counts.head, counts.tail, found, foundPartial)
 
 			n match {
-				case l: LeafNode[K, V] => p + l.indexOfKey(k)
+				case l: LeafNode[K, V] => {
+					val i = l.indexOfKey(k)
+					if (i >= 0) p + i
+					else if (p == 0) i
+					else p + l.count
+				}
 				case c: IndexNode[K] => {
 					val (index, partial) = roughRank(0, c.keys, 0, c.counts, -1, 0)
 					rank(c.childAt(index + 1), partial)
@@ -367,11 +372,14 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 	override def page(start: Rank#Position, length: Int): Seq[Row[K, V]] = {
 		val cursor: Cursor = searchByRank(start)
-		val leaf = cursor.node
-		val buf = new ListBuffer[Row[K, V]]
-		val index = cursor.index.intValue
-		rangeForwards(buf, start, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
-		buf.toSeq
+		if (cursor == null) Seq()
+		else {
+			val leaf = cursor.node
+			val buf = new ListBuffer[Row[K, V]]
+			val index = cursor.index.intValue
+			rangeForwards(buf, start, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
+			buf.toSeq
+		}
 	}
 
 	@tailrec private def rangeBackwards(buf: ListBuffer[Row[K, V]], position: Rank#Position, khead: Seq[K], vhead: Seq[V], prev: LeafNode[K, V], leftover: Int) {
@@ -415,7 +423,8 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		@tailrec def searchByRank(n: Node[K], remainder: Rank#Position): Cursor = n match {
 			case l: LeafNode[K, V] => {
 				val index = remainder.intValue
-				Cursor(l.keyAt(index), l.childAt(index), l, index)
+				if (index >= l.count) null
+				else Cursor(l.keyAt(index), l.childAt(index), l, index)
 			}
 			case c: IndexNode[K] => {
 				@tailrec def lastIndexWhereCount(i: Int, counts: Seq[Rank#Position], total: Rank#Position, found: Int, foundPartial: Rank#Position): Pair[Int, Rank#Position] =
@@ -427,7 +436,8 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 						lastIndexWhereCount(i + 1, counts.tail, total + counts.head, found, foundPartial)
 
 				val (next, total) = lastIndexWhereCount(0, c.counts, 0, -1, 0)
-				searchByRank(c.childAt(next), remainder - total)
+				if (next < 0) null
+				else searchByRank(c.childAt(next), remainder - total)
 			}
 		}
 		searchByRank(root, rank)
