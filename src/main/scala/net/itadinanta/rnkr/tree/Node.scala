@@ -37,15 +37,15 @@ trait DataNode[K, V] extends Node[K] with Children[V] {
 }
 
 trait IndexNode[K] extends Node[K] with Children[Node[K]] {
-	def counts: Seq[Rank#Position]
-	def countAt(index: Int) = counts(index)
-	override def count: Rank#Position = counts.reduceLeft(_ + _)
+	def partialRanks: Seq[Rank#Position]
+	def partialRankAt(index: Int) = partialRanks(index)
+	override def count: Rank#Position = partialRanks.last
 	override def toString = {
 		val buf = new StringBuilder
 		var sep = ""
 		buf.append("{")
 		if (!isEmpty) {
-			(values, keys, counts).zipped.toList foreach { i =>
+			(values, keys, partialRanks).zipped.toList foreach { i =>
 				buf.append(sep)
 				buf.append("(").append(i._3).append(")")
 				buf.append(i._1)
@@ -53,7 +53,7 @@ trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 				sep = ">"
 			}
 			buf.append(">")
-			buf.append("(").append(counts.last).append(")")
+			buf.append("(").append(partialRanks.last).append(")")
 			buf.append(values.last)
 		}
 		buf.append("}");

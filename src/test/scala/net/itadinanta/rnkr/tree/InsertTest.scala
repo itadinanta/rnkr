@@ -6,6 +6,24 @@ import org.scalatest.ShouldMatchers
 import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
+import org.junit.Test
+import org.fest.assertions.Assertions._
+
+class InsertJUnitTest {
+	val log = LoggerFactory.getLogger(classOf[InsertTest])
+	def createTreeWithFanout(fanout: Int) = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, fanout))
+	def createTestTree() = createTreeWithFanout(4)
+	def createTestTree(items: Pair[Int, String]*) = {
+		val tree = createTreeWithFanout(4)
+		items foreach { i => tree.put(i._1, i._2) }
+		tree
+	}
+
+	@Test
+	def testMe() {
+		assertThat(true).isTrue()
+	}
+}
 
 class InsertTest extends FlatSpec with ShouldMatchers {
 	val log = LoggerFactory.getLogger(classOf[InsertTest])

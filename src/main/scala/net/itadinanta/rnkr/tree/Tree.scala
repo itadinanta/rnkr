@@ -49,7 +49,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					else p + l.count
 				}
 				case c: IndexNode[K] => {
-					val (index, partial) = roughRank(0, c.keys, 0, c.counts, -1, 0)
+					val (index, partial) = roughRank(0, c.keys, 0, c.partialRanks, -1, 0)
 					rank(c.childAt(index + 1), partial)
 				}
 			}
@@ -132,7 +132,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		case index: IndexNode[K] => {
 			val indexKeys = index.keys
 			val indexValues = index.values
-			val indexCounts = index.counts
+			val indexCounts = index.partialRanks
 			(indexKeys.size == (indexValues.size - 1)) &&
 				(index.isEmpty ||
 					(factory.index.ordering.lt(min(indexValues.head), indexKeys.head) &&
@@ -435,7 +435,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					else
 						lastIndexWhereCount(i + 1, counts.tail, total + counts.head, found, foundPartial)
 
-				val (next, total) = lastIndexWhereCount(0, c.counts, 0, -1, 0)
+				val (next, total) = lastIndexWhereCount(0, c.partialRanks, 0, -1, 0)
 				if (next < 0) null
 				else searchByRank(c.childAt(next), remainder - total)
 			}
