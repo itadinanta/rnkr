@@ -1,88 +1,58 @@
 package net.itadinanta.rnkr.tree
 
 import net.itadinanta.rnkr.node._
-import org.scalatest.FlatSpec
-import org.scalatest.ShouldMatchers
 import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
-import org.fest.assertions.Assertions._
+import org.fest.assertions.Assertions.assertThat
 import org.junit.Test
 
-class RankJUnitTest {
-	val log = LoggerFactory.getLogger(classOf[InsertTest])
-	def createTreeWithFanout(fanout: Int) = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, fanout))
-	def createTestTree() = createTreeWithFanout(4)
-	def createTestTree(items: Pair[Int, String]*) = {
-		val tree = createTreeWithFanout(4)
-		items foreach { i => tree.put(i._1, i._2) }
-		tree
-	}
-
-	@Test
-	def testSimpleRank() {
+class RankTest extends TreeBaseTest {
+	test("A tree with one entry should have one rank 0") {
 		val tree = createTestTree()
 		tree.append(1, "Item")
 		assertThat(tree.size) isEqualTo 1
 		assertThat(tree.rank(1)) isEqualTo 0
 	}
-}
 
-class RankTest extends FlatSpec with ShouldMatchers {
-	val log = LoggerFactory.getLogger(classOf[RankTest])
-	def createTreeWithFanout(fanout: Int) = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, fanout))
-	def createTestTree() = createTreeWithFanout(4)
-	def createTestTree(items: Pair[Int, String]*) = {
-		val tree = createTreeWithFanout(4)
-		items foreach { i => tree.append(i._1, i._2) }
-		tree
-	}
-
-	"A tree with one entry" should "have one rank 0" in {
-		val tree = createTestTree()
-		tree.append(1, "Item")
-		tree.size should be(1)
-		tree.rank(1) should be(0)
-	}
-
-	"A tree with few entries" should "have low ranks" in {
+	test("A tree with few entries should have low ranks") {
 		val tree = createTestTree()
 		tree.append(1, "Item1")
 		tree.append(2, "Item2")
 		tree.append(3, "Item3")
 
-		tree.size should be(3)
-		tree.rank(1) should be(0)
-		tree.rank(2) should be(1)
-		tree.rank(3) should be(2)
+		assertThat(tree.size) isEqualTo 3
+		assertThat(tree.rank(1)) isEqualTo 0
+		assertThat(tree.rank(2)) isEqualTo 1
+		assertThat(tree.rank(3)) isEqualTo 2
 
-		tree.page(1, 1) should be(Seq(Row(2, "Item2", 1)))
+		assertThat(tree.page(1, 1)) isEqualTo Seq(Row(2, "Item2", 1))
 	}
 
-	"A tree with more entries" should "have higher ranks" in {
+	test("A tree with more entries should have higher ranks") {
 		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (4, "Item4"), (5, "Item5"), (6, "Item6"))
 		log.debug("{}", tree)
-		tree.size should be(6)
-		tree.consistent should be(true)
+		assertThat(tree.size) isEqualTo 6
+		assertThat(tree.consistent) isEqualTo true
 
-		tree.rank(-1) should be(-1)
-		tree.rank(0) should be(-1)
-		tree.rank(1) should be(0)
-		tree.rank(2) should be(1)
-		tree.rank(3) should be(2)
-		tree.rank(4) should be(3)
-		tree.rank(5) should be(4)
-		tree.rank(6) should be(5)
-		tree.rank(7) should be(6)
+		assertThat(tree.rank(-1)) isEqualTo -1
+		assertThat(tree.rank(0)) isEqualTo -1
+		assertThat(tree.rank(1)) isEqualTo 0
+		assertThat(tree.rank(2)) isEqualTo 1
+		assertThat(tree.rank(3)) isEqualTo 2
+		assertThat(tree.rank(4)) isEqualTo 3
+		assertThat(tree.rank(5)) isEqualTo 4
+		assertThat(tree.rank(6)) isEqualTo 5
+		assertThat(tree.rank(7)) isEqualTo 6
 
-		tree.page(-1, 1) should be(Seq())
-		tree.page(0, 1) should be(Seq(Row(1, "Item1", 0)))
-		tree.page(1, 1) should be(Seq(Row(2, "Item2", 1)))
-		tree.page(2, 1) should be(Seq(Row(3, "Item3", 2)))
-		tree.page(3, 1) should be(Seq(Row(4, "Item4", 3)))
-		tree.page(4, 1) should be(Seq(Row(5, "Item5", 4)))
-		tree.page(5, 1) should be(Seq(Row(6, "Item6", 5)))
-		tree.page(6, 1) should be(Seq())
+		assertThat(tree.page(-1, 1)) isEqualTo Seq()
+		assertThat(tree.page(0, 1)) isEqualTo Seq(Row(1, "Item1", 0))
+		assertThat(tree.page(1, 1)) isEqualTo Seq(Row(2, "Item2", 1))
+		assertThat(tree.page(2, 1)) isEqualTo Seq(Row(3, "Item3", 2))
+		assertThat(tree.page(3, 1)) isEqualTo Seq(Row(4, "Item4", 3))
+		assertThat(tree.page(4, 1)) isEqualTo Seq(Row(5, "Item5", 4))
+		assertThat(tree.page(5, 1)) isEqualTo Seq(Row(6, "Item6", 5))
+		assertThat(tree.page(6, 1)) isEqualTo Seq()
 
 	}
 
