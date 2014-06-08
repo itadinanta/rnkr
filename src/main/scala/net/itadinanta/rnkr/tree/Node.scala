@@ -10,17 +10,18 @@ trait Ordering[T] {
 	final def max(a: T, b: T): T = if (lt(a, b)) b else a
 }
 
+object Rank {
+	type Position = Long
+}
+import Rank.Position
+
 trait Node[K] {
 	def keys: Seq[K]
 	def isEmpty: Boolean
-	def count: Rank#Position
+	def count: Position
 	def indexOfKey(key: K) = keys.indexOf(key)
 	def keyAt(index: Int) = keys(index)
 	def keyOption(index: Int) = if (0 <= index && index < keys.length) Some(keyAt(index)) else None
-}
-
-trait Rank {
-	type Position = Long
 }
 
 trait Children[ChildType] {
@@ -30,16 +31,16 @@ trait Children[ChildType] {
 	def childOption(index: Int) = if (0 <= index && index < values.length) Some(childAt(index)) else None
 }
 
-case class Row[K, V](val key: K, val value: V, val rank: Rank#Position)
+case class Row[K, V](val key: K, val value: V, val rank: Position)
 
 trait DataNode[K, V] extends Node[K] with Children[V] {
-	override def count: Rank#Position = values.size
+	override def count: Position = values.size
 }
 
 trait IndexNode[K] extends Node[K] with Children[Node[K]] {
-	def partialRanks: Seq[Rank#Position]
+	def partialRanks: Seq[Position]
 	def partialRankAt(index: Int) = partialRanks(index)
-	override def count: Rank#Position = partialRanks.last
+	override def count: Position = partialRanks.last
 	override def toString = {
 		val buf = new StringBuilder
 		var sep = ""

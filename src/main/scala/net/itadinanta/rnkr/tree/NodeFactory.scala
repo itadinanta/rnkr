@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import org.slf4j.LoggerFactory
 import scala.collection.mutable.ArraySeq
+import Rank.Position
 
 trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]] {
 	val LOG = LoggerFactory.getLogger(this.getClass())
@@ -37,12 +38,12 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 	type ChildType = Node[K]
 	private val splitOffset: Int = 1
 
-	def newNode(keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position]): NodeType
+	def newNode(keys: Seq[K], children: Seq[ChildType], counts: Seq[Position]): NodeType
 
-	def updateNode(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position]): NodeType
-	def updatePartialRanks(node: NodeType, counts: Seq[Rank#Position]): NodeType
+	def updateNode(input: NodeType, keys: Seq[K], children: Seq[ChildType], counts: Seq[Position]): NodeType
+	def updatePartialRanks(node: NodeType, counts: Seq[Position]): NodeType
 
-	def append(input: NodeType, k: K, child: ChildType, partialRank: Rank#Position): BuildResult = {
+	def append(input: NodeType, k: K, child: ChildType, partialRank: Position): BuildResult = {
 		val keys = input.keys
 		val children = input.values
 		val partialRanks = input.partialRanks
@@ -60,7 +61,7 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 		}
 	}
 
-	def insert(input: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = {
+	def insert(input: NodeType, k: K, child: ChildType, count: Position): BuildResult = {
 		val keys = input.keys
 		val children = input.values
 		val partialRanks = input.partialRanks
@@ -93,7 +94,7 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 			keys(position), children(position + splitOffset), position)
 	}
 
-	def updateAt(input: NodeType, position: Int, child: ChildType, count: Rank#Position) = {
+	def updateAt(input: NodeType, position: Int, child: ChildType, count: Position) = {
 		val keys = input.keys
 		val children = input.values
 		val counts = input.partialRanks
@@ -105,15 +106,15 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 			keys(position), children(position), position)
 	}
 
-	def grow(node: NodeType, position: Int, increment: Rank#Position): NodeType = {
+	def grow(node: NodeType, position: Int, increment: Position): NodeType = {
 		if (increment == 0) node
 		else {
 			val counts = node.partialRanks
-			updatePartialRanks(node, counts.take(position) ++ Seq(counts(position) + increment) ++ counts.drop(position + 1))
+			updatePartialRanks(node, counts.take(position) ++ counts.drop(position).map(_ + increment))
 		}
 	}
 
-	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], aCounts: Seq[Rank#Position], bKeys: Seq[K], bValues: Seq[ChildType], bCounts: Seq[Rank#Position]) = {
+	private def merge(input: NodeType, aKeys: Seq[K], aValues: Seq[ChildType], aCounts: Seq[Position], bKeys: Seq[K], bValues: Seq[ChildType], bCounts: Seq[Position]) = {
 		val newKeys = aKeys ++ bKeys
 		val newChildren = aValues ++ bValues
 		val newCounts = aCounts ++ bCounts
@@ -124,7 +125,7 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 			split(input, minout, newKeys, newChildren, newCounts)
 	}
 
-	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType], counts: Seq[Rank#Position]): BuildResult = {
+	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType], counts: Seq[Position]): BuildResult = {
 		val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
 		val (newChildHead, newChildTail) = children.splitAt(splitAt + splitOffset)
 		val (newCountHead, newCountTail) = counts.splitAt(splitAt + splitOffset)
@@ -135,7 +136,7 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 			splitAt + splitOffset)
 	}
 
-	def update(node: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = updateAt(node, node.indexOfKey(k), child, count)
+	def update(node: NodeType, k: K, child: ChildType, count: Position): BuildResult = updateAt(node, node.indexOfKey(k), child, count)
 
 	def merge(a: NodeType, b: NodeType): BuildResult = merge(a, a.keys, a.values, a.partialRanks, b.keys, b.values, b.partialRanks)
 
@@ -183,7 +184,7 @@ abstract class DataNodeBuilder[K, V] extends NodeBuilder[K, V, V, LeafNode[K, V]
 
 	def updateNode(input: NodeType, keys: Seq[K], children: Seq[ChildType]): NodeType
 
-	def insert(input: NodeType, k: K, child: ChildType, count: Rank#Position): BuildResult = {
+	def insert(input: NodeType, k: K, child: ChildType, count: Position): BuildResult = {
 		val keys = input.keys
 		val children = input.values
 
@@ -291,7 +292,7 @@ abstract class NodeFactory[K, V](val ordering: Ordering[K], val fanout: Int = 10
 class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 10) extends NodeFactory[K, V](ordering, fanout) {
 	override val index = new IndexNodeBuilder[K, V] {
 
-		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[Node[K]], var partialRanks: Seq[Rank#Position]) extends IndexNode[K] {
+		private[SeqNodeFactory] class SeqNodeImpl(var keys: Seq[K], var values: Seq[Node[K]], var partialRanks: Seq[Position]) extends IndexNode[K] {
 			override def isEmpty = this.keys.isEmpty
 			def set(keys: Seq[K], values: Seq[Node[K]], counts: Seq[Long]): this.type = {
 				this.keys = keys
@@ -303,11 +304,11 @@ class SeqNodeFactory[K, V](ordering: Ordering[K] = IntAscending, fanout: Int = 1
 
 		override val fanout = SeqNodeFactory.this.fanout
 		override val ordering = SeqNodeFactory.this.ordering
-		override def newNode(keys: Seq[K], children: Seq[Node[K]], partialRanks: Seq[Rank#Position]) = new SeqNodeImpl(keys, children, partialRanks)
-		override def updateNode(node: IndexNode[K], keys: Seq[K], children: Seq[Node[K]], partialRanks: Seq[Rank#Position]) =
+		override def newNode(keys: Seq[K], children: Seq[Node[K]], partialRanks: Seq[Position]) = new SeqNodeImpl(keys, children, partialRanks)
+		override def updateNode(node: IndexNode[K], keys: Seq[K], children: Seq[Node[K]], partialRanks: Seq[Position]) =
 			node match { case n: SeqNodeImpl => n.set(keys, children, partialRanks) }
 
-		override def updatePartialRanks(node: IndexNode[K], partialRanks: Seq[Rank#Position]) =
+		override def updatePartialRanks(node: IndexNode[K], partialRanks: Seq[Position]) =
 			node match { case n: SeqNodeImpl => n.set(n.keys, n.values, partialRanks) }
 
 		override def updateKeys(node: IndexNode[K], keys: Seq[K]) =

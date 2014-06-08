@@ -2,6 +2,7 @@ package net.itadinanta.rnkr.tree
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
+import Rank.Position
 
 import org.slf4j.LoggerFactory
 
@@ -13,14 +14,14 @@ trait BPlusTree[K, V] {
 	def append(k: K, value: V): Row[K, V]
 	def keys(): Seq[K]
 	def keysReverse(): Seq[K]
-	def rank(k: K): Rank#Position
+	def rank(k: K): Position
 	def range(k: K, length: Int): Seq[Row[K, V]]
-	def page(start: Rank#Position, length: Int): Seq[Row[K, V]]
+	def page(start: Position, length: Int): Seq[Row[K, V]]
 }
 
 class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V] {
 	val LOG = LoggerFactory.getLogger(this.getClass())
-	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Rank#Position)
+	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Position)
 
 	private[rnkr] var head: LeafNode[K, V] = factory.data.newNode()
 	private[rnkr] var root: Node[K] = head
@@ -31,16 +32,8 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	private[rnkr] var level: Int = 1
 
 	override def size = valueCount
-	override def rank(k: K): Rank#Position = {
-		@tailrec def rank(n: Node[K], p: Rank#Position): Rank#Position = {
-			def roughRank(i: Int, keys: Seq[K], partial: Rank#Position, counts: Seq[Rank#Position], found: Int, foundPartial: Rank#Position): Pair[Int, Rank#Position] =
-				if (keys == Nil)
-					(found, foundPartial)
-				else if (factory.ordering.ge(k, keys.head))
-					roughRank(i + 1, keys.tail, partial + counts.head, counts.tail, i, partial + counts.head)
-				else
-					roughRank(i + 1, keys.tail, partial + counts.head, counts.tail, found, foundPartial)
-
+	override def rank(k: K): Position = {
+		@tailrec def rank(n: Node[K], p: Position): Position = {
 			n match {
 				case l: LeafNode[K, V] => {
 					val i = l.indexOfKey(k)
@@ -49,8 +42,8 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 					else p + l.count
 				}
 				case c: IndexNode[K] => {
-					val (index, partial) = roughRank(0, c.keys, 0, c.partialRanks, -1, 0)
-					rank(c.childAt(index + 1), partial)
+					val index = before(k, c.keys)
+					rank(c.childAt(index), if (index == 0) 0: Position else c.partialRanks(index - 1))
 				}
 			}
 		}
@@ -108,9 +101,9 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		buf.append("}").toString()
 	}
 
-	def count(node: Node[K]): Rank#Position = node match {
+	def count(node: Node[K]): Position = node match {
 		case data: LeafNode[K, V] => data.keys.size
-		case index: IndexNode[K] => index.values.foldLeft(0: Rank#Position) { (a, b) => a + count(b) }
+		case index: IndexNode[K] => index.values.foldLeft(0: Position) { (a, b) => a + count(b) }
 	}
 
 	def min(node: Node[K]): K = node match {
@@ -132,12 +125,12 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		case index: IndexNode[K] => {
 			val indexKeys = index.keys
 			val indexValues = index.values
-			val indexCounts = index.partialRanks
+			val indexPartialRanks = index.partialRanks
 			(indexKeys.size == (indexValues.size - 1)) &&
 				(index.isEmpty ||
 					(factory.index.ordering.lt(min(indexValues.head), indexKeys.head) &&
 						indexKeys.zip(indexValues.tail.map(min)).foldLeft(true) { (a, b) => a && (b._1 == b._2) } &&
-						indexCounts.zip(indexValues.map(count)).foldLeft(true) { (a, b) => a && (b._1 == b._2) } &&
+						indexPartialRanks.zip(indexValues.map(count).scanLeft(0: Position)(_ + _).tail).foldLeft(true) { (a, b) => a && (b._1 == b._2) } &&
 						indexValues.foldLeft(true) { (a, b) => (a && consistent(b)) }))
 		}
 	}
@@ -151,7 +144,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	}
 
 	private def insertAtEnd(k: K, v: V): Cursor = {
-		case class AppendedResult(a: Node[K], key: K, b: Option[Node[K]], grow: Rank#Position, cursor: Cursor)
+		case class AppendedResult(a: Node[K], key: K, b: Option[Node[K]], grow: Position, cursor: Cursor)
 
 		def appendRecursively(targetNode: Node[K], k: K, v: V): AppendedResult = targetNode match {
 			case leaf: LeafNode[K, V] => {
@@ -254,7 +247,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	private def newRoot(key: K, a: Node[K], b: Node[K]) = {
 		level += 1
 		indexCount += 1
-		factory.index.newNode(Seq(key), Seq(a, b), Seq(a.count, b.count))
+		factory.index.newNode(Seq(key), Seq(a, b), Seq(a.count, a.count + b.count))
 	}
 
 	private def delete(k: K): Cursor = {
@@ -359,7 +352,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		}
 	}
 
-	@tailrec private def rangeForwards(buf: ListBuffer[Row[K, V]], position: Rank#Position, khead: Seq[K], vhead: Seq[V], next: LeafNode[K, V], leftover: Int) {
+	@tailrec private def rangeForwards(buf: ListBuffer[Row[K, V]], position: Position, khead: Seq[K], vhead: Seq[V], next: LeafNode[K, V], leftover: Int) {
 		if (leftover > 0) {
 			if (khead == Nil) {
 				if (next != null) rangeForwards(buf, position, next.keys, next.values, next.next, leftover)
@@ -370,7 +363,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		}
 	}
 
-	override def page(start: Rank#Position, length: Int): Seq[Row[K, V]] = {
+	override def page(start: Position, length: Int): Seq[Row[K, V]] = {
 		val cursor: Cursor = searchByRank(start)
 		if (cursor == null) Seq()
 		else {
@@ -382,7 +375,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		}
 	}
 
-	@tailrec private def rangeBackwards(buf: ListBuffer[Row[K, V]], position: Rank#Position, khead: Seq[K], vhead: Seq[V], prev: LeafNode[K, V], leftover: Int) {
+	@tailrec private def rangeBackwards(buf: ListBuffer[Row[K, V]], position: Position, khead: Seq[K], vhead: Seq[V], prev: LeafNode[K, V], leftover: Int) {
 		if (leftover > 0) {
 			if (khead == Nil) {
 				if (prev != null) rangeBackwards(buf, position, prev.keys.reverse, prev.values.reverse, prev.prev, leftover)
@@ -419,25 +412,17 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		}
 	}
 
-	private def searchByRank(rank: Rank#Position): Cursor = {
-		@tailrec def searchByRank(n: Node[K], remainder: Rank#Position): Cursor = n match {
+	private def searchByRank(rank: Position): Cursor = {
+		@tailrec def searchByRank(n: Node[K], remainder: Position): Cursor = n match {
 			case l: LeafNode[K, V] => {
 				val index = remainder.intValue
-				if (index >= l.count) null
+				if (index < 0 || index >= l.count) null
 				else Cursor(l.keyAt(index), l.childAt(index), l, index)
 			}
 			case c: IndexNode[K] => {
-				@tailrec def lastIndexWhereCount(i: Int, counts: Seq[Rank#Position], total: Rank#Position, found: Int, foundPartial: Rank#Position): Pair[Int, Rank#Position] =
-					if (counts == Nil)
-						(found, foundPartial)
-					else if (remainder >= total)
-						lastIndexWhereCount(i + 1, counts.tail, total + counts.head, i, total)
-					else
-						lastIndexWhereCount(i + 1, counts.tail, total + counts.head, found, foundPartial)
-
-				val (next, total) = lastIndexWhereCount(0, c.partialRanks, 0, -1, 0)
-				if (next < 0) null
-				else searchByRank(c.childAt(next), remainder - total)
+				val next = c.partialRanks.lastIndexWhere(rank >= _) + 1
+				if (next >= c.partialRanks.size) null
+				else searchByRank(c.childAt(next), remainder - (if (next == 0) 0: Position else c.partialRanks(next - 1)))
 			}
 		}
 		searchByRank(root, rank)

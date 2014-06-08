@@ -33,7 +33,6 @@ class RankTest extends TreeBaseTest {
 		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (4, "Item4"), (5, "Item5"), (6, "Item6"))
 		log.debug("{}", tree)
 		assertThat(tree.size) isEqualTo 6
-		assertThat(tree.consistent) isEqualTo true
 
 		assertThat(tree.rank(-1)) isEqualTo -1
 		assertThat(tree.rank(0)) isEqualTo -1
@@ -54,6 +53,7 @@ class RankTest extends TreeBaseTest {
 		assertThat(tree.page(5, 1)) isEqualTo Seq(Row(6, "Item6", 5))
 		assertThat(tree.page(6, 1)) isEqualTo Seq()
 
+		assertThat(tree.consistent) isEqualTo true
 	}
 
 }
