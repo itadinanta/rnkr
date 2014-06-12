@@ -128,10 +128,10 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType], counts: Seq[Position]): BuildResult = {
 		val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
 		val (newChildHead, newChildTail) = children.splitAt(splitAt + splitOffset)
-		val (newCountHead, newCountTail) = counts.splitAt(splitAt + splitOffset)
+		val (newPartialRankHead, newPartialRankTail) = counts.splitAt(splitAt + splitOffset)
 
-		BuildResult(updateNode(input, newKeyHead, newChildHead, newCountHead),
-			newNode(newKeyTail.drop(splitOffset), newChildTail, newCountTail),
+		BuildResult(updateNode(input, newKeyHead, newChildHead, newPartialRankHead),
+			newNode(newKeyTail.drop(splitOffset), newChildTail, newPartialRankTail.map(_ - newPartialRankHead.last)),
 			keys(splitAt), children(splitAt),
 			splitAt + splitOffset)
 	}
@@ -150,14 +150,17 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 			BuildResult(a, b, removedKey, removedValue, a.keys.size)
 		else if (aSize + bSize < fanout) {
 			// migrate everything to the first node
-			BuildResult(updateNode(a, a.keys ++ pivot ++ b.keys, a.values ++ b.values, a.partialRanks ++ b.partialRanks),
+			BuildResult(
+				updateNode(a, a.keys ++ pivot ++ b.keys,
+					a.values ++ b.values,
+					a.partialRanks ++ b.partialRanks.map(_ + a.partialRanks.last)),
 				updateNode(b, Seq(), Seq(), Seq()),
 				removedKey, removedValue,
 				a.keys.size)
 		} else {
 			val keys = a.keys ++ pivot ++ b.keys
 			val children = a.values ++ b.values
-			val counts = a.partialRanks ++ b.partialRanks
+			val counts = a.partialRanks ++ b.partialRanks.map(_ + a.partialRanks.last)
 			val splitAt = (children.size + 1) / 2
 
 			val (newKeyHead, newKeyTail) = keys.splitAt(splitAt - 1)
@@ -166,7 +169,7 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 
 			val mergeKey = newKeyTail.head
 			BuildResult(updateNode(a, newKeyHead, newChildHead, newCountHead),
-				updateNode(b, newKeyTail.tail, newChildTail, newCountTail),
+				updateNode(b, newKeyTail.tail, newChildTail, newCountTail.map(_ + newCountHead.last)),
 				mergeKey, removedValue,
 				splitAt)
 		}

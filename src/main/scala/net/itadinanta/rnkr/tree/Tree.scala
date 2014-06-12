@@ -144,7 +144,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	}
 
 	private def insertAtEnd(k: K, v: V): Cursor = {
-		case class AppendedResult(a: Node[K], key: K, b: Option[Node[K]], grow: Position, cursor: Cursor)
+		case class AppendedResult(a: Node[K], key: K, b: Option[Node[K]], cursor: Cursor)
 
 		def appendRecursively(targetNode: Node[K], k: K, v: V): AppendedResult = targetNode match {
 			case leaf: LeafNode[K, V] => {
@@ -158,24 +158,25 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 						tail = appended.b
 						tail.prev = appended.a
 						leafCount += 1
-						AppendedResult(appended.a, appended.key, Some(appended.b), +1, cursor)
+						AppendedResult(appended.a, appended.key, Some(appended.b), cursor)
 					} else
-						AppendedResult(appended.a, appended.key, None, +1, cursor)
+						AppendedResult(appended.a, appended.key, None, cursor)
 				} else throw new IllegalArgumentException("Key " + k + " out of order")
 			}
 			case index: IndexNode[K] => {
 				if (factory.ordering.gt(k, index.keys.last)) {
 					appendRecursively(index.values.last, k, v) match {
-						case AppendedResult(a, newKey, None, grow, cursor) =>
-							AppendedResult(factory.index.grow(index, index.values.size - 1, grow), newKey, None, grow, cursor)
-						case AppendedResult(a, newKey, Some(b), grow, cursor) => {
-							val inserted = factory.index.append(index, newKey, b, 1)
+						case AppendedResult(a, newKey, None, cursor) =>
+							AppendedResult(factory.index.grow(index, index.values.size - 1, +1), newKey, None, cursor)
+						case AppendedResult(a, newKey, Some(b), cursor) => {
+							factory.index.grow(index, index.values.size - 1, -b.count - 1)
+							val inserted = factory.index.append(index, newKey, b, index.partialRanks.last)
 							if (inserted.split) {
 								indexCount += 1
-								AppendedResult(inserted.a, inserted.key, Some(factory.index.grow(inserted.b, inserted.b.values.size - 1, grow)), grow, cursor)
+								AppendedResult(inserted.a, inserted.key, Some(factory.index.grow(inserted.b, inserted.b.values.size - 1, +1)), cursor)
 							} else
-								AppendedResult(factory.index.grow(inserted.a, inserted.a.values.size - 1, grow),
-									inserted.key, None, grow, cursor)
+								AppendedResult(factory.index.grow(inserted.a, inserted.a.values.size - 1, +1),
+									inserted.key, None, cursor)
 						}
 					}
 				} else throw new IllegalArgumentException("Key " + k + " out of order")
@@ -184,7 +185,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 		val appended = appendRecursively(root, k, v)
 		root = appended match {
-			case AppendedResult(a, key, Some(b), cursor, grow) => newRoot(key, a, b)
+			case AppendedResult(a, key, Some(b), cursor) => newRoot(key, a, b)
 			case _ => root
 		}
 

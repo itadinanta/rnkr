@@ -32,20 +32,18 @@ class AppendTest extends TreeBaseTest {
 
 	test("After 7 insertions should contain 7 entries") {
 		val tree = createTestTree()
-		1 to 7 foreach { i => tree.append(i, "Item" + i); log.debug("Added {} to {}", i, tree) }
+		for (i <- 1 to 7) { tree.append(i, "Item" + i); log.debug("Added {} to {}", i, tree) }
 		assertThat(tree.size) isEqualTo 7
 		assertThat(tree.factory.fanout) isEqualTo 4
 		assertThat(tree.level) isEqualTo 2
 		assertThat(tree.root.keys.size) isEqualTo 2
 		assertThat(tree.head.keys.size) isEqualTo 2
+		assertThat(tree.consistent) isTrue
 	}
 
 	test("After 100 insertions with String keys should contain 100 entries") {
 		val tree = new SeqBPlusTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
-		1 to 100 foreach { i =>
-			tree.append("Key%03d".format(i), "Item" + i)
-
-		}
+		for (i <- 1 to 100) tree.append("Key%03d".format(i), "Item" + i)
 		log.debug("Tree with Strings: {}", tree)
 		assertThat(tree.size) isEqualTo 100
 		assertThat(tree.factory.fanout) isEqualTo 4
