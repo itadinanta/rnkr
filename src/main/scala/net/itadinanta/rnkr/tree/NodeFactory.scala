@@ -118,7 +118,12 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 	def offload(node: NodeType, position: Int, aDelta: Position, bDelta: Position = 0): NodeType = {
 		if (aDelta == 0 && bDelta == 0)
 			node
-		else {
+		else if (bDelta == 0) {
+			val counts = node.partialRanks
+			updatePartialRanks(node, counts.take(position) ++
+				Seq(counts(position) + aDelta) ++
+				counts.drop(position + 1))
+		} else {
 			val counts = node.partialRanks
 			updatePartialRanks(node, counts.take(position) ++
 				Seq(counts(position) + aDelta, counts(position + 1) + bDelta) ++

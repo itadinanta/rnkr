@@ -41,14 +41,29 @@ class InsertTest extends TreeBaseTest {
 		assertThat(tree.consistent) isEqualTo true
 	}
 
+	test("After 17 insertions in reverse should contain 17 entries and grow a level") {
+		val tree = createTestTree()
+		for (i <- 17 to 1 by -1) {
+			tree.put(i, "Item" + i);
+			log.debug("Added {} to {}", i, tree)
+			assertThat(tree.consistent) isEqualTo true
+		}
+		assertThat(tree.size) isEqualTo 17
+		assertThat(tree.factory.fanout) isEqualTo 4
+		assertThat(tree.level) isEqualTo 3
+		assertThat(tree.root.keys.size) isEqualTo 1
+	}
+
 	test("After 100 insertions with String keys should contain 100 entries") {
 		val tree = new SeqBPlusTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
-		1 to 100 foreach { i => tree.put("Key" + i, "Item" + i) }
-		log.debug("Tree with Strings: {}", tree)
+		for (i <- 1 to 100) {
+			tree.put("Key" + i, "Item" + i)
+			log.debug("Add {} to tree: {}", i, tree)
+			assertThat(tree.consistent) isEqualTo true
+		}
 		assertThat(tree.size) isEqualTo 100
 		assertThat(tree.factory.fanout) isEqualTo 4
 		assertThat(tree.level) isEqualTo 4
-		assertThat(tree.consistent) isEqualTo true
 	}
 
 	test("After 7 insertions in reverse should contain 7 entries") {
@@ -63,12 +78,11 @@ class InsertTest extends TreeBaseTest {
 
 	test("After 100 insertion should contain 100 entries in order") {
 		val tree = createTestTree()
-		1 to 100 foreach {
-			i =>
-				tree.put(i, "Item" + i);
-				assertThat(tree.keys()) isEqualTo(1 to i)
-				log.debug("{}", tree)
-				assertThat(tree.consistent) isEqualTo true
+		for (i <- 1 to 100) {
+			tree.put(i, "Item" + i);
+			assertThat(tree.keys()) isEqualTo (1 to i)
+			log.debug("{}", tree)
+			assertThat(tree.consistent) isEqualTo true
 		}
 		assertThat(tree.size) isEqualTo 100
 		assertThat(tree.factory.fanout) isEqualTo 4
@@ -79,7 +93,7 @@ class InsertTest extends TreeBaseTest {
 		val tree = createTestTree()
 		100 to 1 by -1 foreach { i => tree.put(i, "Item" + i) }
 		log.debug("{}", tree)
-		assertThat(tree.keys()) isEqualTo(1 to 100)
+		assertThat(tree.keys()) isEqualTo (1 to 100)
 		assertThat(tree.keysReverse()) isEqualTo (100 to 1 by -1)
 		assertThat(tree.size) isEqualTo 100
 	}
@@ -94,7 +108,7 @@ class InsertTest extends TreeBaseTest {
 			assertThat(tree.keys()) isEqualTo ordered.toList
 		}
 		log.debug("{}", tree)
-		assertThat(tree.keysReverse()) isEqualTo(1000 to 1 by -1)
+		assertThat(tree.keysReverse()) isEqualTo (1000 to 1 by -1)
 		assertThat(tree.size) isEqualTo 1000
 	}
 
@@ -102,8 +116,8 @@ class InsertTest extends TreeBaseTest {
 		val tree = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntDescending, 9))
 		1 to 100 foreach { i => tree.put(i, "Item" + i) }
 		log.debug("{}", tree)
-		assertThat(tree.keysReverse()) isEqualTo(1 to 100)
-		assertThat(tree.keys()) isEqualTo(100 to 1 by -1)
+		assertThat(tree.keysReverse()) isEqualTo (1 to 100)
+		assertThat(tree.keys()) isEqualTo (100 to 1 by -1)
 		assertThat(tree.size) isEqualTo 100
 	}
 
@@ -112,11 +126,11 @@ class InsertTest extends TreeBaseTest {
 		1 to 100 foreach { i => tree.put(2 * i, "Item" + i) }
 		log.debug("{}", tree)
 		assertThat(tree.get(20) map (_.value)) isEqualTo Some("Item10")
-		assertThat(tree.range(2, 100) map (_.key)) isEqualTo(2 to 200 by 2)
-		assertThat(tree.range(0, 200) map (_.key)) isEqualTo(2 to 200 by 2)
-		assertThat(tree.range(20, 10) map (_.key)) isEqualTo(20 to 38 by 2)
-		assertThat(tree.range(19, 10) map (_.key)) isEqualTo(20 to 38 by 2)
-		assertThat(tree.range(21, 10) map (_.key)) isEqualTo(22 to 40 by 2)
+		assertThat(tree.range(2, 100) map (_.key)) isEqualTo (2 to 200 by 2)
+		assertThat(tree.range(0, 200) map (_.key)) isEqualTo (2 to 200 by 2)
+		assertThat(tree.range(20, 10) map (_.key)) isEqualTo (20 to 38 by 2)
+		assertThat(tree.range(19, 10) map (_.key)) isEqualTo (20 to 38 by 2)
+		assertThat(tree.range(21, 10) map (_.key)) isEqualTo (22 to 40 by 2)
 		assertThat(tree.range(200, 0) map (_.key)) isEqualTo Seq()
 		assertThat(tree.range(200, 1) map (_.key)) isEqualTo Seq(200)
 		assertThat(tree.range(200, 100) map (_.key)) isEqualTo Seq(200)
@@ -129,7 +143,7 @@ class InsertTest extends TreeBaseTest {
 
 		assertThat(tree.range(1, -1) map (_.key)) isEqualTo Seq()
 		assertThat(tree.range(2, -1) map (_.key)) isEqualTo Seq(2)
-		assertThat(tree.range(20, -5) map (_.key)) isEqualTo(20 to 12 by -2)
-		assertThat(tree.range(21, -5) map (_.key)) isEqualTo(20 to 12 by -2)
+		assertThat(tree.range(20, -5) map (_.key)) isEqualTo (20 to 12 by -2)
+		assertThat(tree.range(21, -5) map (_.key)) isEqualTo (20 to 12 by -2)
 	}
 }
