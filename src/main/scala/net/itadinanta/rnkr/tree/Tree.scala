@@ -169,14 +169,15 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 						case AppendedResult(a, newKey, None, cursor) =>
 							AppendedResult(factory.index.grow(index, index.values.size - 1, +1), newKey, None, cursor)
 						case AppendedResult(a, newKey, Some(b), cursor) => {
-							factory.index.grow(index, index.values.size - 1, -b.count - 1)
-							val inserted = factory.index.append(index, newKey, b, index.partialRanks.last)
+							val inserted = factory.index.append(index, newKey, b, index.partialRanks.last + 1)
 							if (inserted.split) {
 								indexCount += 1
-								AppendedResult(inserted.a, inserted.key, Some(factory.index.grow(inserted.b, inserted.b.values.size - 1, +1)), cursor)
-							} else
-								AppendedResult(factory.index.grow(inserted.a, inserted.a.values.size - 1, +1),
-									inserted.key, None, cursor)
+								factory.index.offload(inserted.b, inserted.b.values.size - 2, -b.count + 1)
+								AppendedResult(inserted.a, inserted.key, Some(inserted.b), cursor)
+							} else {
+								factory.index.offload(inserted.a, inserted.a.values.size - 2, -b.count + 1)
+								AppendedResult(inserted.a, inserted.key, None, cursor)
+							}
 						}
 					}
 				} else throw new IllegalArgumentException("Key " + k + " out of order")

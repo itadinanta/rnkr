@@ -107,10 +107,22 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 	}
 
 	def grow(node: NodeType, position: Int, increment: Position): NodeType = {
-		if (increment == 0) node
+		if (increment == 0)
+			node
 		else {
 			val counts = node.partialRanks
 			updatePartialRanks(node, counts.take(position) ++ counts.drop(position).map(_ + increment))
+		}
+	}
+
+	def offload(node: NodeType, position: Int, aDelta: Position, bDelta: Position = 0): NodeType = {
+		if (aDelta == 0 && bDelta == 0)
+			node
+		else {
+			val counts = node.partialRanks
+			updatePartialRanks(node, counts.take(position) ++
+				Seq(counts(position) + aDelta, counts(position + 1) + bDelta) ++
+				counts.drop(position + 2))
 		}
 	}
 
