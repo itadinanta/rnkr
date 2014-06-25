@@ -36,7 +36,7 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNode[K]] {
 	type NodeType = IndexNode[K]
 	type ChildType = Node[K]
-	private val splitOffset: Int = 1
+	private val SPLIT_OFFSET: Int = 1
 
 	def newNode(keys: Seq[K], children: Seq[ChildType], counts: Seq[Position]): NodeType
 
@@ -61,23 +61,23 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 		}
 	}
 
-	def insert(input: NodeType, k: K, child: ChildType, count: Position): BuildResult = {
+	def insert(input: NodeType, k: K, child: ChildType, take: Position, give: Position): BuildResult = {
 		val keys = input.keys
 		val children = input.values
 		val partialRanks = input.partialRanks
 		if (keys.isEmpty)
-			new BuildResult(updateNode(input, Seq(k), Seq(child), Seq(count)), k, child, 0)
+			new BuildResult(updateNode(input, Seq(k), Seq(child), Seq(take + give)), k, child, 0)
 		else {
 			val position = keys.lastIndexWhere(item => ordering.gt(k, item)) + 1
 			val (keyHead, keyTail) = keys.splitAt(position)
-			val (childHead, childTail) = children.splitAt(position + splitOffset)
-			val (countHead, countTail) = partialRanks.splitAt(position + splitOffset)
+			val (childHead, childTail) = children.splitAt(position + SPLIT_OFFSET)
+			val (countHead, countTail) = partialRanks.splitAt(position + SPLIT_OFFSET)
 			val newKeys = keyHead ++ Seq(k) ++ keyTail
 			val newChildren = childHead ++ Seq(child) ++ childTail
-			val newCounts = countHead ++ Seq(count) ++ countTail
+			val newCounts = countHead.dropRight(1) ++ Seq(take + countHead.lastOption.getOrElse(0L), take + give + countHead.lastOption.getOrElse(0L)) ++ countTail.map(_ + take + give)
 
 			if (newKeys.length <= fanout)
-				new BuildResult(updateNode(input, newKeys, newChildren, newCounts), k, child, position + splitOffset)
+				new BuildResult(updateNode(input, newKeys, newChildren, newCounts), k, child, position + SPLIT_OFFSET)
 			else
 				split(input, minout, newKeys, newChildren, newCounts)
 		}
@@ -89,9 +89,9 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 		val counts = input.partialRanks
 		new BuildResult(updateNode(input,
 			keys.take(position) ++ keys.drop(position + 1),
-			children.take(position + splitOffset) ++ children.drop(position + splitOffset + 1),
-			counts.take(position + splitOffset) ++ counts.drop(position + splitOffset + 1)),
-			keys(position), children(position + splitOffset), position)
+			children.take(position + SPLIT_OFFSET) ++ children.drop(position + SPLIT_OFFSET + 1),
+			counts.take(position + SPLIT_OFFSET) ++ counts.drop(position + SPLIT_OFFSET + 1)),
+			keys(position), children(position + SPLIT_OFFSET), position)
 	}
 
 	def updateAt(input: NodeType, position: Int, child: ChildType, count: Position) = {
@@ -144,13 +144,14 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 
 	private def split(input: NodeType, splitAt: Int, keys: Seq[K], children: Seq[ChildType], counts: Seq[Position]): BuildResult = {
 		val (newKeyHead, newKeyTail) = keys.splitAt(splitAt)
-		val (newChildHead, newChildTail) = children.splitAt(splitAt + splitOffset)
-		val (newPartialRankHead, newPartialRankTail) = counts.splitAt(splitAt + splitOffset)
+		val splitPoint = splitAt + SPLIT_OFFSET
+		val (newChildHead, newChildTail) = children.splitAt(splitPoint)
+		val (newPartialRankHead, newPartialRankTail) = counts.splitAt(splitPoint)
 
-		BuildResult(updateNode(input, newKeyHead, newChildHead, newPartialRankHead),
-			newNode(newKeyTail.drop(splitOffset), newChildTail, newPartialRankTail.map(_ - newPartialRankHead.last)),
-			keys(splitAt), children(splitAt),
-			splitAt + splitOffset)
+		val baseCount = newPartialRankHead.last
+		val a = updateNode(input, newKeyHead, newChildHead, newPartialRankHead)
+		val b = newNode(newKeyTail.drop(SPLIT_OFFSET), newChildTail, newPartialRankTail.map(_ - baseCount))
+		BuildResult(a, b, keys(splitAt), children(splitAt), splitPoint)
 	}
 
 	def update(node: NodeType, k: K, child: ChildType, count: Position): BuildResult = updateAt(node, node.indexOfKey(k), child, count)

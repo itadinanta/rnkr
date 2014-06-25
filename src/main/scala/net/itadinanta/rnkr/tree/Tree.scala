@@ -195,7 +195,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 	private def insert(k: K, v: V): Cursor = {
 		sealed trait ChangedResult { val a: Node[K]; val key: K; val cursor: Cursor }
-		case class InsertedResult(override val a: Node[K], override val key: K, val b: Option[Node[K]], override val cursor: Cursor) extends ChangedResult
+		case class InsertedResult(override val a: Node[K], override val key: K, val b: Option[Node[K]], val taken: Position, override val cursor: Cursor) extends ChangedResult
 		case class UpdatedResult(override val a: Node[K], override val key: K, override val cursor: Cursor) extends ChangedResult
 
 		def insertRecursively(targetNode: Node[K], k: K, v: V): ChangedResult = targetNode match {
@@ -215,33 +215,25 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 						head = if (leaf eq head) inserted.a else head
 						tail = if (leaf eq tail) inserted.b else tail
 						leafCount += 1
-						InsertedResult(inserted.a, inserted.key, Some(inserted.b), cursor)
+						InsertedResult(inserted.a, inserted.key, Some(inserted.b), inserted.b.count, cursor)
 					} else
-						InsertedResult(inserted.a, inserted.key, None, cursor)
+						InsertedResult(inserted.a, inserted.key, None, -1, cursor)
 				}
 			}
 			case index: IndexNode[K] => {
 				val i = index.keys.lastIndexWhere(factory.ordering.ge(k, _)) + 1
 				insertRecursively(index.childAt(i), k, v) match {
 					case u: UpdatedResult => { u }
-					case InsertedResult(a, newKey, None, cursor) => {
-						factory.index.grow(index, i, +1)
-						InsertedResult(index, newKey, None, cursor)
+					case InsertedResult(a, newKey, None, taken, cursor) => {
+						InsertedResult(factory.index.grow(index, i, -taken), newKey, None, taken, cursor)
 					}
-					case InsertedResult(a, newKey, Some(b), cursor) => {
-						val inserted = factory.index.insert(index, newKey, b, index.partialRankAt(i))
+					case InsertedResult(a, newKey, Some(b), taken, cursor) => {
+						val inserted = factory.index.insert(index, newKey, b, 1 - taken, taken)
 						if (inserted.split) {
 							indexCount += 1
-
-							val (sideIndex, side) = if (i < inserted.a.values.size) (i, inserted.a) else (i - inserted.a.values.size, inserted.b)
-							factory.index.grow(side, sideIndex + 1, +1)
-							factory.index.offload(side, sideIndex, -b.count + 1)
-
-							InsertedResult(inserted.a, inserted.key, Some(inserted.b), cursor)
+							InsertedResult(inserted.a, inserted.key, Some(inserted.b), inserted.b.count, cursor)
 						} else {
-							factory.index.grow(index, i + 1, +1)
-							factory.index.offload(index, i, -b.count + 1)
-							InsertedResult(index, inserted.key, None, cursor)
+							InsertedResult(index, inserted.key, None, -1, cursor)
 						}
 					}
 				}
@@ -250,7 +242,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 
 		val inserted = insertRecursively(root, k, v)
 		root = inserted match {
-			case InsertedResult(a, key, Some(b), cursor) => newRoot(key, a, b)
+			case InsertedResult(a, key, Some(b), _, cursor) => newRoot(key, a, b)
 			case _ => root
 		}
 

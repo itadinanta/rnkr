@@ -48,14 +48,14 @@ trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 		if (!isEmpty) {
 			(values, keys, partialRanks).zipped.toList foreach { i =>
 				buf.append(sep)
-				buf.append("(").append(i._3).append(")")
 				buf.append(i._1)
+				buf.append("(").append(i._3).append(")")
 				buf.append("<" + i._2)
 				sep = ">"
 			}
 			buf.append(">")
-			buf.append("(").append(partialRanks.last).append(")")
 			buf.append(values.last)
+			buf.append("(").append(partialRanks.last).append(")")
 		}
 		buf.append("}");
 		buf.toString

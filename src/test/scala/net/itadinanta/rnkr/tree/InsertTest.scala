@@ -58,7 +58,7 @@ class InsertTest extends TreeBaseTest {
 		val tree = new SeqBPlusTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
 		for (i <- 1 to 100) {
 			tree.put("Key" + i, "Item" + i)
-			log.debug("Add {} to tree: {}", i, tree)
+			log.debug("After adding {} to tree: {}", i, tree)
 			assertThat(tree.consistent) isEqualTo true
 		}
 		assertThat(tree.size) isEqualTo 100
