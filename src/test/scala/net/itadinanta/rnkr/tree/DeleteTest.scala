@@ -36,7 +36,7 @@ class DeleteTest extends TreeBaseTest {
 		}
 	}
 
-	test("A after 5 insertions and 1 deletion should contain 1 entry") {
+	test("After 5 insertions and 1 deletion should contain 1 entry") {
 		val tree = createTestTree(
 			(1, "Item"),
 			(2, "Item"),
@@ -73,15 +73,18 @@ class DeleteTest extends TreeBaseTest {
 
 	test("After 100 insertions and 100 deletions should be empty") {
 		val tree = createTestTree()
-		val n = 100
+		val n = 21
 		1 to n foreach { i =>
 			tree.put(i, "Item" + i)
 			assertThat(tree.keys()) isEqualTo(1 to i)
+			assertThat(tree.consistent) isEqualTo true
 		}
 		log.debug("{}", tree)
 		1 to n foreach { i =>
+			log.debug("Deleting item {} from {}", i, tree)
 			tree.remove(i);
-			log.debug("{}", tree)
+			log.debug("Deleted item {} from {}", i, tree)
+			assertThat(tree.consistent) isEqualTo true
 			assertThat(tree.keys()) isEqualTo((i + 1) to n)
 		}
 		assertThat(tree.level) isEqualTo 1
@@ -144,6 +147,7 @@ class DeleteTest extends TreeBaseTest {
 		Seq(11, 7, 5, 9, 1, 6, 12) foreach { i =>
 			log.debug("Removing {} from {}", i, tree)
 			tree.remove(i)
+			log.debug("Removed {} from {}", i, tree)
 			ordered -= i
 			assertThat(tree.keys()) isEqualTo ordered.toList
 			assertThat(tree.consistent) isEqualTo true

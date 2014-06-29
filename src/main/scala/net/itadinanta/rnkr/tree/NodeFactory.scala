@@ -18,9 +18,6 @@ trait NodeBuilder[K, V, ChildType, NodeType <: Node[K] with Children[ChildType]]
 		def this(a: NodeType, key: K, child: ChildType, index: Int) = this(a, a, key, child, index)
 	}
 
-	def delete(node: NodeType, k: K): BuildResult = deleteAt(node, node.indexOfKey(k))
-	def deleteAt(input: NodeType, position: Int): BuildResult
-
 	def updateKeys(node: NodeType, keys: Seq[K]): NodeType
 	def renameKey(node: NodeType, oldKey: K, newKey: K): NodeType =
 		if (oldKey != newKey) renameKeyAt(node, node.indexOfKey(oldKey), newKey) else node
@@ -74,7 +71,8 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 			val (countHead, countTail) = partialRanks.splitAt(position + SPLIT_OFFSET)
 			val newKeys = keyHead ++ Seq(k) ++ keyTail
 			val newChildren = childHead ++ Seq(child) ++ childTail
-			val newCounts = countHead.dropRight(1) ++ Seq(take + countHead.lastOption.getOrElse(0L), take + give + countHead.lastOption.getOrElse(0L)) ++ countTail.map(_ + take + give)
+			val first = take + countHead.lastOption.getOrElse(0L)
+			val newCounts = countHead.dropRight(1) ++ Seq(first, first + give) ++ countTail.map(_ + take + give)
 
 			if (newKeys.length <= fanout)
 				new BuildResult(updateNode(input, newKeys, newChildren, newCounts), k, child, position + SPLIT_OFFSET)
@@ -83,14 +81,16 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 		}
 	}
 
+	def delete(node: NodeType, k: K): BuildResult = deleteAt(node, node.indexOfKey(k))
 	def deleteAt(input: NodeType, position: Int): BuildResult = {
 		val keys = input.keys
 		val children = input.values
 		val counts = input.partialRanks
+		val dropped = counts(position + SPLIT_OFFSET) - counts.lift(position + SPLIT_OFFSET - 1).getOrElse(0L) 
 		new BuildResult(updateNode(input,
 			keys.take(position) ++ keys.drop(position + 1),
 			children.take(position + SPLIT_OFFSET) ++ children.drop(position + SPLIT_OFFSET + 1),
-			counts.take(position + SPLIT_OFFSET) ++ counts.drop(position + SPLIT_OFFSET + 1)),
+			counts.take(position + SPLIT_OFFSET) ++ counts.drop(position + SPLIT_OFFSET + 1).map(_ - dropped)),
 			keys(position), children(position + SPLIT_OFFSET), position)
 	}
 
@@ -187,7 +187,7 @@ abstract class IndexNodeBuilder[K, V] extends NodeBuilder[K, V, Node[K], IndexNo
 
 			val mergeKey = newKeyTail.head
 			BuildResult(updateNode(a, newKeyHead, newChildHead, newCountHead),
-				updateNode(b, newKeyTail.tail, newChildTail, newCountTail.map(_ + newCountHead.last)),
+				updateNode(b, newKeyTail.tail, newChildTail, newCountTail.map(_ - newCountHead.last)),
 				mergeKey, removedValue,
 				splitAt)
 		}
@@ -253,6 +253,7 @@ abstract class DataNodeBuilder[K, V] extends NodeBuilder[K, V, V, LeafNode[K, V]
 		}
 	}
 
+	def delete(node: NodeType, k: K) = deleteAt(node, node.indexOfKey(k))
 	def deleteAt(input: NodeType, position: Int): BuildResult = {
 		val keys = input.keys
 		val children = input.values
