@@ -73,7 +73,7 @@ class DeleteTest extends TreeBaseTest {
 
 	test("After 100 insertions and 100 deletions should be empty") {
 		val tree = createTestTree()
-		val n = 21
+		val n = 100
 		1 to n foreach { i =>
 			tree.put(i, "Item" + i)
 			assertThat(tree.keys()) isEqualTo(1 to i)
@@ -123,6 +123,7 @@ class DeleteTest extends TreeBaseTest {
 		Random.shuffle(1 to n map { i => i }) foreach { i =>
 			log.debug("Removing {} from {}", i, tree)
 			tree.remove(i)
+			log.debug("Removed {} from {}", i, tree)			
 			assertThat(tree.consistent) isEqualTo true
 			ordered -= i
 			assertThat(tree.keys()) isEqualTo ordered.toList

@@ -41,6 +41,25 @@ trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 	def partialRanks: Seq[Position]
 	def partialRankAt(index: Int) = partialRanks(index)
 	override def count: Position = partialRanks.last
+	def topLevel = {
+		val buf = new StringBuilder
+		var sep = ""
+		buf.append("{")
+		if (!isEmpty) {
+			(values, keys, partialRanks).zipped.toList foreach { i =>
+				buf.append(sep)
+				buf.append(i._1.count)
+				buf.append("(").append(i._3).append(")")
+				buf.append("<" + i._2)
+				sep = ">"
+			}
+			buf.append(">")
+			buf.append(values.last.count)
+			buf.append("(").append(partialRanks.last).append(")")
+		}
+		buf.append("}");
+		buf.toString		
+	}
 	override def toString = {
 		val buf = new StringBuilder
 		var sep = ""
