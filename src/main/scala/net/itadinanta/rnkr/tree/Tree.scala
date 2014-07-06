@@ -150,7 +150,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 	private def insertAtEnd(k: K, v: V): Cursor = {
 		case class AppendedResult(a: Node[K], key: K, b: Option[Node[K]], cursor: Cursor)
 
-		def appendRecursively(targetNode: Node[K], k: K, v: V): AppendedResult = targetNode match {
+		def appendRecursively(node: Node[K], k: K, v: V): AppendedResult = node match {
 			case leaf: LeafNode[K, V] => {
 				if (leaf.isEmpty || factory.ordering.gt(k, leaf.keys.last)) {
 					val appended = factory.data.append(leaf, k, v)
@@ -202,9 +202,9 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 		case class InsertedResult(override val a: Node[K], override val key: K, val b: Option[Node[K]], val taken: Position, override val cursor: Cursor) extends ChangedResult
 		case class UpdatedResult(override val a: Node[K], override val key: K, override val cursor: Cursor) extends ChangedResult
 
-		def insertRecursively(targetNode: Node[K], k: K, v: V): ChangedResult = targetNode match {
+		def insertRecursively(node: Node[K], k: K, v: V): ChangedResult = node match {
 			case leaf: LeafNode[K, V] => {
-				val i = targetNode.indexOfKey(k)
+				val i = node.indexOfKey(k)
 				if (i >= 0)
 					UpdatedResult(leaf, k, Cursor(k, v, leaf, factory.data.update(leaf, k, v).index))
 				else {
@@ -273,17 +273,16 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 			takenB: Position,
 			cursor: Cursor)
 
-		def deleteRecursively(k: K, pos: Int, left: Option[Node[K]], targetNode: Node[K], right: Option[Node[K]]): DeletedResult = {
-			// LOG.debug("Removing {} from {}", k, targetNode)
+		def deleteRecursively(k: K, pos: Int, left: Option[Node[K]], node: Node[K], right: Option[Node[K]]): DeletedResult = {
 			// choose siblings
 			lazy val (firstSibling, av, bv) = (left, right) match {
-				case (None, Some(rv)) => (pos, targetNode, rv)
-				case (Some(lv), None) => (pos - 1, lv, targetNode)
-				case (Some(lv), Some(rv)) => if (lv.keys.size > rv.keys.size) (pos - 1, lv, targetNode) else (pos, targetNode, rv)
-				case (None, None) => (pos, targetNode, targetNode)
+				case (None, Some(rv)) => (pos, node, rv)
+				case (Some(lv), None) => (pos - 1, lv, node)
+				case (Some(lv), Some(rv)) => if (lv.keys.size > rv.keys.size) (pos - 1, lv, node) else (pos, node, rv)
+				case (None, None) => (pos, node, node)
 			}
 
-			targetNode match {
+			node match {
 				case leaf: LeafNode[K, V] => {
 					val leafK = leaf.keys.head
 					val deleted = factory.data.delete(leaf, k)
@@ -297,9 +296,9 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 							LOG.debug("Leaf needs rebalancing after deletion {} {}", a, b);
 							val oldAk = if (a eq leaf) leafK else a.keys.head
 							val oldBk = if (b eq leaf) leafK else b.keys.head
-							val aCount = a.count + (if (a eq leaf) 1 else 0)
-							val bCount = b.count + (if (b eq leaf) 1 else 0)
-							LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(aCount), b, toLong(bCount)))
+							val initialACount = a.count + (if (a eq leaf) 1 else 0)
+							val initialBCount = b.count + (if (b eq leaf) 1 else 0)
+							LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(initialACount), b, toLong(initialBCount)))
 							val balanced = factory.data.redistribute(a, Seq(), b)
 
 							if (balanced.b.isEmpty) {
@@ -311,7 +310,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 							}
 							LOG.debug("Rebalanced leaf {} {}", balanced.a, balanced.b);
 							DeletedResult(firstSibling, balanced.a.keyAt(0), oldAk, balanced.a, balanced.b.keyOption(0), Some(oldBk),
-								balanced.a.count - aCount, balanced.b.count - bCount,
+								balanced.a.count - initialACount, balanced.b.count - initialBCount,
 								cursor)
 						}
 					}
@@ -330,19 +329,19 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 								case (a: IndexNode[K], b: IndexNode[K]) => {
 									val pivot = first(b)
 									val oldBk = if (b eq index) oldPivot else b.keys.head
-									val aCount = a.count + (if (a eq index) 1 else 0)
-									val bCount = b.count + (if (b eq index) 1 else 0)
-									LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(aCount), b, toLong(bCount)))
+									val initialACount = a.count + (if (a eq index) 1 else 0)
+									val initialBCount = b.count + (if (b eq index) 1 else 0)
+									LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(initialACount), b, toLong(initialBCount)))
 									val balanced = factory.index.redistribute(a, Seq(pivot), b)
 									LOG.debug("Rebalanced {} {}", balanced.a, balanced.b);
 									if (balanced.b.isEmpty) {
 										indexCount -= 1
 										DeletedResult(firstSibling, ak, oldAk, balanced.a, None, Some(pivot),
-											balanced.a.count - aCount, -bCount,
+											balanced.a.count - initialACount, -initialBCount,
 											cursor)
 									} else {
 										DeletedResult(firstSibling, ak, oldAk, balanced.a, Some(balanced.key), Some(pivot),
-											balanced.a.count - aCount, balanced.b.count - bCount,
+											balanced.a.count - initialACount, balanced.b.count - initialBCount,
 											cursor)
 									}
 								}
@@ -367,7 +366,7 @@ class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V]
 						}
 
 						case DeletedResult(child, k, oldK, node, None, None, takenA, takenB, cursor) => {
-							LOG.debug("Propagating deletion [{}] {} {} {} to {}", Array[Object](toInt(child), toLong(takenA), toLong(takenB), index, toInt(candidateChild-1)))
+							LOG.debug("Propagating deletion [{}] {} {} {} to {}", Array[Object](toInt(child), toLong(takenA), toLong(takenB), index, toInt(candidateChild - 1)))
 							factory.index.grow(index, child, takenA + takenB) // WTF?
 							if (k != oldK && candidateChild > 0 && index.keyAt(candidateChild - 1) == oldK) factory.index.renameKeyAt(index, candidateChild - 1, k)
 							DeletedResult(pos, k, oldK, index, None, None, takenA, takenB, cursor)
