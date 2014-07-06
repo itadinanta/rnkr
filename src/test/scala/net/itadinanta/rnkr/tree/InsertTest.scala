@@ -4,7 +4,6 @@ import net.itadinanta.rnkr.node._
 import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
-import org.junit.Test
 import org.fest.assertions.Assertions.assertThat
 
 class InsertTest extends TreeBaseTest {

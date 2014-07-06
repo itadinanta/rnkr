@@ -5,7 +5,6 @@ import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
 import org.fest.assertions.Assertions.assertThat
-import org.junit.Test
 
 class RankTest extends TreeBaseTest {
 	test("A tree with one entry should have one rank 0") {
