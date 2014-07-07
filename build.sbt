@@ -7,7 +7,7 @@ version := "0.1"
 
 scalaVersion := "2.10.4"
 
-EclipseKeys.relativizeLibs := true
+EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer)
 
 retrieveManaged := false
 
