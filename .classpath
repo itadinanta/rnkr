@@ -7,6 +7,8 @@
   <classpathentry path="IVY_HOME/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.6.6.jar" kind="var"></classpathentry>
   <classpathentry path="IVY_HOME/cache/ch.qos.logback/logback-classic/jars/logback-classic-1.0.7.jar" kind="var"></classpathentry>
   <classpathentry path="IVY_HOME/cache/ch.qos.logback/logback-core/jars/logback-core-1.0.7.jar" kind="var"></classpathentry>
+  <classpathentry path="IVY_HOME/cache/com.typesafe.akka/akka-actor_2.10/jars/akka-actor_2.10-2.3.3.jar" kind="var"></classpathentry>
+  <classpathentry path="IVY_HOME/cache/com.typesafe/config/bundles/config-1.2.1.jar" kind="var"></classpathentry>
   <classpathentry path="IVY_HOME/cache/org.scalatest/scalatest_2.10/jars/scalatest_2.10-2.1.3.jar" kind="var"></classpathentry>
   <classpathentry path="IVY_HOME/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.10.3.jar" kind="var"></classpathentry>
   <classpathentry path="IVY_HOME/cache/org.easytesting/fest-assert/jars/fest-assert-1.4.jar" kind="var"></classpathentry>

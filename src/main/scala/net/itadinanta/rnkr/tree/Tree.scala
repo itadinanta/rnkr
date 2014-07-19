@@ -6,6 +6,11 @@ import Rank.Position
 
 import org.slf4j.LoggerFactory
 
+object Tree {
+	implicit val defaultFactory = new SeqNodeFactory[Int, String](IntAscending, 20)
+	def intStringTree() = new SeqBPlusTree[Int, String](defaultFactory)
+}
+
 trait BPlusTree[K, V] {
 	def size: Int
 	def get(k: K): Option[Row[K, V]]
