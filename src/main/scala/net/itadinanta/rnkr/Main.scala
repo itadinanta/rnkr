@@ -7,21 +7,29 @@ import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import akka.dispatch.Futures
 import scala.concurrent.Future
+import scala.concurrent.Future._
 import scala.concurrent.Promise
+import scala.collection.mutable.ListBuffer
+import net.itadinanta.rnkr.tree.Row
 
 object Main extends App {
 	implicit val system = ActorSystem("node")
 	implicit val executionContext = system.dispatcher
 
 	val a = Arbiter.create(Tree.intStringTree())
-	val done = Promise[Boolean]()
+	val done = Promise[Boolean]
 
-	Future.sequence(Seq(a.append(1, "1"), a.append(2, "2"), a.append(3, "3"))) map { r =>
+	val b = new ListBuffer[Future[Row[Int, String]]]
+
+	for (i <- 1 to 50) {
+		Future { b += a.put(i, i.toString()) }
+	}
+
+	sequence(b.toList) map { r =>
 		a.keys().map { r => print(r); done.success(true) }
 	}
 
 	done.future map {
-		case true =>
-			system.shutdown
+		case _ => system.shutdown
 	}
 }
