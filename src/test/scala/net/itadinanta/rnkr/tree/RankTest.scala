@@ -55,4 +55,18 @@ class RankTest extends TreeBaseTest {
 		assertThat(tree.consistent) isEqualTo true
 	}
 
+	test("After 100 insertions with String keys should contain 100 ranks") {
+		val tree = Tree[String, String](StringAscending, 4)
+		for (i <- 1 to 100) tree.append("Key%03d".format(i), "Item" + i)
+		log.debug("Tree with Strings: {}", tree)
+		assertThat(tree.size) isEqualTo 100
+		assertThat(tree.factory.fanout) isEqualTo 4
+		assertThat(tree.level) isEqualTo 4
+		assertThat(tree.consistent) isEqualTo true
+		assertThat(tree.get("Key007")).isEqualTo(Some(Row("Key007", "Item7", 6)));
+		for (i <- 1 to 100) assertThat(tree.get("Key%03d".format(i))).isEqualTo(Some(Row("Key%03d".format(i), "Item" + i, i - 1)))
+		for (i <- 1 to 100) assertThat(tree.rank("Key%03d".format(i))).isEqualTo(i - 1)
+
+	}
+
 }

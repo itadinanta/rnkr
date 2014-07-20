@@ -23,10 +23,12 @@ object Main extends App {
 
 	for (i <- 1 to 50) {
 		Future { b += a.put(i, i.toString()) }
+		Future { a.get(i).map { r => println(s"${i} -> ${r}") } }
 	}
 
 	sequence(b.toList) map { r =>
-		a.keys().map { r => print(r); done.success(true) }
+//		a.page(40, 10).map { r => println(r); done.success(true) }
+		a.get(40).map { r => println(r); done.success(true) }
 	}
 
 	done.future map {

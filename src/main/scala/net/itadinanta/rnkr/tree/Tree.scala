@@ -54,7 +54,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 				}
 				case c: IndexNode[K] => {
 					val index = before(k, c.keys)
-					rank(c.childAt(index), if (index == 0) 0: Position else c.partialRanks(index - 1))
+					rank(c.childAt(index), if (index == 0) p else p + c.partialRanks(index - 1))
 				}
 			}
 		}
@@ -72,12 +72,20 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 	}
 
 	override def get(k: K) = {
-		val node = searchByKey(k)
-		val index = node.indexOfKey(k)
-		if (index >= 0) {
-			val value = node.childAt(index)
-			Some(Row(k, value, index))
-		} else None
+		@tailrec def row(n: Node[K], p: Position): Option[Row[K, V]] = {
+			n match {
+				case l: LeafNode[K, V] => {
+					val i = l.indexOfKey(k)
+					if (i < 0) None
+					else Some(Row(k, l.childAt(i), p + i))
+				}
+				case c: IndexNode[K] => {
+					val index = before(k, c.keys)
+					row(c.childAt(index), if (index == 0) p else p + c.partialRanks(index - 1))
+				}
+			}
+		}
+		row(root, 0)
 	}
 
 	override def keys() = {
@@ -151,12 +159,6 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 	}
 
 	def consistent: Boolean = consistent(root)
-
-	private def seekByKey(k: K): Cursor = {
-		val leaf = searchByKey(k)
-		val index = leaf.indexOfKey(k)
-		Cursor(k, leaf.childAt(index), leaf, index)
-	}
 
 	private def insertAtEnd(k: K, v: V): Cursor = {
 		case class AppendedResult(a: Node[K], key: K, b: Option[Node[K]], cursor: Cursor)

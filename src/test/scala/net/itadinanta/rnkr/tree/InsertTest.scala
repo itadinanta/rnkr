@@ -107,6 +107,7 @@ class InsertTest extends TreeBaseTest {
 			assertThat(tree.keys()) isEqualTo ordered.toList
 		}
 		log.debug("{}", tree)
+		assertThat(tree.consistent) isEqualTo true
 		assertThat(tree.keysReverse()) isEqualTo (1000 to 1 by -1)
 		assertThat(tree.size) isEqualTo 1000
 	}
