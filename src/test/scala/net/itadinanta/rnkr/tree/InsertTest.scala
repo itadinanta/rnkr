@@ -54,7 +54,7 @@ class InsertTest extends TreeBaseTest {
 	}
 
 	test("After 100 insertions with String keys should contain 100 entries") {
-		val tree = new SeqBPlusTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
+		val tree = new SeqTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
 		for (i <- 1 to 100) {
 			tree.put("Key" + i, "Item" + i)
 			log.debug("After adding {} to tree: {}", i, tree)
@@ -112,7 +112,7 @@ class InsertTest extends TreeBaseTest {
 	}
 
 	test("After 100 insertions in reverse should contain 100 entries in reverse") {
-		val tree = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntDescending, 9))
+		val tree = Tree.intStringTree(IntDescending, 9)
 		1 to 100 foreach { i => tree.put(i, "Item" + i) }
 		log.debug("{}", tree)
 		assertThat(tree.keysReverse()) isEqualTo (1 to 100)

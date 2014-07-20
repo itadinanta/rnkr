@@ -42,7 +42,7 @@ class AppendTest extends TreeBaseTest {
 	}
 
 	test("After 100 insertions with String keys should contain 100 entries") {
-		val tree = new SeqBPlusTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
+		val tree = Tree[String, String](StringAscending, 4)
 		for (i <- 1 to 100) tree.append("Key%03d".format(i), "Item" + i)
 		log.debug("Tree with Strings: {}", tree)
 		assertThat(tree.size) isEqualTo 100

@@ -8,7 +8,7 @@ import org.scalatest.FunSuite
 
 abstract class TreeBaseTest extends FunSuite {
 	val log = LoggerFactory.getLogger(this.getClass)
-	def createTreeWithFanout(fanout: Int) = new SeqBPlusTree[Int, String](new SeqNodeFactory[Int, String](IntAscending, fanout))
+	def createTreeWithFanout(fanout: Int) = Tree.intStringTree(IntAscending, fanout)
 	def createTestTree() = createTreeWithFanout(4)
 	def createTestTree(items: Pair[Int, String]*) = {
 		val tree = createTreeWithFanout(4)

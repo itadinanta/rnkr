@@ -10,16 +10,16 @@ import scala.concurrent.duration._
 import scala.concurrent.duration.FiniteDuration._
 import akka.pattern.ask
 import net.itadinanta.rnkr.tree.Row
-import net.itadinanta.rnkr.tree.BPlusTree
+import net.itadinanta.rnkr.tree.Tree
 import net.itadinanta.rnkr.tree.Rank.Position
 import akka.actor.PoisonPill
 
 object Arbiter {
-	def create[K, V](t: BPlusTree[K, V])(implicit system: ActorSystem) = new ActorArbiter(t)
+	def create[K, V](t: Tree[K, V])(implicit system: ActorSystem) = new ActorArbiter(t)
 }
 
 trait Arbiter[K, V] {
-	type Type = BPlusTree[K, V]
+	type Type = Tree[K, V]
 
 	def wqueue[R](f: (Type) => R): Future[R]
 	def rqueue[R](f: (Type) => R): Future[R]
@@ -38,7 +38,7 @@ trait Arbiter[K, V] {
 	def shutdown()
 }
 
-class ActorArbiter[K, V](val target: BPlusTree[K, V])(implicit val system: ActorSystem) extends Arbiter[K, V] {
+class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSystem) extends Arbiter[K, V] {
 	implicit lazy val executionContext = system.dispatcher
 
 	sealed trait Request

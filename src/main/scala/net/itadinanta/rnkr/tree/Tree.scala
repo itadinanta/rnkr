@@ -8,10 +8,16 @@ import org.slf4j.LoggerFactory
 
 object Tree {
 	implicit val defaultFactory = new SeqNodeFactory[Int, String](IntAscending, 20)
-	def intStringTree() = new SeqBPlusTree[Int, String](defaultFactory)
+	def intStringTree() = new SeqTree[Int, String](defaultFactory)
+	def intStringTree(ordering: Ordering[Int] = IntAscending, fanout: Int = 50) =
+		new SeqTree[Int, String](new SeqNodeFactory[Int, String](ordering, fanout))
+	def stringStringTree(ordering: Ordering[String] = StringAscending, fanout: Int = 50) =
+		new SeqTree[String, String](new SeqNodeFactory[String, String](StringAscending, fanout))
+	def apply[K, V](ordering: Ordering[K], fanout: Int = 50) =
+		new SeqTree[K, V](new SeqNodeFactory[K, V](ordering, fanout))
 }
 
-trait BPlusTree[K, V] {
+trait Tree[K, V] {
 	def size: Int
 	def get(k: K): Option[Row[K, V]]
 	def remove(k: K): Option[Row[K, V]]
@@ -24,7 +30,7 @@ trait BPlusTree[K, V] {
 	def page(start: Position, length: Int): Seq[Row[K, V]]
 }
 
-class SeqBPlusTree[K, V](val factory: NodeFactory[K, V]) extends BPlusTree[K, V] {
+class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 	val LOG = LoggerFactory.getLogger(this.getClass())
 	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Position)
 

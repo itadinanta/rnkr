@@ -1,7 +1,7 @@
 package net.itadinanta.rnkr
 
 import net.itadinanta.rnkr.arbiter.Arbiter
-import net.itadinanta.rnkr.tree.SeqBPlusTree
+import net.itadinanta.rnkr.tree.SeqTree
 import net.itadinanta.rnkr.tree.Tree
 import scala.concurrent.duration._
 import akka.actor.ActorSystem
