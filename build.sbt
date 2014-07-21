@@ -9,6 +9,10 @@ scalaVersion := "2.10.4"
 
 EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer)
 
+EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
+
+EclipseKeys.eclipseOutput := Some("target")
+
 retrieveManaged := false
 
 libraryDependencies ++= Seq(

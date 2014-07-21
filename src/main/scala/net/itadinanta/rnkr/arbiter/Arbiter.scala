@@ -40,21 +40,23 @@ trait Arbiter[K, V] {
 }
 
 class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSystem) extends Arbiter[K, V] {
-	implicit lazy val executionContext = system.dispatcher
+	implicit lazy val executionContext = system.dispatchers.lookup("tree-arbiter")
+	val readPool = system.dispatchers.lookup("tree-arbiter-read")
+	val writePool = system.dispatchers.lookup("tree-arbiter-write")
+	implicit val timeout = Timeout(1 day)
 
-	sealed trait Response[R] { val result: R; val replyTo: ActorRef; val id: Long }
-	case class ReadResponse[R](result: R, replyTo: ActorRef, id: Long) extends Response[R]
-	case class WriteResponse[R](result: R, replyTo: ActorRef, id: Long) extends Response[R]
+	sealed trait Response
+	case object ReadResponse extends Response
+	case object WriteResponse extends Response
 
 	sealed trait Request[R] { val f: Type => R }
 	case class ReadRequest[R](f: Type => R) extends Request[R]
 	case class WriteRequest[R](f: Type => R) extends Request[R]
 
-	sealed trait QueuedRequest[R] extends Request[R] { val replyTo: ActorRef; val id: Long }
-	case class QueuedReadRequest[R](f: Type => R, replyTo: ActorRef, id: Long) extends QueuedRequest[R]
-	case class QueuedWriteRequest[R](f: Type => R, replyTo: ActorRef, id: Long) extends QueuedRequest[R]
+	sealed trait QueuedRequest[R] extends Request[R] { val replyTo: ActorRef }
+	case class QueuedReadRequest[R](f: Type => R, replyTo: ActorRef) extends QueuedRequest[R]
+	case class QueuedWriteRequest[R](f: Type => R, replyTo: ActorRef) extends QueuedRequest[R]
 
-	implicit val timeout = Timeout(5 seconds)
 
 	val gate = system.actorOf(Props(new Gate(target)))
 
@@ -65,37 +67,29 @@ class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSyste
 	import scala.collection.immutable.Queue
 
 	class Gate[A](val target: Type) extends Actor {
-		var _id = 0L
 		case class State(val rc: Int, val wc: Int, val q: Queue[QueuedRequest[_]])
 		var state = State(0, 0, Queue[QueuedRequest[_]]())
 
 		@tailrec private def flush(s: State): State = if (s.q.isEmpty) s else {
 			val (r, tail) = s.q.dequeue
 			r match {
-				case QueuedReadRequest(f, replyTo, id) => if (s.wc == 0) {
-					Future { ReadResponse(r.f(target), replyTo, id) } pipeTo self
+				case QueuedReadRequest(f, replyTo) if (s.wc == 0) => {
+					Future { replyTo ! f(target); ReadResponse } (readPool) pipeTo self
 					flush(State(s.rc + 1, s.wc, tail))
-				} else s
-
-				case QueuedWriteRequest(f, replyTo, id) => if (s.wc == 0 && s.rc == 0) {
-					Future { WriteResponse(r.f(target), replyTo, id) } pipeTo self
+				}
+				case QueuedWriteRequest(f, replyTo) if (s.wc == 0 && s.rc == 0) => {
+					Future { replyTo ! f(target); WriteResponse } (writePool) pipeTo self
 					State(s.rc, s.wc + 1, tail)
-				} else s
+				}
+				case _ => s
 			}
 		}
 
-		def id() = { _id += 1; _id }
-		def enqueue(s: State, r: QueuedRequest[_]) = s.copy(q = s.q.enqueue(r))
-
 		def receive() = {
-			case r: ReadRequest[_] => state = flush(enqueue(state, QueuedReadRequest(r.f, sender, id())))
-			case w: WriteRequest[_] => state = flush(enqueue(state, QueuedWriteRequest(w.f, sender, id())))
-			case r: ReadResponse[_] =>
-				r.replyTo ! r.result
-				state = flush(State(state.rc - 1, state.wc, state.q))
-			case w: WriteResponse[_] =>
-				w.replyTo ! w.result
-				state = flush(State(state.rc, state.wc - 1, state.q))
+			case ReadRequest(f) => state = flush(state.copy(q = state.q.enqueue(QueuedReadRequest(f, sender))))
+			case WriteRequest(f) => state = flush(state.copy(q = state.q.enqueue(QueuedWriteRequest(f, sender))))
+			case ReadResponse => state = flush(state.copy(rc = state.rc - 1))
+			case WriteResponse => state = flush(state.copy(wc = state.wc - 1))
 		}
 	}
 }

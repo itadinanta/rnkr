@@ -1,8 +1,10 @@
 <classpath>
-  <classpathentry output="target/scala-2.10.4/classes" path="src/main/scala" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10.4/classes" path="src/main/java" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10.4/test-classes" path="src/test/scala" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10.4/test-classes" path="src/test/java" kind="src"></classpathentry>
+  <classpathentry output="target" path="src/main/scala" kind="src"></classpathentry>
+  <classpathentry output="target" path="src/main/java" kind="src"></classpathentry>
+  <classpathentry output="target" path="src/main/resources" kind="src"></classpathentry>
+  <classpathentry output="target" path="src/test/scala" kind="src"></classpathentry>
+  <classpathentry output="target" path="src/test/java" kind="src"></classpathentry>
+  <classpathentry output="target" path="src/test/resources" kind="src"></classpathentry>
   <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"></classpathentry>
   <classpathentry path="IVY_HOME/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.6.6.jar" kind="var"></classpathentry>
   <classpathentry path="IVY_HOME/cache/ch.qos.logback/logback-classic/jars/logback-classic-1.0.7.jar" kind="var"></classpathentry>

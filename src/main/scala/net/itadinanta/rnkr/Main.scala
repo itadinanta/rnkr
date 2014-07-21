@@ -14,21 +14,23 @@ import net.itadinanta.rnkr.tree.Row
 
 object Main extends App {
 	implicit val system = ActorSystem("node")
-	implicit val executionContext = system.dispatcher
+	implicit val executionContext = system.dispatchers.lookup("main-app-dispatcher")
 
 	val a = Arbiter.create(Tree.intStringTree())
 	val done = Promise[Boolean]
 
 	val b = new ListBuffer[Future[Option[Row[Int, String]]]]
 
-	for (i <- 1 to 50) {
+	for (i <- 1 to 1000) {
 		Future { b += a.put(i, i.toString()) map (Some(_)) }
-		Future { b += a.get(i) }
+		for (j <- 1 to 1000) {
+			Future { b += a.get(i) }
+		}
 	}
-
+	
 	sequence(b.toList) map { r =>
 		//		a.page(40, 10).map { r => println(r); done.success(true) }
-		a.get(40).map { r => println(r); done.success(true) }
+		a.get(990).map { r => println(r); done.success(true) }
 	}
 
 	done.future map {
