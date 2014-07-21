@@ -19,15 +19,15 @@ object Main extends App {
 	val a = Arbiter.create(Tree.intStringTree())
 	val done = Promise[Boolean]
 
-	val b = new ListBuffer[Future[Row[Int, String]]]
+	val b = new ListBuffer[Future[Option[Row[Int, String]]]]
 
 	for (i <- 1 to 50) {
-		Future { b += a.put(i, i.toString()) }
-		Future { a.get(i).map { r => println(s"${i} -> ${r}") } }
+		Future { b += a.put(i, i.toString()) map (Some(_)) }
+		Future { b += a.get(i) }
 	}
 
 	sequence(b.toList) map { r =>
-//		a.page(40, 10).map { r => println(r); done.success(true) }
+		//		a.page(40, 10).map { r => println(r); done.success(true) }
 		a.get(40).map { r => println(r); done.success(true) }
 	}
 

@@ -5,6 +5,7 @@ import scala.concurrent.Future
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.util.Timeout
+import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.duration.FiniteDuration._
 import akka.pattern.{ ask, pipe }
@@ -41,9 +42,9 @@ trait Arbiter[K, V] {
 class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSystem) extends Arbiter[K, V] {
 	implicit lazy val executionContext = system.dispatcher
 
-	sealed trait Response[R] { val result: R; val replyTo: ActorRef }
-	case class ReadResponse[R](result: R, replyTo: ActorRef) extends Response[R]
-	case class WriteResponse[R](result: R, replyTo: ActorRef) extends Response[R]
+	sealed trait Response[R] { val result: R; val replyTo: ActorRef; val id: Long }
+	case class ReadResponse[R](result: R, replyTo: ActorRef, id: Long) extends Response[R]
+	case class WriteResponse[R](result: R, replyTo: ActorRef, id: Long) extends Response[R]
 
 	sealed trait Request[R] { val f: Type => R }
 	case class ReadRequest[R](f: Type => R) extends Request[R]
@@ -64,70 +65,37 @@ class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSyste
 	import scala.collection.immutable.Queue
 
 	class Gate[A](val target: Type) extends Actor {
-		case class GateData(val rc: Int, val wc: Int, val q: Queue[QueuedRequest[_]])
 		var _id = 0L
-		var state = GateData(0, 0, Queue[QueuedRequest[_]]())
+		case class State(val rc: Int, val wc: Int, val q: Queue[QueuedRequest[_]])
+		var state = State(0, 0, Queue[QueuedRequest[_]]())
 
-		def current(rc: Int, wc: Int, q: Queue[QueuedRequest[_]]) =
-			GateData(rc, wc, q)
+		@tailrec private def flush(s: State): State = if (s.q.isEmpty) s else {
+			val (r, tail) = s.q.dequeue
+			r match {
+				case QueuedReadRequest(f, replyTo, id) => if (s.wc == 0) {
+					Future { ReadResponse(r.f(target), replyTo, id) } pipeTo self
+					flush(State(s.rc + 1, s.wc, tail))
+				} else s
 
-		def next(rc: Int, wc: Int, q: Queue[QueuedRequest[_]]) =
-			if (q.isEmpty) {
-				GateData(rc, wc, q)
-			} else {
-				val (r, tail) = q.dequeue
-				val (future, data) = r match {
-					case QueuedReadRequest(f, replyTo, id) =>
-						(Future {
-							println(s"Executing ${r}")
-							ReadResponse(r.f(target), replyTo)
-						}, GateData(rc + 1, wc, tail))
-					case QueuedWriteRequest(f, replyTo, id) =>
-						(Future {
-							println(s"Executing ${r}")
-							WriteResponse(r.f(target), replyTo)
-						}, GateData(rc, wc + 1, tail))
-				}
-				future pipeTo self
-				data
+				case QueuedWriteRequest(f, replyTo, id) => if (s.wc == 0 && s.rc == 0) {
+					Future { WriteResponse(r.f(target), replyTo, id) } pipeTo self
+					State(s.rc, s.wc + 1, tail)
+				} else s
 			}
-
-		def enqueue(s: GateData, r: QueuedRequest[_]) = {
-			println(s"Queuing ${r} -> ${s}")
-			s.q.enqueue(r)
 		}
 
-		def id() = { _id += 1 ; _id }
-		
+		def id() = { _id += 1; _id }
+		def enqueue(s: State, r: QueuedRequest[_]) = s.copy(q = s.q.enqueue(r))
+
 		def receive() = {
-			case r: ReadRequest[_] => {
-				println(s"${r} ${state}")
-				state = if (state.wc > 0)
-					current(state.rc, state.wc, enqueue(state, QueuedReadRequest(r.f, sender, id())))
-				else
-					next(state.rc, state.wc, enqueue(state, QueuedReadRequest(r.f, sender, id())))
-
-			}
-
-			case w: WriteRequest[_] => {
-				println(s"${w} ${state}")
-				state = if (state.wc > 0 || state.rc > 0)
-					current(state.rc, state.wc, enqueue(state, QueuedWriteRequest(w.f, sender, id())))
-				else
-					next(state.rc, state.wc, enqueue(state, QueuedWriteRequest(w.f, sender, id())))
-			}
-
-			case r: ReadResponse[_] => {
-				println(s"${r} ${state}")
+			case r: ReadRequest[_] => state = flush(enqueue(state, QueuedReadRequest(r.f, sender, id())))
+			case w: WriteRequest[_] => state = flush(enqueue(state, QueuedWriteRequest(w.f, sender, id())))
+			case r: ReadResponse[_] =>
 				r.replyTo ! r.result
-				state = next(state.rc - 1, state.wc, state.q)
-			}
-
-			case w: WriteResponse[_] => {
-				println(s"${w} ${state}")
+				state = flush(State(state.rc - 1, state.wc, state.q))
+			case w: WriteResponse[_] =>
 				w.replyTo ! w.result
-				state = next(state.rc, state.wc - 1, state.q)
-			}
+				state = flush(State(state.rc, state.wc - 1, state.q))
 		}
 	}
 }
