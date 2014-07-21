@@ -27,6 +27,7 @@ trait Arbiter[K, V] {
 	def append(k: K, v: V): Future[Row[K, V]] = wqueue((target: Type) => target.append(k, v))
 	def remove(k: K): Future[Option[Row[K, V]]] = wqueue((target: Type) => target.remove(k))
 
+	def version: Future[Long] = rqueue((target: Type) => target.version)
 	def get(k: K): Future[Option[Row[K, V]]] = rqueue((target: Type) => target.get(k))
 	def keys(): Future[Seq[K]] = rqueue((target: Type) => target.keys())
 	def keysReverse(): Future[Seq[K]] = rqueue((target: Type) => target.keysReverse())
@@ -48,28 +49,24 @@ class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSyste
 	case class ReadRequest[R](f: Type => R) extends Request[R]
 	case class WriteRequest[R](f: Type => R) extends Request[R]
 
-	sealed trait QueuedRequest[R] extends Request[R] { val replyTo: ActorRef }
-	case class QueuedReadRequest[R](f: Type => R, replyTo: ActorRef) extends QueuedRequest[R]
-	case class QueuedWriteRequest[R](f: Type => R, replyTo: ActorRef) extends QueuedRequest[R]
+	sealed trait QueuedRequest[R] extends Request[R] { val replyTo: ActorRef; val id: Long }
+	case class QueuedReadRequest[R](f: Type => R, replyTo: ActorRef, id: Long) extends QueuedRequest[R]
+	case class QueuedWriteRequest[R](f: Type => R, replyTo: ActorRef, id: Long) extends QueuedRequest[R]
 
 	implicit val timeout = Timeout(5 seconds)
 
 	val gate = system.actorOf(Props(new Gate(target)))
 
-	def wqueue[R](f: Type => R): Future[R] = gate ? WriteRequest(f) map { _.asInstanceOf[R] }
-	def rqueue[R](f: Type => R): Future[R] = gate ? ReadRequest(f) map { _.asInstanceOf[R] }
+	def wqueue[R](f: Type => R): Future[R] = gate ? WriteRequest[R](f) map { _.asInstanceOf[R] }
+	def rqueue[R](f: Type => R): Future[R] = gate ? ReadRequest[R](f) map { _.asInstanceOf[R] }
 	def shutdown() { gate ! PoisonPill }
 
-	sealed trait GateState
-	case object Idle extends GateState
-	case object Reading extends GateState
-	case object Writing extends GateState
-
 	import scala.collection.immutable.Queue
-	case class GateData(val rc: Int, val wc: Int, val q: Queue[QueuedRequest[_]])
 
-	class Gate[A](val target: Type) extends Actor with FSM[GateState, GateData] {
-		startWith(Idle, GateData(0, 0, Queue[QueuedRequest[_]]()))
+	class Gate[A](val target: Type) extends Actor {
+		case class GateData(val rc: Int, val wc: Int, val q: Queue[QueuedRequest[_]])
+		var _id = 0L
+		var state = GateData(0, 0, Queue[QueuedRequest[_]]())
 
 		def current(rc: Int, wc: Int, q: Queue[QueuedRequest[_]]) =
 			GateData(rc, wc, q)
@@ -80,50 +77,58 @@ class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSyste
 			} else {
 				val (r, tail) = q.dequeue
 				val (future, data) = r match {
-					case QueuedReadRequest(f, replyTo) =>
-						val result = r.f(target)
-						replyTo ! result
-						(Future { ReadResponse(result, replyTo) }, GateData(rc + 1, wc, tail))
-					case QueuedWriteRequest(f, replyTo) =>
-						val result = r.f(target)
-						replyTo ! result
-						(Future { WriteResponse(result, replyTo) }, GateData(rc, wc + 1, tail))
+					case QueuedReadRequest(f, replyTo, id) =>
+						(Future {
+							println(s"Executing ${r}")
+							ReadResponse(r.f(target), replyTo)
+						}, GateData(rc + 1, wc, tail))
+					case QueuedWriteRequest(f, replyTo, id) =>
+						(Future {
+							println(s"Executing ${r}")
+							WriteResponse(r.f(target), replyTo)
+						}, GateData(rc, wc + 1, tail))
 				}
 				future pipeTo self
 				data
 			}
 
-		when(Idle) {
-			case Event(r: ReadRequest[_], GateData(0, 0, q)) => goto(Reading) using next(0, 0, q.enqueue(QueuedReadRequest(r.f, sender)))
-			case Event(r: WriteRequest[_], GateData(0, 0, q)) => goto(Writing) using next(0, 0, q.enqueue(QueuedWriteRequest(r.f, sender)))
+		def enqueue(s: GateData, r: QueuedRequest[_]) = {
+			println(s"Queuing ${r} -> ${s}")
+			s.q.enqueue(r)
 		}
 
-		when(Reading) {
-			case Event(r: ReadRequest[_], GateData(rc, 0, q)) => stay using next(rc, 0, q.enqueue(QueuedReadRequest(r.f, sender)))
-			case Event(r: WriteRequest[_], GateData(rc, 0, q)) => stay using current(rc, 0, q.enqueue(QueuedWriteRequest(r.f, sender)))
+		def id() = { _id += 1 ; _id }
+		
+		def receive() = {
+			case r: ReadRequest[_] => {
+				println(s"${r} ${state}")
+				state = if (state.wc > 0)
+					current(state.rc, state.wc, enqueue(state, QueuedReadRequest(r.f, sender, id())))
+				else
+					next(state.rc, state.wc, enqueue(state, QueuedReadRequest(r.f, sender, id())))
 
-			case Event(r: ReadResponse[_], GateData(1, 0, q)) => if (q.isEmpty) {
-				goto(Idle) using next(0, 0, q)
-			} else q.front match {
-				case qr: QueuedReadRequest[_] => goto(Reading) using next(0, 0, q)
-				case qw: QueuedWriteRequest[_] => goto(Writing) using next(0, 0, q)
 			}
-			case Event(r: ReadResponse[_], GateData(rc, 0, q)) => stay using next(rc - 1, 0, q)
-		}
 
-		when(Writing) {
-			case Event(r: ReadRequest[_], GateData(0, 1, q)) => stay using current(0, 1, q.enqueue(QueuedReadRequest(r.f, sender)))
-			case Event(r: WriteRequest[_], GateData(0, 1, q)) => stay using current(0, 1, q.enqueue(QueuedWriteRequest(r.f, sender)))
+			case w: WriteRequest[_] => {
+				println(s"${w} ${state}")
+				state = if (state.wc > 0 || state.rc > 0)
+					current(state.rc, state.wc, enqueue(state, QueuedWriteRequest(w.f, sender, id())))
+				else
+					next(state.rc, state.wc, enqueue(state, QueuedWriteRequest(w.f, sender, id())))
+			}
 
-			case Event(r: WriteResponse[_], GateData(0, 1, q)) => if (q.isEmpty) {
-				goto(Idle) using next(0, 0, q)
-			} else q.front match {
-				case qr: QueuedReadRequest[_] => goto(Reading) using next(0, 0, q)
-				case qw: QueuedWriteRequest[_] => goto(Writing) using next(0, 0, q)
+			case r: ReadResponse[_] => {
+				println(s"${r} ${state}")
+				r.replyTo ! r.result
+				state = next(state.rc - 1, state.wc, state.q)
+			}
+
+			case w: WriteResponse[_] => {
+				println(s"${w} ${state}")
+				w.replyTo ! w.result
+				state = next(state.rc, state.wc - 1, state.q)
 			}
 		}
-
-		initialize
 	}
 }
 

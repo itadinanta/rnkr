@@ -1,6 +1,8 @@
 package net.itadinanta.rnkr.tree
 
 import scala.annotation.tailrec
+import scala.volatile
+
 import scala.collection.mutable.ListBuffer
 import Rank.Position
 
@@ -19,6 +21,7 @@ object Tree {
 
 trait Tree[K, V] {
 	def size: Int
+	def version: Long
 	def get(k: K): Option[Row[K, V]]
 	def remove(k: K): Option[Row[K, V]]
 	def put(k: K, value: V): Row[K, V]
@@ -41,7 +44,9 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 	private[rnkr] var leafCount: Int = 1
 	private[rnkr] var indexCount: Int = 0
 	private[rnkr] var level: Int = 1
+	@volatile private[rnkr] var _version: Long = 0
 
+	override def version = _version
 	override def size = valueCount
 	override def rank(k: K): Position = {
 		@tailrec def rank(n: Node[K], p: Position): Position = {
@@ -61,12 +66,18 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 		rank(root, 0)
 	}
 
-	override def append(k: K, v: V) = {
+	private def newVersion() = { _version += 1; _version }
+	private def checkVersion[R](cv: Long)(f: => R): R = {
+		if (_version != cv) throw new RuntimeException(s"Expected version ${cv} detected version ${_version}")
+		f
+	}
+
+	override def append(k: K, v: V) = checkVersion(newVersion) {
 		val inserted = insertAtEnd(k, v)
 		Row(k, inserted.value, size)
 	}
 
-	override def put(k: K, v: V) = {
+	override def put(k: K, v: V) = checkVersion(newVersion) {
 		val inserted = insert(k, v)
 		Row(k, v, inserted.index)
 	}
@@ -108,9 +119,11 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 		buf.toList
 	}
 
-	override def remove(k: K) = delete(k) match {
-		case Cursor(key, child, _, index) => Some(Row(key, child, index))
-		case _ => None
+	override def remove(k: K) = checkVersion(newVersion) {
+		delete(k) match {
+			case Cursor(key, child, _, index) => Some(Row(key, child, index))
+			case _ => None
+		}
 	}
 
 	override def toString(): String = {

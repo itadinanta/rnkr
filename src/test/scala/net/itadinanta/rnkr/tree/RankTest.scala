@@ -66,7 +66,6 @@ class RankTest extends TreeBaseTest {
 		assertThat(tree.get("Key007")).isEqualTo(Some(Row("Key007", "Item7", 6)));
 		for (i <- 1 to 100) assertThat(tree.get("Key%03d".format(i))).isEqualTo(Some(Row("Key%03d".format(i), "Item" + i, i - 1)))
 		for (i <- 1 to 100) assertThat(tree.rank("Key%03d".format(i))).isEqualTo(i - 1)
-
 	}
 
 }
