@@ -20,6 +20,7 @@ object Arbiter {
 }
 
 trait Arbiter[T] {
+	val target: T
 	def wqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R]
 	def rqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R]
 	def shutdown()
@@ -43,7 +44,7 @@ object TreeArbiter {
 	def create[K, V](t: Tree[K, V])(implicit system: ActorSystem) = new ActorArbiter(t) with TreeArbiter[K, V]
 }
 
-class ActorArbiter[T](target: T)(implicit val system: ActorSystem) extends Arbiter[T] {
+class ActorArbiter[T](val target: T)(implicit val system: ActorSystem) extends Arbiter[T] {
 	implicit lazy val executionContext = system.dispatcher
 	implicit val timeout = Timeout(21474835 seconds)
 	val gate = system.actorOf(Props(new Gate(target)))
