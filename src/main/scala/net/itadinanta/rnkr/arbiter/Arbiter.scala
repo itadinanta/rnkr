@@ -46,7 +46,7 @@ object TreeArbiter {
 
 class ActorArbiter[T](val target: T)(implicit val system: ActorSystem) extends Arbiter[T] {
 	implicit lazy val executionContext = system.dispatcher
-	implicit val timeout = Timeout(21474835 seconds)
+	implicit val timeout = Timeout.intToTimeout(Int.MaxValue)
 	val gate = system.actorOf(Props(new Gate(target)))
 
 	sealed trait Response
@@ -61,8 +61,8 @@ class ActorArbiter[T](val target: T)(implicit val system: ActorSystem) extends A
 	case class QueuedReadRequest[R](f: T => R, replyTo: ActorRef) extends QueuedRequest[R]
 	case class QueuedWriteRequest[R](f: T => R, replyTo: ActorRef) extends QueuedRequest[R]
 
-	override def wqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R] = (gate ? WriteRequest[R](f)).mapTo[R]
-	override def rqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R] = (gate ? ReadRequest[R](f)).mapTo[R]
+	override def wqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R] = ask(gate, WriteRequest(f)).mapTo[R]
+	override def rqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R] = ask(gate, ReadRequest(f)).mapTo[R]
 	override def shutdown() { gate ! PoisonPill }
 
 	class Gate(val target: T) extends Actor {
@@ -70,20 +70,18 @@ class ActorArbiter[T](val target: T)(implicit val system: ActorSystem) extends A
 		case class State(val rc: Int, val wc: Int, val q: Queue[QueuedRequest[_]])
 		var state = State(0, 0, Queue[QueuedRequest[_]]())
 
-		@tailrec private def flush(s: State): State = if (s.q.isEmpty) s else {
-			val (r, tail) = s.q.dequeue
-			r match {
-				case QueuedReadRequest(f, replyTo) if (s.wc == 0) => {
+		@tailrec private def flush(s: State): State = if (s.q.isEmpty) s else
+			s.q.dequeue match {
+				case (QueuedReadRequest(f, replyTo), tail) if (s.wc == 0) => {
 					Future { replyTo ! f(target); ReadResponse } pipeTo self
 					flush(State(s.rc + 1, s.wc, tail))
 				}
-				case QueuedWriteRequest(f, replyTo) if (s.wc == 0 && s.rc == 0) => {
+				case (QueuedWriteRequest(f, replyTo), tail) if (s.wc == 0 && s.rc == 0) => {
 					Future { replyTo ! f(target); WriteResponse } pipeTo self
 					State(s.rc, s.wc + 1, tail)
 				}
 				case _ => s
 			}
-		}
 
 		def next(s: State) { state = flush(s) }
 		def receive() = {
@@ -91,7 +89,6 @@ class ActorArbiter[T](val target: T)(implicit val system: ActorSystem) extends A
 			case WriteRequest(f) => next(state.copy(q = state.q.enqueue(QueuedWriteRequest(f, sender))))
 			case ReadResponse => next(state.copy(rc = state.rc - 1))
 			case WriteResponse => next(state.copy(wc = state.wc - 1))
-			case _ => println("WTF")
 		}
 	}
 }
