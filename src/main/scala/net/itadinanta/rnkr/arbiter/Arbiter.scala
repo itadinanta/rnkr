@@ -13,60 +13,59 @@ import net.itadinanta.rnkr.tree.Row
 import net.itadinanta.rnkr.tree.Tree
 import net.itadinanta.rnkr.tree.Rank.Position
 import akka.actor.PoisonPill
+import scala.reflect.ClassTag
 
 object Arbiter {
-	def create[K, V](t: Tree[K, V])(implicit system: ActorSystem) = new ActorArbiter(t)
+	def create[T](t: T)(implicit system: ActorSystem) = new ActorArbiter(t)
 }
 
-trait Arbiter[K, V] {
-	type Type = Tree[K, V]
-
-	def wqueue[R](f: (Type) => R): Future[R]
-	def rqueue[R](f: (Type) => R): Future[R]
-
-	def put(k: K, v: V): Future[Row[K, V]] = wqueue((target: Type) => target.put(k, v))
-	def append(k: K, v: V): Future[Row[K, V]] = wqueue((target: Type) => target.append(k, v))
-	def remove(k: K): Future[Option[Row[K, V]]] = wqueue((target: Type) => target.remove(k))
-
-	def version: Future[Long] = rqueue((target: Type) => target.version)
-	def get(k: K): Future[Option[Row[K, V]]] = rqueue((target: Type) => target.get(k))
-	def keys(): Future[Seq[K]] = rqueue((target: Type) => target.keys())
-	def keysReverse(): Future[Seq[K]] = rqueue((target: Type) => target.keysReverse())
-	def rank(k: K): Future[Position] = rqueue((target: Type) => target.rank(k))
-	def range(k: K, length: Int): Future[Seq[Row[K, V]]] = rqueue((target: Type) => target.range(k, length))
-	def page(start: Position, length: Int): Future[Seq[Row[K, V]]] = rqueue((target: Type) => target.page(start, length))
-
+trait Arbiter[T] {
+	def wqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R]
+	def rqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R]
 	def shutdown()
 }
 
-class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSystem) extends Arbiter[K, V] {
-	implicit lazy val executionContext = system.dispatchers.lookup("tree-arbiter")
-	val readPool = system.dispatchers.lookup("tree-arbiter-read")
-	val writePool = system.dispatchers.lookup("tree-arbiter-write")
-	implicit val timeout = Timeout(1 day)
+trait TreeArbiter[K, V] extends Arbiter[Tree[K, V]] {
+	def put(k: K, v: V): Future[Row[K, V]] = wqueue((target: Tree[K, V]) => target.put(k, v))
+	def append(k: K, v: V): Future[Row[K, V]] = wqueue((target: Tree[K, V]) => target.append(k, v))
+	def remove(k: K): Future[Option[Row[K, V]]] = wqueue((target: Tree[K, V]) => target.remove(k))
+
+	def version: Future[Long] = rqueue((target: Tree[K, V]) => target.version)
+	def get(k: K): Future[Option[Row[K, V]]] = rqueue((target: Tree[K, V]) => target.get(k))
+	def keys(): Future[Seq[K]] = rqueue((target: Tree[K, V]) => target.keys())
+	def keysReverse(): Future[Seq[K]] = rqueue((target: Tree[K, V]) => target.keysReverse())
+	def rank(k: K): Future[Position] = rqueue((target: Tree[K, V]) => target.rank(k))
+	def range(k: K, length: Int): Future[Seq[Row[K, V]]] = rqueue((target: Tree[K, V]) => target.range(k, length))
+	def page(start: Position, length: Int): Future[Seq[Row[K, V]]] = rqueue((target: Tree[K, V]) => target.page(start, length))
+}
+
+object TreeArbiter {
+	def create[K, V](t: Tree[K, V])(implicit system: ActorSystem) = new ActorArbiter(t) with TreeArbiter[K, V]
+}
+
+class ActorArbiter[T](target: T)(implicit val system: ActorSystem) extends Arbiter[T] {
+	implicit lazy val executionContext = system.dispatcher
+	implicit val timeout = Timeout(21474835 seconds)
+	val gate = system.actorOf(Props(new Gate(target)))
 
 	sealed trait Response
 	case object ReadResponse extends Response
 	case object WriteResponse extends Response
 
-	sealed trait Request[R] { val f: Type => R }
-	case class ReadRequest[R](f: Type => R) extends Request[R]
-	case class WriteRequest[R](f: Type => R) extends Request[R]
+	sealed trait Request[R] { val f: T => R }
+	case class ReadRequest[R](f: T => R) extends Request[R]
+	case class WriteRequest[R](f: T => R) extends Request[R]
 
 	sealed trait QueuedRequest[R] extends Request[R] { val replyTo: ActorRef }
-	case class QueuedReadRequest[R](f: Type => R, replyTo: ActorRef) extends QueuedRequest[R]
-	case class QueuedWriteRequest[R](f: Type => R, replyTo: ActorRef) extends QueuedRequest[R]
+	case class QueuedReadRequest[R](f: T => R, replyTo: ActorRef) extends QueuedRequest[R]
+	case class QueuedWriteRequest[R](f: T => R, replyTo: ActorRef) extends QueuedRequest[R]
 
+	override def wqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R] = (gate ? WriteRequest[R](f)).mapTo[R]
+	override def rqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R] = (gate ? ReadRequest[R](f)).mapTo[R]
+	override def shutdown() { gate ! PoisonPill }
 
-	val gate = system.actorOf(Props(new Gate(target)))
-
-	def wqueue[R](f: Type => R): Future[R] = gate ? WriteRequest[R](f) map { _.asInstanceOf[R] }
-	def rqueue[R](f: Type => R): Future[R] = gate ? ReadRequest[R](f) map { _.asInstanceOf[R] }
-	def shutdown() { gate ! PoisonPill }
-
-	import scala.collection.immutable.Queue
-
-	class Gate[A](val target: Type) extends Actor {
+	class Gate(val target: T) extends Actor {
+		import scala.collection.immutable.Queue
 		case class State(val rc: Int, val wc: Int, val q: Queue[QueuedRequest[_]])
 		var state = State(0, 0, Queue[QueuedRequest[_]]())
 
@@ -74,22 +73,24 @@ class ActorArbiter[K, V](val target: Tree[K, V])(implicit val system: ActorSyste
 			val (r, tail) = s.q.dequeue
 			r match {
 				case QueuedReadRequest(f, replyTo) if (s.wc == 0) => {
-					Future { replyTo ! f(target); ReadResponse } (readPool) pipeTo self
+					Future { replyTo ! f(target); ReadResponse } pipeTo self
 					flush(State(s.rc + 1, s.wc, tail))
 				}
 				case QueuedWriteRequest(f, replyTo) if (s.wc == 0 && s.rc == 0) => {
-					Future { replyTo ! f(target); WriteResponse } (writePool) pipeTo self
+					Future { replyTo ! f(target); WriteResponse } pipeTo self
 					State(s.rc, s.wc + 1, tail)
 				}
 				case _ => s
 			}
 		}
 
+		def next(s: State) { state = flush(s) }
 		def receive() = {
-			case ReadRequest(f) => state = flush(state.copy(q = state.q.enqueue(QueuedReadRequest(f, sender))))
-			case WriteRequest(f) => state = flush(state.copy(q = state.q.enqueue(QueuedWriteRequest(f, sender))))
-			case ReadResponse => state = flush(state.copy(rc = state.rc - 1))
-			case WriteResponse => state = flush(state.copy(wc = state.wc - 1))
+			case ReadRequest(f) => next(state.copy(q = state.q.enqueue(QueuedReadRequest(f, sender))))
+			case WriteRequest(f) => next(state.copy(q = state.q.enqueue(QueuedWriteRequest(f, sender))))
+			case ReadResponse => next(state.copy(rc = state.rc - 1))
+			case WriteResponse => next(state.copy(wc = state.wc - 1))
+			case _ => println("WTF")
 		}
 	}
 }

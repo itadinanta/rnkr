@@ -11,12 +11,13 @@ import scala.concurrent.Future._
 import scala.concurrent.Promise
 import scala.collection.mutable.ListBuffer
 import net.itadinanta.rnkr.tree.Row
+import net.itadinanta.rnkr.arbiter.TreeArbiter
 
 object Main extends App {
 	implicit val system = ActorSystem("node")
 	implicit val executionContext = system.dispatchers.lookup("main-app-dispatcher")
 
-	val a = Arbiter.create(Tree.intStringTree())
+	val a = TreeArbiter.create(Tree.intStringTree())
 	val done = Promise[Boolean]
 
 	val b = new ListBuffer[Future[Option[Row[Int, String]]]]
