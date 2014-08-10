@@ -14,67 +14,21 @@ import scala.util.Failure
 object Timer extends App {
 	implicit val system = ActorSystem("node")
 	implicit val executionContext = system.dispatchers.lookup("main-app-dispatcher")
-	case class Message(val n: Int)
+	case class Message(val n: String) {
+		printts(n)
+		def apply(s: String) = copy(n = s)
+	}
 	val scheduler = system.scheduler
 
 	val t0 = System.currentTimeMillis()
 	def printts(s: Any) { println((System.currentTimeMillis() - t0) + ": " + s) }
 	def after[F](d: FiniteDuration)(f: => Future[F]) = akka.pattern.after(d, using = scheduler)(f)
-	//def after[F](d: FiniteDuration)(f: => F) = akka.pattern.after(d, using = scheduler)(f)
-
-	def f1(doPrint: Boolean, x: Int) = if (doPrint) println(x) else println("-")
-	f1(true, f(1) + f(1))
-
-	def f2(doPrint: Boolean, x: => Int) = if (doPrint) println(x) else println("-")
-	f2(true, f(3) + f(3))
-
-	def f3(doPrint: Boolean, x: () => Int) = if (doPrint) println(x()) else println("-")
-	f3(true, () => { f(5) + f(5) })
-
-	def f(i: Int) = { println("Evaluated " + i); i }
-
-	f1(false, f(2) + f(2))
-	f2(false, f(4) + f(4))
-	f3(false, () => { f(6) + f(6) })
 
 	val dummy = system.actorOf(Props(new Actor {
 		def receive = {
 			case m => printts(s"Message ${m} received")
 		}
 	}))
-
-	printts("Before schedule")
-	
-	// andThen does not work the way you think it works
-	after(5 seconds) {
-		printts("In scheduler")
-		after(5 seconds) {
-			successful(Message(0)) pipeTo dummy
-		} andThen {
-			case Success(m) =>
-				printts("Flatmap1")
-				after(5 seconds) {
-					printts(s"Message ${m} mapped");
-					successful(m.copy(n = 1))
-				}
-		} andThen {
-			case Success(m) =>
-				after(5 seconds) {
-					printts("Flatmap2")
-					successful(m)
-				}
-		} andThen {
-			case Success(m) =>
-				after(5 seconds) {
-					printts("Flatmap3")
-					successful(m)
-				}
-		}
-	} onComplete {
-		case Success(t) => {
-			printts(s"Success: ${t}")
-		}
-	}
 
 	case class Step[T](f: () => Future[T], delay: Option[FiniteDuration])
 	case object Step {
@@ -95,44 +49,44 @@ object Timer extends App {
 			return p.future
 		}
 
-		def seq[T](x: Step[T]*): Future[Seq[T]] =
+		def apply[T](x: Step[T]*): Future[Seq[T]] =
 			sequentially(x map {
 				case Step(f, Some(delay)) => () => after(delay) { f() }
 				case Step(f, None) => f
 			})
 
 		def pause[T](delay: FiniteDuration)(f: => Future[T]) = new Step(() => { f }, Some(delay))
+		def apply[T](f: => Future[T]) = new Step(() => { f }, None)
 	}
 
-	Step.seq(Step.pause(5 seconds) { printts("one"); successful(Message(0)) },
-		Step.pause(5 seconds) { printts("two"); successful(Message(1)) },
-		Step.pause(5 seconds) { printts("three"); successful(Message(2)) }) onComplete (printts)
+	val delay = (1 seconds)
 
-	after(5 seconds) {
-		printts("In scheduler")
-		after(5 seconds) {
-			successful(Message(0)) pipeTo dummy
-		} flatMap { m =>
-			printts("Flatmap1")
-			after(5 seconds) {
-				printts(s"Message ${m} mapped");
-				successful(m.copy(n = 1))
-			}
-		} flatMap { m =>
-			after(5 seconds) {
-				printts("Flatmap2")
-				successful(m)
-			}
-		} flatMap { m =>
-			after(5 seconds) {
-				printts("Flatmap3")
-				successful(m)
-			}
-		}
+	val f1 = after(delay) {
+		successful(Message("andThen0"))
+	} andThen {
+		case Success(m) => after(delay) { successful(m("andThen1")) }
+	} andThen {
+		case Success(m) => after(delay) { successful(m("andThen2")) }
+	} andThen {
+		case Success(m) => after(delay) { successful(m("andThen3")) pipeTo dummy }
 	} onComplete {
-		case Success(t) => {
-			printts(s"Success: ${t}")
-			system.shutdown
-		}
+		case _ =>
+			Step(
+				Step.pause(delay) { successful(Message("step0")) },
+				Step.pause(delay) { successful(Message("step1")) },
+				Step { after(delay) { successful(Message("step2")) } },
+				Step.pause(delay) { successful(Message("step3")) pipeTo dummy }) onSuccess {
+					case _ =>
+						after(delay) {
+							successful(Message("flatMap0"))
+						} flatMap { m => after(delay) { successful(m("flatMap1")) }
+						} flatMap { m => after(delay) { successful(m("flatMap2")) }
+						} flatMap { m => after(delay) { successful(m("flatMap3")) pipeTo dummy }
+						} onComplete {
+							case _ => {
+								system.shutdown
+							}
+						}
+				}
 	}
 }
