@@ -58,7 +58,7 @@ trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 			buf.append("(").append(partialRanks.last).append(")")
 		}
 		buf.append("}");
-		buf.toString		
+		buf.toString
 	}
 	override def toString = {
 		val buf = new StringBuilder
@@ -85,17 +85,7 @@ trait LeafNode[K, V] extends DataNode[K, V] {
 	var next: LeafNode[K, V]
 	var prev: LeafNode[K, V]
 	def childOfKey(key: K) = childAt(indexOfKey(key))
-	override def toString = {
-		val buf = new StringBuilder
-		var sep = ""
-		buf.append("[")
-		keys zip values foreach { i =>
-			buf.append(sep).append(i._1)
-			sep = " "
-		}
-		buf.append("]");
-		buf.toString
-	}
+	override def toString = "[" + keys.mkString(" ") + "]"
 }
 
 object IntAscending extends Ordering[Int] {
