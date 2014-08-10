@@ -36,14 +36,18 @@ object Timer extends App {
 			val p = Promise[Seq[T]]
 			val accum = new ListBuffer[T]
 			def sequentially(x: List[() => Future[T]]): Unit = x match {
-				case head :: tail => head() onComplete {
-					case Success(result) => {
-						accum += result
-						sequentially(tail)
-					}
-					case Failure(t) => p.failure(t)
-				}
 				case Nil => p.success(accum.toSeq)
+				case head :: tail => try {
+					head() onComplete {
+						case Success(result) => {
+							accum += result
+							sequentially(tail)
+						}
+						case Failure(t) => p.failure(t)
+					}
+				} catch {
+					case t: Throwable => p.failure(t)
+				}
 			}
 			sequentially(x.to[List])
 			return p.future
@@ -58,8 +62,7 @@ object Timer extends App {
 		def pause[T](delay: FiniteDuration)(f: => Future[T]) = new Step(() => { f }, Some(delay))
 		implicit def apply[T](f: => Future[T]) = new Step(() => { f }, None)
 	}
-	import Step.pause
-	import Step.seq
+	import Step._
 
 	val delay = (1 seconds)
 
@@ -71,25 +74,19 @@ object Timer extends App {
 		case Success(m) => after(delay) { successful(m("andThen2")) }
 	} andThen {
 		case Success(m) => after(delay) { successful(m("andThen3")) pipeTo dummy }
-	} onComplete {
-		case _ =>
-			seq(
-				pause(delay) { successful(Message("step0")) },
-				pause(delay) { successful(Message("step1")) },
-				pause(delay) { after(delay) { successful(Message("step2")) } },
-				successful(Message("step2.5")),
-				pause(delay) { successful(Message("step3")) pipeTo dummy }) onSuccess {
-					case _ =>
-						after(delay) {
-							successful(Message("flatMap0"))
-						} flatMap { m => after(delay) { successful(m("flatMap1")) }
-						} flatMap { m => after(delay) { successful(m("flatMap2")) }
-						} flatMap { m => after(delay) { successful(m("flatMap3")) pipeTo dummy }
-						} onComplete {
-							case _ => {
-								system.shutdown
-							}
-						}
-				}
+	} onSuccess {
+		case _ => seq(
+			pause(delay) { successful(Message("step0")) },
+			pause(delay) { successful(Message("step1")) },
+			pause(delay) { after(delay) { successful(Message("step2")) } },
+			successful(Message("step2.5")),
+			pause(delay) { successful(Message("step3")) pipeTo dummy }) onSuccess {
+				case _ => after(delay) {
+					successful(Message("flatMap0"))
+				} flatMap { m => after(delay) { successful(m("flatMap1")) }
+				} flatMap { m => after(delay) { successful(m("flatMap2")) }
+				} flatMap { m => after(delay) { successful(m("flatMap3")) pipeTo dummy }
+				} onComplete { case _ => system.shutdown }
+			}
 	}
 }
