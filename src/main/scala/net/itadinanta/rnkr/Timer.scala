@@ -44,7 +44,8 @@ object Timer extends App {
 	}))
 
 	printts("Before schedule")
-
+	
+	// andThen does not work the way you think it works
 	after(5 seconds) {
 		printts("In scheduler")
 		after(5 seconds) {
