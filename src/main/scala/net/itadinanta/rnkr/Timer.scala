@@ -26,13 +26,13 @@ object Timer extends App {
 
 	val dummy = system.actorOf(Props(new Actor {
 		def receive = {
-			case m => printts(s"Message ${m} received")
+			case m => printts(s"${m} received")
 		}
 	}))
 
 	case class Step[T](f: () => Future[T], delay: Option[FiniteDuration])
 	case object Step {
-		def sequentially[T](x: Seq[() => Future[T]]): Future[Seq[T]] = {
+		private def sequentially[T](x: Seq[() => Future[T]]): Future[Seq[T]] = {
 			val p = Promise[Seq[T]]
 			val accum = new ListBuffer[T]
 			def sequentially(x: List[() => Future[T]]): Unit = x match {
@@ -49,15 +49,17 @@ object Timer extends App {
 			return p.future
 		}
 
-		def apply[T](x: Step[T]*): Future[Seq[T]] =
+		def seq[T](x: Step[T]*): Future[Seq[T]] =
 			sequentially(x map {
 				case Step(f, Some(delay)) => () => after(delay) { f() }
 				case Step(f, None) => f
 			})
 
 		def pause[T](delay: FiniteDuration)(f: => Future[T]) = new Step(() => { f }, Some(delay))
-		def apply[T](f: => Future[T]) = new Step(() => { f }, None)
+		implicit def apply[T](f: => Future[T]) = new Step(() => { f }, None)
 	}
+	import Step.pause
+	import Step.seq
 
 	val delay = (1 seconds)
 
@@ -71,11 +73,12 @@ object Timer extends App {
 		case Success(m) => after(delay) { successful(m("andThen3")) pipeTo dummy }
 	} onComplete {
 		case _ =>
-			Step(
-				Step.pause(delay) { successful(Message("step0")) },
-				Step.pause(delay) { successful(Message("step1")) },
-				Step { after(delay) { successful(Message("step2")) } },
-				Step.pause(delay) { successful(Message("step3")) pipeTo dummy }) onSuccess {
+			seq(
+				pause(delay) { successful(Message("step0")) },
+				pause(delay) { successful(Message("step1")) },
+				pause(delay) { after(delay) { successful(Message("step2")) } },
+				successful(Message("step2.5")),
+				pause(delay) { successful(Message("step3")) pipeTo dummy }) onSuccess {
 					case _ =>
 						after(delay) {
 							successful(Message("flatMap0"))
