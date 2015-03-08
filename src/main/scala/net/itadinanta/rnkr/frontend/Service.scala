@@ -20,39 +20,34 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 
 	val manager = new Manager[Long, String](Tree.longStringTree())
 
-	val rnkrRoute =
-		pathPrefix("rnkr") {
-			pathPrefix("tree") {
-				pathPrefix("""[a-zA-Z]+""".r) { treeId =>
-					val tree = manager.get(treeId)
-					path("size") {
-						complete(tree.flatMap(_.size).map(_.toString))
-					} ~ path("range") {
-						parameters('score, 'length ? 1) { (score, length) =>
-							complete(tree.flatMap(_.range(score.toLong, length.toInt)))
-						}
-					} ~ path("page") {
-						parameters('start ? 0, 'length ? 10) { (start, length) =>
-							complete(tree.flatMap(_.page(start.toInt, length.toInt)))
-						}
-					} ~ path("post") {
-						(post | put) {
-							formFields('score, 'entrant) { (score, entrant) =>
-								complete(tree.flatMap(_.put(score.toLong, entrant)))
-							}
-						}
-					} ~ path("get") {
-						parameter('score) { score =>
-							complete(tree.flatMap(_.get(score.toLong)))
-						}
-					} ~ path("rank") {
-						parameter('score) { score =>
-							complete(tree.flatMap(_.rank(score.toLong).map(_.toString)))
-						}
-					}
+	val rnkrRoute = pathPrefix("rnkr" / "tree" / """[a-zA-Z0-9]+""".r) { treeId =>
+		val tree = manager.get(treeId)
+		path("set" | "post") {
+			(post | put) {
+				formFields('score, 'entrant) { (score, entrant) =>
+					complete(tree.flatMap(_.put(score.toLong, entrant)))
 				}
 			}
+		} ~ path("get") {
+			parameter('score) { score =>
+				complete(tree.flatMap(_.get(score.toLong)))
+			}
+		} ~ path("rank") {
+			parameter('score) { score =>
+				complete(tree.flatMap(_.rank(score.toLong).map(_.toString)))
+			}
+		} ~ path("size") {
+			complete(tree.flatMap(_.size).map(_.toString))
+		} ~ path("range") {
+			parameters('score, 'length ? 1) { (score, length) =>
+				complete(tree.flatMap(_.range(score.toLong, length.toInt)))
+			}
+		} ~ path("page") {
+			parameters('start ? 0, 'length ? 10) { (start, length) =>
+				complete(tree.flatMap(_.page(start.toInt, length.toInt)))
+			}
 		}
+	}
 }
 
 class ServiceActor extends Actor with Service {
