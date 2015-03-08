@@ -10,7 +10,7 @@ abstract class TreeBaseTest extends FunSuite {
 	val log = LoggerFactory.getLogger(this.getClass)
 	def createTreeWithFanout(fanout: Int) = Tree.intStringTree(IntAscending, fanout)
 	def createTestTree() = createTreeWithFanout(4)
-	def createTestTree(items: Pair[Int, String]*) = {
+	def createTestTree(items: Tuple2[Int, String]*) = {
 		val tree = createTreeWithFanout(4)
 		items foreach { i => tree.append(i._1, i._2) }
 		tree
