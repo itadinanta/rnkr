@@ -12,18 +12,42 @@ import akka.actor.ActorContext
 import spray.httpx.SprayJsonSupport
 import spray.httpx.marshalling.MetaMarshallers
 import scala.concurrent.Future
+import net.itadinanta.rnkr.tree.Row
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
 	implicit val executionContext: ExecutionContext
-	val manager = new Manager[Long, String](Tree.longStringTree())(actorRefFactory)
+	implicit val jsonRows = jsonFormat3(Row[Long, String])
+
+	val manager = new Manager[Long, String](Tree.longStringTree())
 
 	val rnkrRoute =
 		pathPrefix("rnkr") {
 			pathPrefix("tree") {
 				pathPrefix("""[a-zA-Z]+""".r) { treeId =>
+					val tree = manager.get(treeId)
 					path("size") {
-						get {
-							complete(manager.get(treeId).flatMap(_.size).map(_.toString))
+						complete(tree.flatMap(_.size).map(_.toString))
+					} ~ path("range") {
+						parameters('score, 'length ? 1) { (score, length) =>
+							complete(tree.flatMap(_.range(score.toLong, length.toInt)))
+						}
+					} ~ path("page") {
+						parameters('start ? 0, 'length ? 10) { (start, length) =>
+							complete(tree.flatMap(_.page(start.toInt, length.toInt)))
+						}
+					} ~ path("post") {
+						(post | put) {
+							formFields('score, 'entrant) { (score, entrant) =>
+								complete(tree.flatMap(_.put(score.toLong, entrant)))
+							}
+						}
+					} ~ path("get") {
+						parameter('score) { score =>
+							complete(tree.flatMap(_.get(score.toLong)))
+						}
+					} ~ path("rank") {
+						parameter('score) { score =>
+							complete(tree.flatMap(_.rank(score.toLong).map(_.toString)))
 						}
 					}
 				}
