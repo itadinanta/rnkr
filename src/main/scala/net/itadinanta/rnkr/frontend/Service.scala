@@ -4,60 +4,35 @@ import akka.actor.Actor
 import spray.routing._
 import spray.http._
 import MediaTypes._
-import spray.httpx.SprayJsonSupport.sprayJsonMarshaller
-import spray.httpx.SprayJsonSupport.sprayJsonUnmarshaller
 import spray.json.DefaultJsonProtocol
+import scala.concurrent.ExecutionContext
+import net.itadinanta.rnkr.manager.Manager
+import net.itadinanta.rnkr.tree.Tree
+import akka.actor.ActorContext
+import spray.httpx.SprayJsonSupport
+import spray.httpx.marshalling.MetaMarshallers
+import scala.concurrent.Future
 
-class ServiceActor extends Actor with Service {
-	def actorRefFactory = context
-
-	def receive = runRoute(rnkrRoute)
-}
-
-// this trait defines our service behavior independently from the service actor
-trait Service extends HttpService with DefaultJsonProtocol {
-	import spray.httpx.SprayJsonSupport.sprayJsonMarshaller
-	import spray.httpx.SprayJsonSupport.sprayJsonUnmarshaller
-
-	val HTML = `text/html`
+trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
+	implicit val executionContext: ExecutionContext
+	val manager = new Manager[Long, String](Tree.longStringTree())(actorRefFactory)
 
 	val rnkrRoute =
-		path("hello") {
-			get {
-				respondWithMediaType(HTML) { // XML is marshalled to `text/xml` by default, so we simply override here
-					complete {
-						<html>
-							<body>
-								<h1>Say hello to <i>spray-routing</i> on <i>spray-can</i> </h1>
-							</body>
-						</html>
+		pathPrefix("rnkr") {
+			pathPrefix("tree") {
+				pathPrefix("""[a-zA-Z]+""".r) { treeId =>
+					path("size") {
+						get {
+							complete(manager.get(treeId).flatMap(_.size).map(_.toString))
+						}
 					}
 				}
 			}
-		} ~ path("echo") {
-			(post | get) {
-				parameters('value.?) { (value) =>
-					complete(transformed(value))
-				}
-			}
-		} ~ pathPrefix("number") {
-			path(IntNumber) { value =>
-				complete(transformed(value))
-			}
-		} ~ pathPrefix("nestedValue") {
-			pathPrefix("number") {
-				path(IntNumber) { value =>
-					complete(transformed(value))
-				}
-			} ~ pathPrefix("another") {
-				path(IntNumber) { value =>
-					complete(transformed(value))
-				}
-			}
 		}
+}
 
-	def transformed(value: Option[String]) = value.getOrElse("null") + "_echoed"
-	def transformed(value: Int) =
-		(value + 1) toString
-
+class ServiceActor extends Actor with Service {
+	def actorRefFactory = context
+	val executionContext = context.dispatcher
+	def receive = runRoute(rnkrRoute)
 }

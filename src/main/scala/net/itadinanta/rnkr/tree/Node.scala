@@ -92,6 +92,10 @@ object IntAscending extends Ordering[Int] {
 	override def lt(a: Int, b: Int): Boolean = a < b
 }
 
+object LongAscending extends Ordering[Long] {
+	override def lt(a: Long, b: Long): Boolean = a < b
+}
+
 object IntDescending extends Ordering[Int] {
 	override def lt(a: Int, b: Int): Boolean = a > b
 }

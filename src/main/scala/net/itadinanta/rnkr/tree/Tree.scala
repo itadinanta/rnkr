@@ -14,7 +14,9 @@ object Tree {
 	def intStringTree(ordering: Ordering[Int] = IntAscending, fanout: Int = 50) =
 		new SeqTree[Int, String](new SeqNodeFactory[Int, String](ordering, fanout))
 	def stringStringTree(ordering: Ordering[String] = StringAscending, fanout: Int = 50) =
-		new SeqTree[String, String](new SeqNodeFactory[String, String](StringAscending, fanout))
+		new SeqTree[String, String](new SeqNodeFactory[String, String](ordering, fanout))
+	def longStringTree(ordering: Ordering[Long] = LongAscending, fanout: Int = 50) =
+		new SeqTree[Long, String](new SeqNodeFactory[Long, String](ordering, fanout))
 	def apply[K, V](ordering: Ordering[K], fanout: Int = 50) =
 		new SeqTree[K, V](new SeqNodeFactory[K, V](ordering, fanout))
 }

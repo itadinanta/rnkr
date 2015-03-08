@@ -14,9 +14,10 @@ import net.itadinanta.rnkr.tree.Tree
 import net.itadinanta.rnkr.tree.Rank.Position
 import akka.actor.PoisonPill
 import scala.reflect.ClassTag
+import akka.actor.ActorContext
 
 object Arbiter {
-	def create[T](t: T)(implicit system: ActorSystem) = new ActorArbiter(t)
+	def create[T](t: T)(implicit context: ActorContext) = new ActorArbiter(t)
 }
 
 trait Arbiter[T] {
@@ -27,27 +28,28 @@ trait Arbiter[T] {
 }
 
 trait TreeArbiter[K, V] extends Arbiter[Tree[K, V]] {
-	def put(k: K, v: V): Future[Row[K, V]] = wqueue((target: Tree[K, V]) => target.put(k, v))
-	def append(k: K, v: V): Future[Row[K, V]] = wqueue((target: Tree[K, V]) => target.append(k, v))
-	def remove(k: K): Future[Option[Row[K, V]]] = wqueue((target: Tree[K, V]) => target.remove(k))
+	def put(k: K, v: V) = wqueue(_.put(k, v))
+	def append(k: K, v: V) = wqueue(_.append(k, v))
+	def remove(k: K) = wqueue(_.remove(k))
 
-	def version: Future[Long] = rqueue((target: Tree[K, V]) => target.version)
-	def get(k: K): Future[Option[Row[K, V]]] = rqueue((target: Tree[K, V]) => target.get(k))
-	def keys(): Future[Seq[K]] = rqueue((target: Tree[K, V]) => target.keys())
-	def keysReverse(): Future[Seq[K]] = rqueue((target: Tree[K, V]) => target.keysReverse())
-	def rank(k: K): Future[Position] = rqueue((target: Tree[K, V]) => target.rank(k))
-	def range(k: K, length: Int): Future[Seq[Row[K, V]]] = rqueue((target: Tree[K, V]) => target.range(k, length))
-	def page(start: Position, length: Int): Future[Seq[Row[K, V]]] = rqueue((target: Tree[K, V]) => target.page(start, length))
+	def size = rqueue(_.size)
+	def version = rqueue(_.version)
+	def get(k: K) = rqueue(_.get(k))
+	def keys() = rqueue(_.keys())
+	def keysReverse() = rqueue(_.keysReverse())
+	def rank(k: K) = rqueue(_.rank(k))
+	def range(k: K, length: Int) = rqueue(_.range(k, length))
+	def page(start: Position, length: Int) = rqueue(_.page(start, length))
 }
 
 object TreeArbiter {
-	def create[K, V](t: Tree[K, V])(implicit system: ActorSystem) = new ActorArbiter(t) with TreeArbiter[K, V]
+	def create[K, V](t: Tree[K, V])(implicit context: ActorContext) = new ActorArbiter(t) with TreeArbiter[K, V]
 }
 
-class ActorArbiter[T](val target: T)(implicit val system: ActorSystem) extends Arbiter[T] {
-	implicit lazy val executionContext = system.dispatcher
+class ActorArbiter[T](val target: T)(implicit val context: ActorContext) extends Arbiter[T] {
+	implicit lazy val executionContext = context.system.dispatcher
 	implicit val timeout = Timeout.intToTimeout(Int.MaxValue)
-	val gate = system.actorOf(Props(new Gate(target)))
+	val gate = context.actorOf(Props(new Gate(target)))
 
 	sealed trait Response
 	case object ReadResponse extends Response
