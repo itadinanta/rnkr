@@ -6,7 +6,6 @@
   <classpathentry output="target" kind="src" path="src/test/java"/>
   <classpathentry output="target" kind="src" path="src/test/resources"/>
   <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.6.6.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-classic/jars/logback-classic-1.0.7.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-core/jars/logback-core-1.0.7.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-actor_2.11/jars/akka-actor_2.11-2.3.8.jar"/>
@@ -23,6 +22,10 @@
   <classpathentry kind="var" path="IVY_HOME/cache/org.jvnet.mimepull/mimepull/jars/mimepull-1.9.4.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.chuusai/shapeless_2.11/jars/shapeless_2.11-1.2.4.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-json_2.11/bundles/spray-json_2.11-1.3.1.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.datastax.cassandra/cassandra-driver-core/bundles/cassandra-driver-core-2.1.4.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.google.guava/guava/bundles/guava-14.0.1.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.codahale.metrics/metrics-core/bundles/metrics-core-3.0.2.jar"/>
+  <classpathentry kind="lib" path="/home/nico/Projects/3rdParty/activator-1.3.2/repository/org.slf4j/slf4j-api/1.7.5/jars/slf4j-api.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/org.easytesting/fest-assert/jars/fest-assert-1.4.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/org.easytesting/fest-util/jars/fest-util-1.1.6.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-testkit_2.11/jars/spray-testkit_2.11-1.3.2.jar"/>

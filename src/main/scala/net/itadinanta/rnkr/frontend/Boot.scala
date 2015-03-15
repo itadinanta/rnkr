@@ -9,11 +9,11 @@ import scala.concurrent.duration._
 import com.typesafe.config.ConfigFactory
 import net.itadinanta.common.Constants
 import net.itadinanta.common.GlobalConfig
+import net.itadinanta.rnkr.globals.ConfigActorApp
 
-object Boot extends App {
+object Boot extends App with ConfigActorApp {
 	val host = GlobalConfig.getOptionalString("host")
 	val port = GlobalConfig.getOptionalInt("port")
-	implicit val system = ActorSystem("rnkr")
 
 	val service = system.actorOf(Props[ServiceActor], "rnkr-service")
 
