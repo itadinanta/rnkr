@@ -10,8 +10,9 @@ import com.typesafe.config.ConfigFactory
 import net.itadinanta.common.Constants
 import net.itadinanta.common.GlobalConfig
 import net.itadinanta.rnkr.globals.ConfigActorApp
+import net.itadinanta.rnkr.backend.ConfigCassandraCluster
 
-object Boot extends App with ConfigActorApp {
+object Boot extends App with ConfigActorApp with ConfigCassandraCluster {
 	val host = GlobalConfig.getOptionalString("host")
 	val port = GlobalConfig.getOptionalInt("port")
 

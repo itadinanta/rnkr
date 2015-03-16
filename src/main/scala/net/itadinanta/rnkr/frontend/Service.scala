@@ -13,6 +13,7 @@ import spray.httpx.SprayJsonSupport
 import spray.httpx.marshalling.MetaMarshallers
 import scala.concurrent.Future
 import net.itadinanta.rnkr.tree.Row
+import net.itadinanta.rnkr.backend.CassandraCluster
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
 	implicit val executionContext: ExecutionContext

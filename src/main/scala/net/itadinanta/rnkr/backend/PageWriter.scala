@@ -17,6 +17,9 @@ import scala.concurrent.Promise
 import scala.collection.JavaConversions._
 import com.datastax.driver.core.querybuilder.QueryBuilder
 
+case class PageReadRequest(id: String, page: Int)
+case class PageWriteRequest(id: String, page: Int, rows: Seq[Row[Long, String]])
+
 trait PageIoActor extends Actor with CassandraCluster {
 	val session = cluster.connect("akkacassandra")
 	implicit lazy val executionContext = context.system.dispatcher
@@ -32,7 +35,6 @@ trait PageIoActor extends Actor with CassandraCluster {
 }
 
 class PageReaderActor(val cluster: Cluster, val id: String) extends PageIoActor {
-	case class PageReadRequest(id: String, page: Int)
 
 	val query = QueryBuilder.select("score", "entrant").from("pages").where(QueryBuilder.eq("id", "?"))
 	val readPageStatement = session.prepare(query).setConsistencyLevel(ConsistencyLevel.ONE)
@@ -56,7 +58,6 @@ class PageReaderActor(val cluster: Cluster, val id: String) extends PageIoActor 
 }
 
 class PageWriterActor(override val cluster: Cluster, val id: String) extends PageIoActor {
-	case class PageWriteRequest(id: String, page: Int, rows: Seq[Row[Long, String]])
 
 	val query = QueryBuilder.insertInto("pages").value("id", "?").value("score", "?").value("entrant", "?")
 	val insertRowStatement = session.prepare(query).setConsistencyLevel(ConsistencyLevel.ONE)
