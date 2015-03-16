@@ -5,12 +5,10 @@ import akka.actor.ActorSystem
 import net.itadinanta.common.GlobalConfig
 
 trait CassandraCluster {
-	def cluster: Cluster
+	val cluster: Cluster
 }
 
 trait ConfigCassandraCluster extends CassandraCluster {
-	def system: ActorSystem
-
 	import scala.collection.JavaConversions._
 	private val port = GlobalConfig.getOptionalInt("cassandra.port")
 	private val hosts = GlobalConfig.getOptionalString("cassandra.host").toList
