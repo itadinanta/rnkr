@@ -2,15 +2,23 @@ package net.itadinanta.common
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
+import scala.collection.JavaConversions._
 
-object GlobalConfig {
-	val cfg = ConfigFactory.load()
-	val root = Constants.NAMESPACE
+abstract class GlobalConfig {
+	val cfg: Config
+	val root: String
+
 	private def withKey[T](f: (String) => T, key: String): Option[T] = {
 		val path = root + "." + key
 		if (cfg.hasPath(path)) Option(f(path)) else None
 	}
-	def getOptionalString(key: String) = withKey(cfg.getString _, key)
-	def getOptionalInt(key: String) = withKey(cfg.getInt _, key)
-	def getOptionalBoolean(key: String) = withKey(cfg.getBoolean _, key)
+	def string(key: String) = withKey(cfg.getString _, key)
+	def strings(key: String) = withKey(cfg.getStringList(_).toList, key)
+	def int(key: String) = withKey(cfg.getInt _, key)
+	def boolean(key: String) = withKey(cfg.getBoolean _, key)
+}
+
+object GlobalConfig extends GlobalConfig {
+	val root = Constants.NAMESPACE
+	val cfg = ConfigFactory.load()
 }
