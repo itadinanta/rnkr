@@ -1,21 +1,25 @@
-package net.itadinanta.rnkr.frontend
+package net.itadinanta.rnkr.main
 
-import akka.actor.{ ActorSystem, Props }
+import akka.actor.Props
 import akka.io.IO
 import spray.can.Http
-import akka.pattern.ask
 import akka.util.Timeout
+import akka.pattern.ask
 import scala.concurrent.duration._
-import com.typesafe.config.ConfigFactory
-import net.itadinanta.common.Constants
 import net.itadinanta.common.GlobalConfig
 import net.itadinanta.rnkr.globals.ConfigActorApp
 import net.itadinanta.rnkr.backend.ConfigCassandraCluster
+import net.itadinanta.rnkr.frontend.ServiceActor
+import org.springframework.context.support.ClassPathXmlApplicationContext
 
 object Boot extends App with ConfigActorApp with ConfigCassandraCluster {
+	
+	val ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
+	ctx.refresh();
+	
 	val host = GlobalConfig.getOptionalString("host")
 	val port = GlobalConfig.getOptionalInt("port")
-
+	
 	val service = system.actorOf(Props[ServiceActor], "rnkr-service")
 
 	implicit val timeout = Timeout(5.seconds)

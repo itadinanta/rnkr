@@ -7,6 +7,9 @@ version := "0.1"
 
 scalaVersion := "2.11.6"
 
+resolvers += "repository.springsource.milestone" at "http://repo.springsource.org/libs"
+resolvers += "Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
+
 EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer)
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
@@ -21,6 +24,8 @@ val sprayV = "1.3.2"
 libraryDependencies ++= Seq(
 	"org.easytesting"			% "fest-assert"		% "1.4" % "test",
 	"org.slf4j" 				% "slf4j-api"		% "1.6.6",
+	"org.slf4j" 				% "jcl-over-slf4j"	% "1.6.6",
+	"org.springframework.scala" %% "spring-scala"	% "1.0.0.RC3",
 	"ch.qos.logback" 			% "logback-classic" % "1.0.7",
 	"com.typesafe.akka"			%% "akka-actor"		% akkaV,
 	"io.spray"					%% "spray-can"		% sprayV,

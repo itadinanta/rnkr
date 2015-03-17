@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:scala-util="http://www.springframework.org/schema/scala/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/scala/util http://www.springframework.org/schema/scala/util/scala-util.xsd">
+
+	<bean id="scalaCollection"
+		class="org.springframework.scala.demo.collection.ScalaCollectionBean">
+		<constructor-arg ref="scalaSeq" />
+	</bean>
+
+	<scala-util:seq id="scalaSeq">
+		<value>Foo</value>
+		<value>Bar</value>
+	</scala-util:seq>
+</beans>
