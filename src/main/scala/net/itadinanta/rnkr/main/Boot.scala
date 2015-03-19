@@ -11,14 +11,14 @@ import net.itadinanta.rnkr.frontend.ServiceActor
 import net.itadinanta.rnkr.globals.ConfigActorApp
 import spray.can.Http
 import akka.actor.PoisonPill
+import grizzled.slf4j.Logging
 
-class Boot(override val system: ActorSystem, val host: String, val port: Int) extends ConfigActorApp {
-	val log = Logger[this.type]
+class Boot(override val system: ActorSystem, val host: String, val port: Int) extends ConfigActorApp with Logging {
 
 	val service = system.actorOf(Props[ServiceActor], "rnkr-service")
 
 	def start() = {
-		log.debug("Starting service {}:{}", host, port)
+		debug(s"Starting service ${host}:${port}")
 		implicit val timeout = Timeout(5.seconds)
 		IO(Http)(system) ? Http.Bind(service, interface = host, port = port)
 	}

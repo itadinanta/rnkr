@@ -10,7 +10,7 @@ class Cassandra(val hosts: Seq[String], val port: Int) {
 	val cluster: Cluster =
 		Cluster.builder().
 			addContactPoints(hosts: _*).
-			//			withCompression(ProtocolOptions.Compression.SNAPPY).
+			withCompression(ProtocolOptions.Compression.SNAPPY).
 			withPort(port).
 			build()
 	cluster.connect()

@@ -36,6 +36,7 @@
   <classpathentry kind="var" path="IVY_HOME/cache/com.datastax.cassandra/cassandra-driver-core/bundles/cassandra-driver-core-2.1.4.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.google.guava/guava/bundles/guava-14.0.1.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.codahale.metrics/metrics-core/bundles/metrics-core-3.0.2.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.xerial.snappy/snappy-java/bundles/snappy-java-1.1.1.6.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/org.easytesting/fest-assert/jars/fest-assert-1.4.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/org.easytesting/fest-util/jars/fest-util-1.1.6.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-testkit_2.11/jars/spray-testkit_2.11-1.3.2.jar"/>

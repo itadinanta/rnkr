@@ -7,8 +7,10 @@ version := "0.1"
 
 scalaVersion := "2.11.6"
 
-resolvers += "repository.springsource.milestone" at "http://repo.springsource.org/libs"
-resolvers += "Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
+resolvers ++= Seq(
+	"repository.springsource.milestone" at "http://repo.springsource.org/libs",
+	"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
+)
 
 EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer)
 
@@ -22,7 +24,6 @@ val akkaV = "2.3.8"
 val sprayV = "1.3.2"
 
 libraryDependencies ++= Seq(
-	"org.easytesting"			% "fest-assert"		% "1.4" % "test",
 	"org.slf4j" 				% "slf4j-api"		% "1.6.6",
 	"org.slf4j" 				% "jcl-over-slf4j"	% "1.6.6",
 	"org.clapper"				%% "grizzled-slf4j"	% "1.0.2",
@@ -32,9 +33,16 @@ libraryDependencies ++= Seq(
 	"io.spray"					%% "spray-can"		% sprayV,
 	"io.spray"					%% "spray-routing"	% sprayV,
 	"io.spray"					%% "spray-json"		% "1.3.1",
-	"io.spray"					%% "spray-testkit"	% sprayV	% "test",
-	"com.typesafe.akka"			%% "akka-testkit"	% akkaV		% "test",
 	"com.datastax.cassandra"	% "cassandra-driver-core" % "2.1.4",
+
+	// compression
+	"net.jpountz.lz4"			% "lz4"				% "1.3.0",
+	"org.xerial.snappy"			% "snappy-java"		% "1.1.1.6",
+
+	// test
+	"org.easytesting"			% "fest-assert"		% "1.4" % "test",
 	"org.scalatest"				%% "scalatest"		% "2.1.3"	% "test",
-	"org.specs2"				%% "specs2-core"	% "2.3.11"	% "test"
+	"org.specs2"				%% "specs2-core"	% "2.3.11"	% "test",
+	"io.spray"					%% "spray-testkit"	% sprayV	% "test",
+	"com.typesafe.akka"			%% "akka-testkit"	% akkaV		% "test"
 )
