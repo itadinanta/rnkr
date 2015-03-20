@@ -82,7 +82,7 @@ class LeaderboardTreeImpl extends Leaderboard {
 		Entry(post.score, uniqueTimestamp, post.entrant, 0, post.attachments)
 
 	private def updownrange(s: TimedScore, length: Int) =
-		scoreIndex.range(s, -length).reverse.union(scoreIndex.range(s, length + 1)) map { r =>
+		(scoreIndex.range(s, -length).reverse ++ scoreIndex.range(s, length + 1)) map { r =>
 			Entry(r.key.score, r.key.timestamp, r.value, r.rank, entrantIndex.get(r.value) flatMap { _._2 })
 		}
 
