@@ -1,17 +1,16 @@
 package net.itadinanta.rnkr.leaderboard
 
 import scalaz.ImmutableArray
-
 import net.itadinanta.rnkr.tree.Tree
 import net.itadinanta.rnkr.tree.Ordering
 import scala.collection.mutable.Map
+import net.itadinanta.rnkr.tree.Row
 
 object UpdateMode extends Enumeration {
 	type UpdateMode = Value
 	val BestWins, LastWins, Delete = Value
 }
 import UpdateMode._
-
 class Attachments(val data: ImmutableArray[Byte]) extends AnyVal
 case class Entry(score: Long, timestamp: Long, entrant: String, rank: Long, attachments: Option[Attachments])
 case class Post(score: Long, entrant: String, attachments: Option[Attachments], updateMode: UpdateMode)
@@ -69,16 +68,38 @@ class LeaderboardTreeImpl extends Leaderboard {
 			(_, a) <- entrantIndex.get(r.value)
 		} yield Entry(score, timestamp, r.value, r.rank, a)
 
-	def estimatedRank(score: Long): Long = 0
+	def estimatedRank(score: Long): Long =
+		scoreIndex.rank(TimedScore(score, 0))
 
-	def remove(entrant: String): Option[Entry] = None
+	def remove(entrant: String): Option[Entry] =
+		entrantIndex.remove(entrant) flatMap {
+			case (s, a) => scoreIndex.remove(s) map {
+				r => Entry(s.score, s.timestamp, r.value, r.rank, a)
+			}
+		}
 
 	def post(post: Post): Entry =
 		Entry(post.score, uniqueTimestamp, post.entrant, 0, post.attachments)
 
-	def around(entrant: String, length: Int): Seq[Entry] = ???
-	def around(score: Long, length: Int): Seq[Entry] = ???
+	private def updownrange(s: TimedScore, length: Int) =
+		scoreIndex.range(s, -length).reverse.union(scoreIndex.range(s, length + 1)) map { r =>
+			Entry(r.key.score, r.key.timestamp, r.value, r.rank, entrantIndex.get(r.value) flatMap { _._2 })
+		}
+
+	def around(entrant: String, length: Int): Seq[Entry] =
+		entrantIndex.get(entrant) match {
+			case Some((s, _)) => updownrange(s, length)
+			case None => Seq()
+		}
+
+	def around(score: Long, length: Int): Seq[Entry] =
+		scoreIndex.range(TimedScore(score, 0), 1).headOption match {
+			case Some(Row(s, value, rank)) => updownrange(s, length)
+			case None => Seq()
+		}
+
 	def at(rank: Long): Option[Entry] = page(rank, 1).headOption
+
 	def page(start: Long, length: Int): Seq[Entry] =
 		for {
 			r <- scoreIndex.page(start, length)
