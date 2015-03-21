@@ -1,50 +1,45 @@
 package net.itadinanta.rnkr.leaderboard
 
 import scala.collection.mutable.Map
-
 import net.itadinanta.rnkr.tree.Ordering
 import net.itadinanta.rnkr.tree.Row
 import net.itadinanta.rnkr.tree.Tree
 import scalaz._
+import java.util.Arrays
 
 object UpdateMode extends Enumeration {
 	type UpdateMode = Value
 	val BestWins, LastWins = Value
 }
+import UpdateMode._
 class Attachments(val data: ImmutableArray[Byte]) extends AnyVal
 case class Entry(score: Long, timestamp: Long, entrant: String, rank: Long, attachments: Option[Attachments])
-case class Post(score: Long, entrant: String, attachments: Option[Attachments], updateMode: UpdateMode.UpdateMode)
-case class Update(oldEntry: Option[Entry], newEntry: Entry, updateMode: UpdateMode.UpdateMode)
+case class Post(score: Long, entrant: String, attachments: Option[Attachments])
+case class Update(oldEntry: Option[Entry], newEntry: Option[Entry])
 
 trait Leaderboard {
 	def size: Int
+	def isEmpty: Boolean
 	def get(entrant: String*): Seq[Entry]
 	def get(score: Long, timestamp: Long): Option[Entry]
 	def at(rank: Long): Option[Entry]
 	def estimatedRank(score: Long): Long
 	def remove(entrant: String): Option[Entry]
-	def post(post: Post): Update
-	def delete(entrant: String): Option[Entry]
 	def around(entrant: String, length: Int): Seq[Entry]
 	def around(score: Long, length: Int): Seq[Entry]
 	def page(start: Long, length: Int): Seq[Entry]
+
+	def post(post: Post, updateMode: UpdateMode = BestWins): Update
+	def delete(entrant: String): Update
 }
 
-private[leaderboard] class TimedScore private (val data: Array[Long]) extends AnyVal {
-	def score = data(0)
-	def timestamp = data(1)
-}
-
-private object TimedScore {
-	def apply(score: Long, timestamp: Long) = new TimedScore(Array(score, timestamp))
-}
-
+private[leaderboard] case class TimedScore(val score: Long, val timestamp: Long)
 private[leaderboard] object TimedScoreOrdering extends Ordering[TimedScore] {
 	def lt(a: TimedScore, b: TimedScore): Boolean = a.score < b.score || (a.score == b.score && a.timestamp < b.timestamp)
 }
 
 object Leaderboard {
-	val TimestampScale = 10000000
+	val TimestampScale = 1000L
 	def apply(): Leaderboard = new LeaderboardTreeImpl()
 }
 
@@ -57,8 +52,9 @@ class LeaderboardTreeImpl extends Leaderboard {
 	private[this] var _lastTime: Long = System.currentTimeMillis
 	private[this] var _lastCount: Long = 0
 
-	def size: Int = scoreIndex.size
-
+	def size = scoreIndex.size
+	def isEmpty = scoreIndex.isEmpty
+	
 	def get(entrants: String*) =
 		for {
 			e <- entrants
@@ -85,27 +81,32 @@ class LeaderboardTreeImpl extends Leaderboard {
 	private def better(a: TimedScore, b: TimedScore) =
 		ordering.lt(a, b)
 
-	def post(post: Post): Update = {
+	def post(post: Post, updateMode: UpdateMode = BestWins): Update = {
 		import UpdateMode._
 		val newScore = TimedScore(post.score, uniqueTimestamp)
 		val oldEntry =
 			for {
 				(oldScore, oldAttachments) <- entrantIndex.get(post.entrant)
 				o <- scoreIndex.remove(oldScore)
-				if (post.updateMode == LastWins || better(newScore, oldScore))
+				if (updateMode == LastWins || better(newScore, oldScore))
 			} yield Entry(o.key.score, o.key.timestamp, o.value, o.rank, oldAttachments)
 
 		val newRow = scoreIndex.put(newScore, post.entrant)
 		val newEntry = Entry(newScore.score, newScore.timestamp, post.entrant, newRow.rank, post.attachments)
 		val replaced = entrantIndex.put(post.entrant, (TimedScore(newEntry.score, newEntry.timestamp), post.attachments))
-		Update(oldEntry, newEntry, post.updateMode)
+
+		Update(oldEntry, Some(newEntry))
 	}
 
-	def delete(entrant: String) =
-		for {
-			(oldScore, oldAttachments) <- entrantIndex.remove(entrant)
-			o <- scoreIndex.remove(oldScore)
-		} yield { Entry(o.key.score, o.key.timestamp, o.value, o.rank, oldAttachments) }
+	def delete(entrant: String) = {
+		val deleted =
+			for {
+				(oldScore, oldAttachments) <- entrantIndex.remove(entrant)
+				o <- scoreIndex.remove(oldScore)
+			} yield Entry(o.key.score, o.key.timestamp, o.value, o.rank, oldAttachments)
+
+		Update(deleted, None)
+	}
 
 	private def updownrange(s: TimedScore, length: Int) =
 		(scoreIndex.range(s, -length).reverse ++ scoreIndex.range(s, length + 1)) map { r =>
@@ -132,8 +133,8 @@ class LeaderboardTreeImpl extends Leaderboard {
 			(s, a) <- entrantIndex.get(r.value)
 		} yield Entry(s.score, s.timestamp, r.value, r.rank, a)
 
-	private[this] def uniqueTimestamp = {
-		val now = System.currentTimeMillis
+	private[this] def uniqueTimestamp: Long = {
+		val now = System.currentTimeMillis()
 		if (now > _lastTime) {
 			_lastTime = now
 			_lastCount = 0

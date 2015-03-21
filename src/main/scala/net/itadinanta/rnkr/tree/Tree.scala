@@ -2,11 +2,9 @@ package net.itadinanta.rnkr.tree
 
 import scala.annotation.tailrec
 import scala.volatile
-
 import scala.collection.mutable.ListBuffer
 import Rank.Position
-
-import org.slf4j.LoggerFactory
+import grizzled.slf4j.Logging
 
 object Tree {
 	implicit val defaultFactory = new SeqNodeFactory[Int, String](IntAscending, 20)
@@ -23,6 +21,7 @@ object Tree {
 
 trait Tree[K, V] {
 	def size: Int
+	def isEmpty: Boolean
 	def version: Long
 	def get(k: K): Option[Row[K, V]]
 	def remove(k: K): Option[Row[K, V]]
@@ -35,8 +34,11 @@ trait Tree[K, V] {
 	def page(start: Position, length: Int): Seq[Row[K, V]]
 }
 
+object SeqTree extends Logging {
+	val LOG = logger.logger
+}
 class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
-	val LOG = LoggerFactory.getLogger(this.getClass())
+	import SeqTree.LOG
 	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Position)
 
 	private[rnkr] var head: LeafNode[K, V] = factory.data.newNode()
@@ -50,6 +52,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 
 	override def version = _version
 	override def size = valueCount
+	override def isEmpty = valueCount == 0
 	override def rank(k: K): Position = {
 		@tailrec def rank(n: Node[K], p: Position): Position = {
 			n match {
@@ -321,7 +324,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 						DeletedResult(pos, if (leaf.isEmpty) k else leaf.keyAt(0), leafK, leaf, None, None, -1, 0, cursor)
 					else (av, bv) match {
 						case (a: LeafNode[K, V], b: LeafNode[K, V]) => {
-							LOG.debug("Leaf needs rebalancing after deletion {} {}", a, b);
+							LOG.debug("Leaf needs rebalancing after deletion {} {}", Array[Object](a, b): _*);
 							val oldAk = if (a eq leaf) leafK else a.keys.head
 							val oldBk = if (b eq leaf) leafK else b.keys.head
 							val initialACount = a.count + (if (a eq leaf) 1 else 0)
@@ -336,7 +339,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 								if (balanced.b eq tail) tail = balanced.a
 								leafCount -= 1
 							}
-							LOG.debug("Rebalanced leaf {} {}", balanced.a, balanced.b);
+							LOG.debug("Rebalanced leaf {} {}", Array[Object](balanced.a, balanced.b): _*);
 							DeletedResult(firstSibling, balanced.a.keyAt(0), oldAk, balanced.a, balanced.b.keyOption(0), Some(oldBk),
 								balanced.a.count - initialACount, balanced.b.count - initialBCount,
 								cursor)
@@ -359,9 +362,9 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
 									val oldBk = if (b eq index) oldPivot else b.keys.head
 									val initialACount = a.count + (if (a eq index) 1 else 0)
 									val initialBCount = b.count + (if (b eq index) 1 else 0)
-									LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(initialACount), b, toLong(initialBCount)))
+									LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(initialACount), b, toLong(initialBCount)): _*)
 									val balanced = factory.index.redistribute(a, Seq(pivot), b)
-									LOG.debug("Rebalanced {} {}", balanced.a, balanced.b);
+									LOG.debug("Rebalanced {} {}", Array[Object](balanced.a, balanced.b): _*);
 									if (balanced.b.isEmpty) {
 										indexCount -= 1
 										DeletedResult(firstSibling, ak, oldAk, balanced.a, None, Some(pivot),
