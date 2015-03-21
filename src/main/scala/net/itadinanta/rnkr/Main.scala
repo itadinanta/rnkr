@@ -2,7 +2,7 @@ package net.itadinanta.rnkr
 
 import net.itadinanta.rnkr.arbiter.Arbiter
 import net.itadinanta.rnkr.tree.SeqTree
-import net.itadinanta.rnkr.tree.Tree
+import net.itadinanta.rnkr.tree.RankedTreeMap
 import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import akka.dispatch.Futures

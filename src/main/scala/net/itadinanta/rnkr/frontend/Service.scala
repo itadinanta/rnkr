@@ -7,7 +7,7 @@ import MediaTypes._
 import spray.json.DefaultJsonProtocol
 import scala.concurrent.ExecutionContext
 import net.itadinanta.rnkr.manager.Manager
-import net.itadinanta.rnkr.tree.Tree
+import net.itadinanta.rnkr.tree.RankedTreeMap
 import akka.actor.ActorContext
 import spray.httpx.SprayJsonSupport
 import spray.httpx.marshalling.MetaMarshallers
@@ -19,7 +19,7 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 	implicit val executionContext: ExecutionContext
 	implicit val jsonRows = jsonFormat3(Row[Long, String])
 
-	val manager = new Manager[Long, String](Tree.longStringTree())
+	val manager = new Manager[Long, String](RankedTreeMap.longStringTree())
 
 	val rnkrRoute = pathPrefix("rnkr" / "tree" / """[a-zA-Z0-9]+""".r) { treeId =>
 		val tree = manager.get(treeId)

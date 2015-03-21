@@ -3,7 +3,7 @@ package net.itadinanta.rnkr.leaderboard
 import scala.collection.mutable.Map
 import net.itadinanta.rnkr.tree.Ordering
 import net.itadinanta.rnkr.tree.Row
-import net.itadinanta.rnkr.tree.Tree
+import net.itadinanta.rnkr.tree.RankedTreeMap
 import scalaz._
 import java.util.Arrays
 
@@ -45,7 +45,7 @@ object Leaderboard {
 
 class LeaderboardTreeImpl extends Leaderboard {
 	val ordering = TimedScoreOrdering
-	val scoreIndex = Tree[TimedScore, String](ordering)
+	val scoreIndex = RankedTreeMap[TimedScore, String](ordering)
 	val entrantIndex = Map[String, (TimedScore, Option[Attachments])]()
 	val attachments = Map[String, Attachments]()
 
@@ -127,6 +127,9 @@ class LeaderboardTreeImpl extends Leaderboard {
 
 	def at(rank: Long): Option[Entry] = page(rank, 1).headOption
 
+	override def toString() =
+		page(0, 10).toString()
+	
 	def page(start: Long, length: Int): Seq[Entry] =
 		for {
 			r <- scoreIndex.page(start, length)

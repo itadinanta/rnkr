@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 import scala.concurrent.duration.FiniteDuration._
 import akka.pattern.{ ask, pipe }
 import net.itadinanta.rnkr.tree.Row
-import net.itadinanta.rnkr.tree.Tree
+import net.itadinanta.rnkr.tree.RankedTreeMap
 import net.itadinanta.rnkr.tree.Rank.Position
 import akka.actor.PoisonPill
 import scala.reflect.ClassTag
@@ -27,7 +27,7 @@ trait Arbiter[T] {
 	def shutdown()
 }
 
-trait TreeArbiter[K, V] extends Arbiter[Tree[K, V]] {
+trait TreeArbiter[K, V] extends Arbiter[RankedTreeMap[K, V]] {
 	def put(k: K, v: V) = wqueue(_.put(k, v))
 	def append(k: K, v: V) = wqueue(_.append(k, v))
 	def remove(k: K) = wqueue(_.remove(k))
@@ -43,7 +43,7 @@ trait TreeArbiter[K, V] extends Arbiter[Tree[K, V]] {
 }
 
 object TreeArbiter {
-	def create[K, V](t: Tree[K, V])(implicit context: ActorContext) = new ActorArbiter(t) with TreeArbiter[K, V]
+	def create[K, V](t: RankedTreeMap[K, V])(implicit context: ActorContext) = new ActorArbiter(t) with TreeArbiter[K, V]
 }
 
 class ActorArbiter[T](val target: T)(implicit val context: ActorContext) extends Arbiter[T] {

@@ -31,7 +31,7 @@ class InsertTest extends TreeBaseTest {
 
 	test("After 7 insertions should contain 7 entries") {
 		val tree = createTestTree()
-		1 to 7 foreach { i => tree.put(i, "Item" + i); log.debug("Added {} to {}", i, tree) }
+		1 to 7 foreach { i => tree.put(i, "Item" + i); debug(s"Added ${i} to ${tree}") }
 		assertThat(tree.size) isEqualTo 7
 		assertThat(tree.factory.fanout) isEqualTo 4
 		assertThat(tree.level) isEqualTo 2
@@ -43,8 +43,8 @@ class InsertTest extends TreeBaseTest {
 	test("After 17 insertions in reverse should contain 17 entries and grow a level") {
 		val tree = createTestTree()
 		for (i <- 17 to 1 by -1) {
-			tree.put(i, "Item" + i);
-			log.debug("Added {} to {}", i, tree)
+			tree.put(i, "Item" + i)
+			debug(s"Added ${i} to ${tree}")
 			assertThat(tree.consistent) isEqualTo true
 		}
 		assertThat(tree.size) isEqualTo 17
@@ -57,7 +57,7 @@ class InsertTest extends TreeBaseTest {
 		val tree = new SeqTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
 		for (i <- 1 to 100) {
 			tree.put("Key" + i, "Item" + i)
-			log.debug("After adding {} to tree: {}", i, tree)
+			debug(s"After adding ${i} to tree: {tree}")
 			assertThat(tree.consistent) isEqualTo true
 		}
 		assertThat(tree.size) isEqualTo 100
@@ -67,7 +67,7 @@ class InsertTest extends TreeBaseTest {
 
 	test("After 7 insertions in reverse should contain 7 entries") {
 		val tree = createTestTree()
-		7 to 1 by -1 foreach { i => tree.put(i, "Item" + i); log.debug("Added {} to {}", i, tree) }
+		7 to 1 by -1 foreach { i => tree.put(i, "Item" + i); debug(s"Added ${i} to ${tree}") }
 		assertThat(tree.size) isEqualTo 7
 		assertThat(tree.factory.fanout) isEqualTo 4
 		assertThat(tree.level) isEqualTo 2
@@ -80,7 +80,7 @@ class InsertTest extends TreeBaseTest {
 		for (i <- 1 to 100) {
 			tree.put(i, "Item" + i);
 			assertThat(tree.keys()) isEqualTo (1 to i)
-			log.debug("{}", tree)
+			debug(tree)
 			assertThat(tree.consistent) isEqualTo true
 		}
 		assertThat(tree.size) isEqualTo 100
@@ -91,7 +91,7 @@ class InsertTest extends TreeBaseTest {
 	test("After 100 insertions in reverse should contain 100 entries in order") {
 		val tree = createTestTree()
 		100 to 1 by -1 foreach { i => tree.put(i, "Item" + i) }
-		log.debug("{}", tree)
+		debug(tree)
 		assertThat(tree.keys()) isEqualTo (1 to 100)
 		assertThat(tree.keysReverse()) isEqualTo (100 to 1 by -1)
 		assertThat(tree.size) isEqualTo 100
@@ -106,16 +106,16 @@ class InsertTest extends TreeBaseTest {
 			ordered += i
 			assertThat(tree.keys()) isEqualTo ordered.toList
 		}
-		log.debug("{}", tree)
+		debug(tree)
 		assertThat(tree.consistent) isEqualTo true
 		assertThat(tree.keysReverse()) isEqualTo (1000 to 1 by -1)
 		assertThat(tree.size) isEqualTo 1000
 	}
 
 	test("After 100 insertions in reverse should contain 100 entries in reverse") {
-		val tree = Tree.intStringTree(IntDescending, 9)
+		val tree = RankedTreeMap.intStringTree(IntDescending, 9)
 		1 to 100 foreach { i => tree.put(i, "Item" + i) }
-		log.debug("{}", tree)
+		debug(tree)
 		assertThat(tree.keysReverse()) isEqualTo (1 to 100)
 		assertThat(tree.keys()) isEqualTo (100 to 1 by -1)
 		assertThat(tree.size) isEqualTo 100
@@ -124,7 +124,7 @@ class InsertTest extends TreeBaseTest {
 	test("An ordered range should count N keys forward from a given pivot") {
 		val tree = createTestTree()
 		1 to 100 foreach { i => tree.put(2 * i, "Item" + i) }
-		log.debug("{}", tree)
+		debug(tree)
 		assertThat(tree.get(20) map (_.value)) isEqualTo Some("Item10")
 		assertThat(tree.range(2, 100) map (_.key)) isEqualTo (2 to 200 by 2)
 		assertThat(tree.range(0, 200) map (_.key)) isEqualTo (2 to 200 by 2)

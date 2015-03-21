@@ -30,7 +30,7 @@ class RankTest extends TreeBaseTest {
 
 	test("A tree with more entries should have higher ranks") {
 		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (4, "Item4"), (5, "Item5"), (6, "Item6"))
-		log.debug("{}", tree)
+		debug(tree)
 		assertThat(tree.size) isEqualTo 6
 
 		assertThat(tree.rank(-1)) isEqualTo -1
@@ -56,9 +56,9 @@ class RankTest extends TreeBaseTest {
 	}
 
 	test("After 100 insertions with String keys should contain 100 ranks") {
-		val tree = Tree[String, String](StringAscending, 4)
+		val tree = RankedTreeMap[String, String](StringAscending, 4)
 		for (i <- 1 to 100) tree.append("Key%03d".format(i), "Item" + i)
-		log.debug("Tree with Strings: {}", tree)
+		debug(s"Tree with Strings: ${tree}")
 		assertThat(tree.size) isEqualTo 100
 		assertThat(tree.factory.fanout) isEqualTo 4
 		assertThat(tree.level) isEqualTo 4

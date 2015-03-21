@@ -12,25 +12,25 @@ class DeleteTest extends TreeBaseTest {
 
 	test("After 3 insertions and 1 deletions should contain 2 entries in the root") {
 		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
-			log.debug("{}", t)
+			debug(t)
 			t.remove(1)
-			log.debug("{}", t)
+			debug(t)
 			assertThat(t.size) isEqualTo 2
 			assertThat(t.keys) isEqualTo Seq(2, 3)
 		}
 
 		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
-			log.debug("{}", t)
+			debug(t)
 			t.remove(2)
-			log.debug("{}", t)
+			debug(t)
 			assertThat(t.size) isEqualTo 2
 			assertThat(t.keys) isEqualTo Seq(1, 3)
 		}
 
 		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
-			log.debug("{}", t)
+			debug(t)
 			t.remove(3)
-			log.debug("{}", t)
+			debug(t)
 			assertThat(t.size) isEqualTo 2
 			assertThat(t.keys) isEqualTo Seq(1, 2)
 		}
@@ -44,17 +44,17 @@ class DeleteTest extends TreeBaseTest {
 			(4, "Item"),
 			(5, "Item"))
 		assertThat(tree.size) isEqualTo 5
-		log.debug("{}", tree)
+		debug(tree)
 
 		tree.remove(3)
-		log.debug("{}", tree)
+		debug(tree)
 		assertThat(tree.size) isEqualTo 4
 		assertThat(tree.keys) isEqualTo Seq(1, 2, 4, 5)
 		assertThat(tree.keysReverse) isEqualTo Seq(5, 4, 2, 1)
 		assertThat(tree.consistent) isEqualTo true
 
 		tree.remove(2)
-		log.debug("{}", tree)
+		debug(tree)
 		assertThat(tree.size) isEqualTo 3
 		assertThat(tree.keys) isEqualTo Seq(1, 4, 5)
 		assertThat(tree.keysReverse) isEqualTo Seq(5, 4, 1)
@@ -62,7 +62,7 @@ class DeleteTest extends TreeBaseTest {
 		assertThat(tree.consistent) isEqualTo true
 
 		tree.remove(1)
-		log.debug("{}", tree)
+		debug(tree)
 		assertThat(tree.size) isEqualTo 2
 		assertThat(tree.keys) isEqualTo Seq(4, 5)
 		assertThat(tree.keysReverse) isEqualTo Seq(5, 4)
@@ -76,16 +76,16 @@ class DeleteTest extends TreeBaseTest {
 		val n = 100
 		1 to n foreach { i =>
 			tree.put(i, "Item" + i)
-			assertThat(tree.keys()) isEqualTo(1 to i)
+			assertThat(tree.keys()) isEqualTo (1 to i)
 			assertThat(tree.consistent) isEqualTo true
 		}
-		log.debug("{}", tree)
+		debug(tree)
 		1 to n foreach { i =>
-			log.debug("Deleting item {} from {}", i, tree)
+			debug(s"Deleting item ${i} from ${tree}")
 			tree.remove(i);
-			log.debug("Deleted item {} from {}", i, tree)
+			debug(s"Deleted item {} from {}", i, tree)
 			assertThat(tree.consistent) isEqualTo true
-			assertThat(tree.keys()) isEqualTo((i + 1) to n)
+			assertThat(tree.keys()) isEqualTo ((i + 1) to n)
 		}
 		assertThat(tree.level) isEqualTo 1
 		assertThat(tree.size) isEqualTo 0
@@ -97,13 +97,13 @@ class DeleteTest extends TreeBaseTest {
 		val n = 100
 		1 to n foreach { i =>
 			tree.put(i, "Item" + i)
-			assertThat(tree.keys()) isEqualTo(1 to i)
+			assertThat(tree.keys()) isEqualTo (1 to i)
 		}
-		log.debug("{}", tree)
+		debug(tree)
 		n to 1 by -1 foreach { i =>
 			tree.remove(i);
-			log.debug("{}", tree)
-			assertThat(tree.keys()) isEqualTo(1 to (i - 1))
+			debug(tree)
+			assertThat(tree.keys()) isEqualTo (1 to (i - 1))
 		}
 		assertThat(tree.level) isEqualTo 1
 		assertThat(tree.indexCount) isEqualTo 0
@@ -121,14 +121,14 @@ class DeleteTest extends TreeBaseTest {
 			assertThat(tree.keys()) isEqualTo ordered.toList
 		}
 		Random.shuffle(1 to n map { i => i }) foreach { i =>
-			log.debug("Removing {} from {}", i, tree)
+			debug(s"Removing ${i} from ${tree}")
 			tree.remove(i)
-			log.debug("Removed {} from {}", i, tree)			
+			debug(s"Removed ${i} from ${tree}")
 			assertThat(tree.consistent) isEqualTo true
 			ordered -= i
 			assertThat(tree.keys()) isEqualTo ordered.toList
 		}
-		log.debug("Result {}", tree)
+		debug(s"Result ${tree}")
 		assertThat(tree.size) isEqualTo 0
 		assertThat(tree.indexCount) isEqualTo 0
 		assertThat(tree.consistent) isEqualTo true
@@ -146,14 +146,14 @@ class DeleteTest extends TreeBaseTest {
 		assertThat(tree.leafCount) isEqualTo 6
 
 		Seq(11, 7, 5, 9, 1, 6, 12) foreach { i =>
-			log.debug("Removing {} from {}", i, tree)
+			debug(s"Removing ${i} from {tree}")
 			tree.remove(i)
-			log.debug("Removed {} from {}", i, tree)
+			debug(s"Removed ${i} from ${tree}")
 			ordered -= i
 			assertThat(tree.keys()) isEqualTo ordered.toList
 			assertThat(tree.consistent) isEqualTo true
 		}
-		log.debug("Result {}", tree)
+		debug(s"Result ${tree}")
 		assertThat(tree.size) isEqualTo ordered.size
 		assertThat(tree.leafCount) isEqualTo 2
 		assertThat(tree.indexCount) isEqualTo 1
@@ -175,7 +175,7 @@ class DeleteTest extends TreeBaseTest {
 			ordered -= i
 			assertThat(tree.keys()) isEqualTo ordered.toList
 		}
-		log.debug("Result {}", tree)
+		debug("Result ${tree}")
 		assertThat(tree.size) isEqualTo 0
 		assertThat(tree.indexCount) isEqualTo 0
 		assertThat(tree.consistent) isEqualTo true

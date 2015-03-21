@@ -6,7 +6,7 @@ import scala.collection.mutable.ListBuffer
 import Rank.Position
 import grizzled.slf4j.Logging
 
-object Tree {
+object RankedTreeMap {
 	implicit val defaultFactory = new SeqNodeFactory[Int, String](IntAscending, 20)
 	def intStringTree() = new SeqTree[Int, String](defaultFactory)
 	def intStringTree(ordering: Ordering[Int] = IntAscending, fanout: Int = 50) =
@@ -19,7 +19,7 @@ object Tree {
 		new SeqTree[K, V](new SeqNodeFactory[K, V](ordering, fanout))
 }
 
-trait Tree[K, V] {
+trait RankedTreeMap[K, V] {
 	def size: Int
 	def isEmpty: Boolean
 	def version: Long
@@ -37,7 +37,7 @@ trait Tree[K, V] {
 object SeqTree extends Logging {
 	val LOG = logger.logger
 }
-class SeqTree[K, V](val factory: NodeFactory[K, V]) extends Tree[K, V] {
+class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] {
 	import SeqTree.LOG
 	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Position)
 

@@ -11,13 +11,13 @@ import akka.actor.Props
 import akka.pattern.ask
 import akka.util.Timeout
 import net.itadinanta.rnkr.arbiter.TreeArbiter
-import net.itadinanta.rnkr.tree.Tree
+import net.itadinanta.rnkr.tree.RankedTreeMap
 import scala.concurrent.duration.FiniteDuration
 import java.util.concurrent.TimeUnit
 
 sealed trait ManagerCommand
 
-class Manager[K, V](constructor: => Tree[K, V])(implicit actorRefFactory: ActorRefFactory) {
+class Manager[K, V](constructor: => RankedTreeMap[K, V])(implicit actorRefFactory: ActorRefFactory) {
 	val duration = FiniteDuration(30, TimeUnit.SECONDS)
 	implicit val timeout: Timeout = new Timeout(duration)
 	case class Find(val name: String) extends ManagerCommand
