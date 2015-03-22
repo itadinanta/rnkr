@@ -6,6 +6,12 @@ import UpdateMode._
 import org.scalatest.FunSuite
 
 class LeaderboardTest extends FunSuite with Matchers {
+	val lb = Leaderboard()
+	val posted = (for {
+		i <- 1 to 100
+		post <- lb.post(Post(i, s"User${i}", None)).newEntry
+	} yield post).toList
+
 	test("empty leaderboard") {
 		Leaderboard().size should be === 0
 	}
@@ -75,21 +81,22 @@ class LeaderboardTest extends FunSuite with Matchers {
 		lb.isEmpty should be(true)
 	}
 
-	test("Insert and query around") {
-		val lb = Leaderboard()
-
-		val posted = (for {
-			i <- 1 to 100
-			post <- lb.post(Post(i, s"User${i}", None)).newEntry
-		} yield post).toList
-
-		println(posted)
-
+	test("Query: size") {
 		lb.size should be(100)
-		val expected = posted.drop(7).take(5).toList
-		println(expected)
-		lb.around("User10", 2) should be(expected)
+	}
+	
+	test("Query: around") {
+		lb.around("User10", 2) should be(posted.drop(7).take(5).toList)
+
 		lb.around("UserNone", 2) should be('empty)
+	}
+	
+	test("Query: at") {
+		lb.at(10) should be(Some(posted(10)))
+	}
+	
+	test("Query: page") {
+		lb.page(10, 5) should be(posted.drop(10).take(5).toList)
 	}
 
 }
