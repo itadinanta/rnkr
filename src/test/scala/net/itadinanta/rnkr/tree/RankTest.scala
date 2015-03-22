@@ -5,8 +5,9 @@ import scala.util.Random
 import scala.collection.mutable
 import org.slf4j.LoggerFactory
 import org.fest.assertions.Assertions.assertThat
+import org.scalatest.Matchers
 
-class RankTest extends TreeBaseTest {
+class RankTest extends TreeBaseTest with Matchers {
 	test("A tree with one entry should have one rank 0") {
 		val tree = createTestTree()
 		tree.append(1, "Item")
@@ -53,6 +54,18 @@ class RankTest extends TreeBaseTest {
 		assertThat(tree.page(6, 1)) isEqualTo Seq()
 
 		assertThat(tree.consistent) isEqualTo true
+	}
+
+	test("Tree with ranges") {
+		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (5, "Item5"), (6, "Item6"), (7, "Item7"))
+		debug(tree)
+		assertThat(tree.size) isEqualTo 6
+
+		tree.range(5, 2) shouldBe Seq(Row(5, "Item5", 3), Row(6, "Item6", 4))
+		tree.range(3, 2) shouldBe Seq(Row(3, "Item3", 2), Row(5, "Item5", 3))
+		tree.range(3, -2) shouldBe Seq(Row(3, "Item3", 2), Row(2, "Item2", 1))
+		tree.range(4, 2) shouldBe Seq(Row(5, "Item5", 3), Row(6, "Item6", 4))
+		tree.range(4, -2) shouldBe Seq(Row(3, "Item3", 2), Row(2, "Item2", 1))
 	}
 
 	test("After 100 insertions with String keys should contain 100 ranks") {

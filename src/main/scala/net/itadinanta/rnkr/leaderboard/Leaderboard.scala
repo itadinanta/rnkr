@@ -54,7 +54,7 @@ class LeaderboardTreeImpl extends Leaderboard {
 
 	def size = scoreIndex.size
 	def isEmpty = scoreIndex.isEmpty
-	
+
 	def get(entrants: String*) =
 		for {
 			e <- entrants
@@ -109,7 +109,7 @@ class LeaderboardTreeImpl extends Leaderboard {
 	}
 
 	private def updownrange(s: TimedScore, length: Int) =
-		(scoreIndex.range(s, -length).reverse ++ scoreIndex.range(s, length + 1)) map { r =>
+		(scoreIndex.range(s, -length - 1).tail.reverse ++ scoreIndex.range(s, length + 1)) map { r =>
 			Entry(r.key.score, r.key.timestamp, r.value, r.rank, entrantIndex.get(r.value) flatMap { _._2 })
 		}
 
@@ -129,7 +129,7 @@ class LeaderboardTreeImpl extends Leaderboard {
 
 	override def toString() =
 		page(0, 10).toString()
-	
+
 	def page(start: Long, length: Int): Seq[Entry] =
 		for {
 			r <- scoreIndex.page(start, length)

@@ -39,7 +39,8 @@ object SeqTree extends Logging {
 }
 class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] {
 	import SeqTree.LOG
-	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Position)
+	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Position, val offset: Position)
+	case class CursorOption(val key: Option[K], val value: Option[V], val node: LeafNode[K, V], val index: Position, val offset: Position)
 
 	private[rnkr] var head: LeafNode[K, V] = factory.data.newNode()
 	private[rnkr] var root: Node[K] = head
@@ -54,21 +55,8 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 	override def size = valueCount
 	override def isEmpty = valueCount == 0
 	override def rank(k: K): Position = {
-		@tailrec def rank(n: Node[K], p: Position): Position = {
-			n match {
-				case l: LeafNode[K, V] => {
-					val i = l.indexOfKey(k)
-					if (i >= 0) p + i
-					else if (p == 0) i
-					else p + l.count
-				}
-				case c: IndexNode[K] => {
-					val index = before(k, c.keys)
-					rank(c.childAt(index), if (index == 0) p else p + c.partialRanks(index - 1))
-				}
-			}
-		}
-		rank(root, 0)
+		val cursor = searchByKey(k)
+		cursor.index + cursor.offset
 	}
 
 	private def newVersion() = { _version += 1; _version }
@@ -126,7 +114,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 
 	override def remove(k: K) = checkVersion(newVersion) {
 		delete(k) match {
-			case Cursor(key, child, _, index) => Some(Row(key, child, index))
+			case Cursor(key, child, _, index, offset) => Some(Row(key, child, index))
 			case _ => None
 		}
 	}
@@ -186,7 +174,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 				if (leaf.isEmpty || factory.ordering.gt(k, leaf.keys.last)) {
 					val appended = factory.data.append(leaf, k, v)
 					valueCount += 1
-					val cursor = Cursor(k, v, leaf, appended.index)
+					val cursor = Cursor(k, v, leaf, appended.index, 0) // TBC
 					if (appended.split) {
 						appended.b.next = appended.a.next
 						appended.a.next = appended.b
@@ -237,11 +225,11 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 			case leaf: LeafNode[K, V] => {
 				val i = node.indexOfKey(k)
 				if (i >= 0)
-					UpdatedResult(leaf, k, Cursor(k, v, leaf, factory.data.update(leaf, k, v).index))
+					UpdatedResult(leaf, k, Cursor(k, v, leaf, factory.data.update(leaf, k, v).index, 0))
 				else {
 					val inserted = factory.data.insert(leaf, k, v, 1)
 					valueCount += 1
-					val cursor = Cursor(k, v, leaf, inserted.index)
+					val cursor = Cursor(k, v, leaf, inserted.index, 0)
 					if (inserted.split) {
 						inserted.b.next = leaf.next
 						inserted.a.next = inserted.b
@@ -318,7 +306,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 					val leafK = leaf.keys.head
 					val deleted = factory.data.delete(leaf, k)
 					valueCount -= 1
-					val cursor = Cursor(k, deleted.child, leaf, deleted.index)
+					val cursor = Cursor(k, deleted.child, leaf, deleted.index, 0)
 					LOG.debug("Deleted index {} from {}", deleted.index, deleted.a);
 					if (factory.data.balanced(leaf) || (av eq bv))
 						DeletedResult(pos, if (leaf.isEmpty) k else leaf.keyAt(0), leafK, leaf, None, None, -1, 0, cursor)
@@ -457,14 +445,17 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 	}
 
 	override def range(k: K, length: Int): Seq[Row[K, V]] = {
-		val leaf = searchByKey(k)
+		val cursor = searchByKey(k)
+		val leaf = cursor.node
 		val buf = new ListBuffer[Row[K, V]]
 		if (length >= 0) {
 			val index = after(k, leaf.keys)
-			rangeForwards(buf, index, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
+			rangeForwards(buf, index + cursor.offset, leaf.keys.drop(index), leaf.values.drop(index), leaf.next, length)
 		} else {
+			//val index = cursor.index.intValue // ?
 			val index = before(k, leaf.keys)
-			rangeBackwards(buf, index, leaf.keys.take(index).reverse, leaf.values.take(index).reverse, leaf.prev, -length)
+			//val index = cursor.index.intValue
+			rangeBackwards(buf, index + cursor.offset - 1, leaf.keys.take(index).reverse, leaf.values.take(index).reverse, leaf.prev, -length)
 		}
 		buf.toSeq
 	}
@@ -472,14 +463,23 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 	private def after(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.gt(key, _)) + 1
 	private def before(key: K, keys: Seq[K]): Int = keys.lastIndexWhere(factory.ordering.ge(key, _)) + 1
 
-	private def searchByKey(k: K): LeafNode[K, V] = pathTo(k, root, Nil, after).head match { case l: LeafNode[K, V] => l; case _ => null }
+	private def searchByKey(k: K): CursorOption = {
+		@tailrec def searchByKey(n: Node[K], p: Position): CursorOption = {
+			n match {
+				case l: LeafNode[K, V] => {
+					val i = l.indexOfKey(k)
 
-	private def pathTo(k: K): List[Node[K]] = pathTo(k, root, Nil, before)
-	private def pathTo(k: K, n: Node[K], path: List[Node[K]], indexBound: (K, Seq[K]) => Int): List[Node[K]] = {
-		n match {
-			case l: LeafNode[K, V] => l :: path
-			case c: IndexNode[K] => pathTo(k, c.childAt(indexBound(k, c.keys)), c :: path, indexBound)
+					if (i >= 0) CursorOption(Some(l.keyAt(i)), Some(l.childAt(i)), l, i, p)
+					else if (p == 0) CursorOption(None, None, l, i, 0)
+					else CursorOption(None, None, l, l.count, p)
+				}
+				case c: IndexNode[K] => {
+					val index = before(k, c.keys)
+					searchByKey(c.childAt(index), if (index == 0) p else p + c.partialRanks(index - 1))
+				}
+			}
 		}
+		searchByKey(root, 0)
 	}
 
 	private def searchByRank(rank: Position): Cursor = {
@@ -487,7 +487,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 			case l: LeafNode[K, V] => {
 				val index = remainder.intValue
 				if (index < 0 || index >= l.count) null
-				else Cursor(l.keyAt(index), l.childAt(index), l, index)
+				else Cursor(l.keyAt(index), l.childAt(index), l, index, rank - index)
 			}
 			case c: IndexNode[K] => {
 				val next = c.partialRanks.lastIndexWhere(rank >= _) + 1
