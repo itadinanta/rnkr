@@ -54,10 +54,11 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 	override def version = _version
 	override def size = valueCount
 	override def isEmpty = valueCount == 0
-	override def rank(k: K): Position = {
-		val cursor = searchByKey(k)
-		cursor.index + cursor.offset
-	}
+	override def rank(k: K): Position =
+		searchByKey(k) match {
+			case CursorOption(None, None, node, index, offset) => before(k, node.keys) + offset
+			case CursorOption(_, _, _, index, offset) => index + offset
+		}
 
 	private def newVersion() = { _version += 1; _version }
 	private def checkVersion[R](cv: Long)(f: => R): R = {
@@ -470,7 +471,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 					val i = l.indexOfKey(k)
 
 					if (i >= 0) CursorOption(Some(l.keyAt(i)), Some(l.childAt(i)), l, i, p)
-					else if (p == 0) CursorOption(None, None, l, i, 0)
+					else if (p == 0) CursorOption(None, None, l, 0, 0)
 					else CursorOption(None, None, l, l.count, p)
 				}
 				case c: IndexNode[K] => {

@@ -4,7 +4,7 @@ import scala.collection.mutable.Map
 import net.itadinanta.rnkr.tree.Ordering
 import net.itadinanta.rnkr.tree.Row
 import net.itadinanta.rnkr.tree.RankedTreeMap
-import scalaz._
+import scalaz.ImmutableArray
 import java.util.Arrays
 
 object UpdateMode extends Enumeration {

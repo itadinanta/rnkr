@@ -1,22 +1,20 @@
 package net.itadinanta.rnkr.frontend
 
-import org.specs2.mutable.Specification
-import spray.testkit.Specs2RouteTest
+import spray.testkit.ScalatestRouteTest
 import spray.http._
 import StatusCodes._
 import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
+import org.scalatest.FunSuite
+import org.scalatest.Matchers
 
-@RunWith(classOf[JUnitRunner])
-class FrontendServiceSpec extends Specification with Specs2RouteTest with Service {
+class FrontendServiceSpec extends FunSuite with Matchers with ScalatestRouteTest with Service {
 	def actorRefFactory = system
 	val executionContext = system.dispatcher
-	"MyService" should {
-		"process a count request" in {
-			Get("/rnkr/tree/test/count") ~> rnkrRoute ~> check {
-				handled must beTrue
-				responseAs[String] === "0"
-			}
+
+	test("process a count request") {
+		Get("/rnkr/tree/test/size") ~> rnkrRoute ~> check {
+			handled should be(true)
+			responseAs[String] === "0"
 		}
 	}
 }

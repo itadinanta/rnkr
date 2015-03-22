@@ -7,8 +7,9 @@ import org.slf4j.LoggerFactory
 import org.scalatest.FunSuite
 import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.tree._
+import org.scalatest.Matchers
 
-abstract class TreeBaseTest extends FunSuite with Logging {
+abstract class TreeBaseTest extends FunSuite with Matchers with Logging {
 	def createTreeWithFanout(fanout: Int) = RankedTreeMap.intStringTree(IntAscending, fanout)
 	def createTestTree() = createTreeWithFanout(4)
 	def createTestTree(items: Tuple2[Int, String]*) = {
