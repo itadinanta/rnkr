@@ -24,13 +24,13 @@ trait Leaderboard {
 	def get(score: Long, timestamp: Long): Option[Entry]
 	def at(rank: Long): Option[Entry]
 	def estimatedRank(score: Long): Long
-	def remove(entrant: String): Option[Entry]
 	def around(entrant: String, length: Int): Seq[Entry]
 	def around(score: Long, length: Int): Seq[Entry]
 	def page(start: Long, length: Int): Seq[Entry]
 
+	def remove(entrant: String): Update
 	def post(post: Post, updateMode: UpdateMode = BestWins): Update
-	def delete(entrant: String): Update
+	def clear(): Int
 }
 
 private[leaderboard] case class TimedScore(val score: Long, val timestamp: Long)
@@ -52,36 +52,29 @@ class LeaderboardTreeImpl extends Leaderboard {
 	private[this] var _lastTime: Long = System.currentTimeMillis
 	private[this] var _lastCount: Long = 0
 
-	def size = scoreIndex.size
-	def isEmpty = scoreIndex.isEmpty
+	override def size = scoreIndex.size
+	override def isEmpty = scoreIndex.isEmpty
 
-	def get(entrants: String*) =
+	override def get(entrants: String*) =
 		for {
 			e <- entrants
 			(s, a) <- entrantIndex.get(e)
 			r <- scoreIndex.get(s)
 		} yield Entry(s.score, s.timestamp, e, r.rank, a)
 
-	def get(score: Long, timestamp: Long) =
+	override def get(score: Long, timestamp: Long) =
 		for {
 			r <- scoreIndex.get(TimedScore(score, timestamp))
 			(_, a) <- entrantIndex.get(r.value)
 		} yield Entry(score, timestamp, r.value, r.rank, a)
 
-	def estimatedRank(score: Long): Long =
+	override def estimatedRank(score: Long): Long =
 		scoreIndex.rank(TimedScore(score, 0))
-
-	def remove(entrant: String): Option[Entry] =
-		entrantIndex.remove(entrant) flatMap {
-			case (s, a) => scoreIndex.remove(s) map {
-				r => Entry(s.score, s.timestamp, r.value, r.rank, a)
-			}
-		}
 
 	private def better(a: TimedScore, b: TimedScore) =
 		ordering.lt(a, b)
 
-	def post(post: Post, updateMode: UpdateMode = BestWins): Update = {
+	override def post(post: Post, updateMode: UpdateMode = BestWins): Update = {
 		import UpdateMode._
 		val newScore = TimedScore(post.score, uniqueTimestamp)
 		val oldEntry =
@@ -98,7 +91,12 @@ class LeaderboardTreeImpl extends Leaderboard {
 		Update(oldEntry, Some(newEntry))
 	}
 
-	def delete(entrant: String) = {
+	override def clear() = {
+		entrantIndex.clear()
+		scoreIndex.clear()
+	}
+
+	override def remove(entrant: String) = {
 		val deleted =
 			for {
 				(oldScore, oldAttachments) <- entrantIndex.remove(entrant)
@@ -113,24 +111,24 @@ class LeaderboardTreeImpl extends Leaderboard {
 			Entry(r.key.score, r.key.timestamp, r.value, r.rank, entrantIndex.get(r.value) flatMap { _._2 })
 		}
 
-	def around(entrant: String, length: Int): Seq[Entry] =
+	override def around(entrant: String, length: Int): Seq[Entry] =
 		entrantIndex.get(entrant) match {
 			case Some((s, _)) => updownrange(s, length)
 			case None => Seq()
 		}
 
-	def around(score: Long, length: Int): Seq[Entry] =
+	override def around(score: Long, length: Int): Seq[Entry] =
 		scoreIndex.range(TimedScore(score, 0), 1).headOption match {
 			case Some(Row(s, value, rank)) => updownrange(s, length)
 			case None => Seq()
 		}
 
-	def at(rank: Long): Option[Entry] = page(rank, 1).headOption
+	override def at(rank: Long): Option[Entry] = page(rank, 1).headOption
 
 	override def toString() =
 		page(0, 10).toString()
 
-	def page(start: Long, length: Int): Seq[Entry] =
+	override def page(start: Long, length: Int): Seq[Entry] =
 		for {
 			r <- scoreIndex.page(start, length)
 			(s, a) <- entrantIndex.get(r.value)

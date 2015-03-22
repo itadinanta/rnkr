@@ -61,11 +61,11 @@ class LeaderboardTest extends FunSuite with Matchers {
 		val posted = lb.post(Post(0, "Me", None))
 		lb.size should be(1)
 
-		val notDeleted = lb.delete("You")
+		val notDeleted = lb.remove("You")
 		notDeleted.oldEntry should be(None)
 		notDeleted.newEntry should be(None)
 
-		val deleted = lb.delete("Me")
+		val deleted = lb.remove("Me")
 		deleted.oldEntry should be(posted.newEntry)
 		deleted.newEntry should be(None)
 

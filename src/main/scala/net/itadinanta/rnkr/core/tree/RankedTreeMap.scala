@@ -32,24 +32,43 @@ trait RankedTreeMap[K, V] {
 	def rank(k: K): Position
 	def range(k: K, length: Int): Seq[Row[K, V]]
 	def page(start: Position, length: Int): Seq[Row[K, V]]
+	def clear(): Int
 }
 
 object SeqTree extends Logging {
 	val LOG = logger.logger
 }
+
 class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] {
 	import SeqTree.LOG
 	case class Cursor(val key: K, val value: V, val node: LeafNode[K, V], val index: Position, val offset: Position)
 	case class CursorOption(val key: Option[K], val value: Option[V], val node: LeafNode[K, V], val index: Position, val offset: Position)
 
-	private[rnkr] var head: LeafNode[K, V] = factory.data.newNode()
-	private[rnkr] var root: Node[K] = head
-	private[rnkr] var tail: LeafNode[K, V] = head
-	private[rnkr] var valueCount: Int = 0
-	private[rnkr] var leafCount: Int = 1
-	private[rnkr] var indexCount: Int = 0
-	private[rnkr] var level: Int = 1
-	@volatile private[rnkr] var _version: Long = 0
+	private[rnkr] var head: LeafNode[K, V] = _
+	private[rnkr] var root: Node[K] = _
+	private[rnkr] var tail: LeafNode[K, V] = _
+	private[rnkr] var valueCount: Int = _
+	private[rnkr] var leafCount: Int = _
+	private[rnkr] var indexCount: Int = _
+	private[rnkr] var level: Int = _
+	@volatile private[rnkr] var _version: Long = _
+
+	clear()
+
+	override def clear() = {
+		val oldSize = size
+
+		head = factory.data.newNode()
+		root = head
+		tail = head
+		valueCount = 0
+		leafCount = 1
+		indexCount = 0
+		level = 1
+		_version = 0
+
+		oldSize
+	}
 
 	override def version = _version
 	override def size = valueCount

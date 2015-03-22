@@ -9,9 +9,6 @@ import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.duration.FiniteDuration._
 import akka.pattern.{ ask, pipe }
-import net.itadinanta.rnkr.core.tree.Rank.Position;
-import net.itadinanta.rnkr.core.tree.Row
-import net.itadinanta.rnkr.core.tree.RankedTreeMap
 import akka.actor.PoisonPill
 import scala.reflect.ClassTag
 import akka.actor.ActorContext
@@ -25,25 +22,6 @@ trait Arbiter[T] {
 	def wqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R]
 	def rqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R]
 	def shutdown()
-}
-
-trait TreeArbiter[K, V] extends Arbiter[RankedTreeMap[K, V]] {
-	def put(k: K, v: V) = wqueue(_.put(k, v))
-	def append(k: K, v: V) = wqueue(_.append(k, v))
-	def remove(k: K) = wqueue(_.remove(k))
-
-	def size = rqueue(_.size)
-	def version = rqueue(_.version)
-	def get(k: K) = rqueue(_.get(k))
-	def keys() = rqueue(_.keys())
-	def keysReverse() = rqueue(_.keysReverse())
-	def rank(k: K) = rqueue(_.rank(k))
-	def range(k: K, length: Int) = rqueue(_.range(k, length))
-	def page(start: Position, length: Int) = rqueue(_.page(start, length))
-}
-
-object TreeArbiter {
-	def create[K, V](t: RankedTreeMap[K, V])(implicit context: ActorContext) = new ActorArbiter(t) with TreeArbiter[K, V]
 }
 
 class ActorArbiter[T](val target: T)(implicit val context: ActorContext) extends Arbiter[T] {
@@ -64,7 +42,7 @@ class ActorArbiter[T](val target: T)(implicit val context: ActorContext) extends
 	override def shutdown() { gate ! PoisonPill }
 
 	class Gate(val target: T) extends Actor {
-import scala.collection.immutable.Queue
+		import scala.collection.immutable.Queue
 		case class State(val rc: Int, val wc: Int, val q: Queue[Request[_]])
 		var state = State(0, 0, Queue[Request[_]]())
 

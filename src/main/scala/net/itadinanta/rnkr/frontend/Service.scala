@@ -13,39 +13,58 @@ import spray.httpx.marshalling.MetaMarshallers
 import scala.concurrent.Future
 import net.itadinanta.rnkr.backend.Cassandra
 import net.itadinanta.rnkr.core.tree.Row
-import net.itadinanta.rnkr.core.tree.RankedTreeMap;
+import net.itadinanta.rnkr.core.tree.RankedTreeMap
+import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
+import net.itadinanta.rnkr.engine.leaderboard.Post
+import net.itadinanta.rnkr.engine.leaderboard.Update
+import net.itadinanta.rnkr.engine.leaderboard.Entry
+import net.itadinanta.rnkr.engine.leaderboard.Attachments
+import spray.json.JsonFormat
+import spray.json.JsString
+import spray.json.JsValue
+import scalaz.ImmutableArray
+import spray.json.DeserializationException
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
 	implicit val executionContext: ExecutionContext
-	implicit val jsonRows = jsonFormat3(Row[Long, String])
+	implicit object AttachmentJsonFormat extends JsonFormat[Attachments] {
+		def write(c: Attachments) =
+			JsString(new String(c.data.toArray, "UTF8"))
 
-	val manager = new Manager[Long, String](RankedTreeMap.longStringTree())
+		def read(value: JsValue) = value match {
+			case JsString(s) => new Attachments(ImmutableArray.fromArray(s.getBytes("UTF8")))
+			case _ => throw new DeserializationException("Invalid format for Attachments")
+		}
+	}
+	implicit val jsonEntry = jsonFormat5(Entry)
+
+	val manager = new Manager(Leaderboard())
 
 	val rnkrRoute = pathPrefix("rnkr" / "tree" / """[a-zA-Z0-9]+""".r) { treeId =>
-		val tree = manager.get(treeId)
+		val lb = manager.get(treeId)
 		path("set" | "post") {
 			(post | put) {
 				formFields('score, 'entrant) { (score, entrant) =>
-					complete(tree.flatMap(_.put(score.toLong, entrant)))
+					complete(lb.flatMap(_.post(Post(score.toLong, entrant, None))).map(_.newEntry))
 				}
 			}
-		} ~ path("get") {
-			parameter('score) { score =>
-				complete(tree.flatMap(_.get(score.toLong)))
+		} ~ path("around") {
+			parameter('entrant, 'count ? 0) { (entrant, count) =>
+				complete(lb.flatMap(_.around(entrant, count)))
 			}
 		} ~ path("rank") {
 			parameter('score) { score =>
-				complete(tree.flatMap(_.rank(score.toLong).map(_.toString)))
+				complete(lb.flatMap(_.estimatedRank(score.toLong).map(_.toString)))
 			}
 		} ~ path("size") {
-			complete(tree.flatMap(_.size).map(_.toString))
+			complete(lb.flatMap(_.size).map(_.toString))
 		} ~ path("range") {
 			parameters('score, 'length ? 1) { (score, length) =>
-				complete(tree.flatMap(_.range(score.toLong, length.toInt)))
+				complete(lb.flatMap(_.around(score.toLong, length.toInt)))
 			}
 		} ~ path("page") {
 			parameters('start ? 0, 'length ? 10) { (start, length) =>
-				complete(tree.flatMap(_.page(start.toInt, length.toInt)))
+				complete(lb.flatMap(_.page(start.toInt, length.toInt)))
 			}
 		}
 	}
