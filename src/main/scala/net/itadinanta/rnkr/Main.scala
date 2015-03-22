@@ -1,8 +1,8 @@
 package net.itadinanta.rnkr
 
-import net.itadinanta.rnkr.arbiter.Arbiter
-import net.itadinanta.rnkr.tree.SeqTree
-import net.itadinanta.rnkr.tree.RankedTreeMap
+import net.itadinanta.rnkr.core.arbiter.Arbiter
+import net.itadinanta.rnkr.core.tree.SeqTree
+import net.itadinanta.rnkr.core.tree.RankedTreeMap
 import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import akka.dispatch.Futures
@@ -10,8 +10,8 @@ import scala.concurrent.Future
 import scala.concurrent.Future._
 import scala.concurrent.Promise
 import scala.collection.mutable.ListBuffer
-import net.itadinanta.rnkr.tree.Row
-import net.itadinanta.rnkr.arbiter.TreeArbiter
+import net.itadinanta.rnkr.core.tree.Row
+import net.itadinanta.rnkr.core.arbiter.TreeArbiter
 import org.springframework.context.support.ClassPathXmlApplicationContext
 import org.springframework.beans.factory.InitializingBean
 import net.itadinanta.rnkr.main.Boot

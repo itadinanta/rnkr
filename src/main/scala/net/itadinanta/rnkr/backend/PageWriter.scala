@@ -2,7 +2,7 @@ package net.itadinanta.rnkr.backend
 
 import com.datastax.driver.core.Cluster
 import com.datastax.driver.core.{ Row => CassandraRow }
-import net.itadinanta.rnkr.tree.Row
+import net.itadinanta.rnkr.core.tree.Row
 import akka.actor.ActorRef
 import akka.pattern.pipe
 import akka.actor.Actor

@@ -6,14 +6,14 @@ import spray.http._
 import MediaTypes._
 import spray.json.DefaultJsonProtocol
 import scala.concurrent.ExecutionContext
-import net.itadinanta.rnkr.manager.Manager
-import net.itadinanta.rnkr.tree.RankedTreeMap
+import net.itadinanta.rnkr.engine.manager.Manager
 import akka.actor.ActorContext
 import spray.httpx.SprayJsonSupport
 import spray.httpx.marshalling.MetaMarshallers
 import scala.concurrent.Future
-import net.itadinanta.rnkr.tree.Row
 import net.itadinanta.rnkr.backend.Cassandra
+import net.itadinanta.rnkr.core.tree.Row
+import net.itadinanta.rnkr.core.tree.RankedTreeMap;
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
 	implicit val executionContext: ExecutionContext
