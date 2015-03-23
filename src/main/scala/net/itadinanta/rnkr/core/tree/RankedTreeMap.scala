@@ -8,13 +8,20 @@ import grizzled.slf4j.Logging
 
 object RankedTreeMap {
 	implicit val defaultFactory = new SeqNodeFactory[Int, String](IntAscending, 20)
-	def intStringTree() = new SeqTree[Int, String](defaultFactory)
-	def intStringTree(ordering: Ordering[Int] = IntAscending, fanout: Int = 50) =
-		new SeqTree[Int, String](new SeqNodeFactory[Int, String](ordering, fanout))
-	def stringStringTree(ordering: Ordering[String] = StringAscending, fanout: Int = 50) =
-		new SeqTree[String, String](new SeqNodeFactory[String, String](ordering, fanout))
-	def longStringTree(ordering: Ordering[Long] = LongAscending, fanout: Int = 50) =
-		new SeqTree[Long, String](new SeqNodeFactory[Long, String](ordering, fanout))
+	def create() = new SeqTree[Int, String](defaultFactory)
+
+	def withIntKeys[T](ordering: Ordering[Int] = IntAscending, fanout: Int = 50) =
+		new SeqTree[Int, T](new SeqNodeFactory[Int, T](ordering, fanout))
+
+	def withStringKeys[T](ordering: Ordering[String] = StringAscending, fanout: Int = 50) =
+		new SeqTree[String, T](new SeqNodeFactory[String, T](ordering, fanout))
+
+	def withStringValues[K](ordering: Ordering[K], fanout: Int = 50) =
+		new SeqTree[K, String](new SeqNodeFactory[K, String](ordering, fanout))
+
+	def withLongKeys[T](ordering: Ordering[Long] = LongAscending, fanout: Int = 50) =
+		new SeqTree[Long, T](new SeqNodeFactory[Long, T](ordering, fanout))
+
 	def apply[K, V](ordering: Ordering[K], fanout: Int = 50) =
 		new SeqTree[K, V](new SeqNodeFactory[K, V](ordering, fanout))
 }

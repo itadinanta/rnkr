@@ -2,8 +2,12 @@ package net.itadinanta.rnkr.engine.leaderboard
 
 import org.scalatest.Matchers
 import org.scalatest.FunSuite
+import UpdateMode._
+import scala.util.Random
+import scala.collection.mutable._
+import grizzled.slf4j.Logging
 
-class LeaderboardTest extends FunSuite with Matchers {
+class LeaderboardTest extends FunSuite with Matchers with Logging {
 
 	test("empty leaderboard") {
 		Leaderboard().size should be === 0
@@ -42,17 +46,19 @@ class LeaderboardTest extends FunSuite with Matchers {
 		val lb = Leaderboard()
 
 		val posted = lb.post(Post(10, "Me", None))
-		lb.size should be(1)
 		val updated = lb.post(Post(9, "Me", None))
 
+		lb.size should be(1)
+
 		updated.oldEntry should be(posted.newEntry)
+		updated.newEntry should be(lb.at(0))
 		updated.newEntry should not be (None)
-		updated.newEntry foreach { e =>
-			lb.at(0) foreach { _ should be(Entry(e.score, e.timestamp, e.entrant, 0, None)) }
-		}
 
 		lb.get("Me").headOption should be(updated.newEntry)
 		lb.at(0) should be(updated.newEntry)
+
+		lb.post(Post(10, "Me", None)) should be(Update(updated.newEntry, updated.newEntry))
+		lb.post(Post(10, "Me", None), LastWins) should be(Update(updated.newEntry, lb.at(0)))
 	}
 
 	test("Simple insert and delete") {
@@ -107,7 +113,38 @@ class LeaderboardTest extends FunSuite with Matchers {
 		lb.estimatedRank(100) should be(99)
 		lb.estimatedRank(101) should be(100)
 		lb.estimatedRank(110) should be(100)
+	}
 
+	test("After 1000000 sequential insertions should contain 1000000 entries in order") {
+		val large = Leaderboard()
+		for (i <- 1 to 1000000) {
+			large.post(Post(i, "Item" + i, None))
+		}
+		large.size should be(1000000)
+	}
+
+	test("After 1000000 random insertions should contain 1000000 entries in order") {
+		val large = Leaderboard()
+		val ordered = new TreeSet[Int]
+		Random.setSeed(1234L)
+		Random.shuffle(1 to 1000000 map { i => i }) foreach { i =>
+			large.post(Post(i, "Item" + i, None))
+			ordered += i
+		}
+		debug(large)
+		large.size should be(1000000)
+	}
+
+	test("After 1000000 insertions of the same value it should contain 1000000 entries in order") {
+		val large = Leaderboard()
+		val ordered = new TreeSet[Int]
+		Random.setSeed(1234L)
+		Random.shuffle(1 to 1000000 map { i => i }) foreach { i =>
+			large.post(Post(1, "Item" + i, None))
+			ordered += i
+		}
+		debug(large)
+		large.size should be(1000000)
 	}
 
 }

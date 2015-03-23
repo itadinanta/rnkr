@@ -12,7 +12,11 @@ object UpdateMode extends Enumeration {
 	val BestWins, LastWins = Value
 }
 import UpdateMode._
-class Attachments(val data: ImmutableArray[Byte]) extends AnyVal
+class Attachments(val data: ImmutableArray[Byte]) extends AnyVal;
+object Attachments {
+	def apply(s: String): Attachments = new Attachments(ImmutableArray.fromArray(s.getBytes("UTF8")))
+	def apply(s: Option[String]): Option[Attachments] = for { v <- s } yield Attachments(v)
+}
 case class Entry(score: Long, timestamp: Long, entrant: String, rank: Long, attachments: Option[Attachments])
 case class Post(score: Long, entrant: String, attachments: Option[Attachments])
 case class Update(oldEntry: Option[Entry], newEntry: Option[Entry])
@@ -39,7 +43,7 @@ private[leaderboard] object TimedScoreOrdering extends Ordering[TimedScore] {
 }
 
 object Leaderboard {
-	val TimestampScale = 1000L
+	val TimestampScale = 10000L
 	def apply(): Leaderboard = new LeaderboardTreeImpl()
 }
 
@@ -71,24 +75,28 @@ class LeaderboardTreeImpl extends Leaderboard {
 	override def estimatedRank(score: Long): Long =
 		scoreIndex.rank(TimedScore(score, 0))
 
-	private def better(a: TimedScore, b: TimedScore) =
-		ordering.lt(a, b)
+	protected def better(newScore: TimedScore, oldScore: TimedScore) =
+		ordering.lt(newScore, oldScore)
 
 	override def post(post: Post, updateMode: UpdateMode = BestWins): Update = {
 		import UpdateMode._
 		val newScore = TimedScore(post.score, uniqueTimestamp)
-		val oldEntry =
-			for {
-				(oldScore, oldAttachments) <- entrantIndex.get(post.entrant)
-				o <- scoreIndex.remove(oldScore)
+		val (isBetter, oldEntry) = entrantIndex.get(post.entrant) match {
+			case Some((oldScore, oldAttachments)) =>
 				if (updateMode == LastWins || better(newScore, oldScore))
-			} yield Entry(o.key.score, o.key.timestamp, o.value, o.rank, oldAttachments)
+					(true, scoreIndex.remove(oldScore) map { o => Entry(o.key.score, o.key.timestamp, o.value, o.rank, oldAttachments) })
+				else
+					(false, scoreIndex.get(oldScore) map { o => Entry(o.key.score, o.key.timestamp, o.value, o.rank, oldAttachments) })
+			case None => (true, None)
+		}
 
-		val newRow = scoreIndex.put(newScore, post.entrant)
-		val newEntry = Entry(newScore.score, newScore.timestamp, post.entrant, newRow.rank, post.attachments)
-		val replaced = entrantIndex.put(post.entrant, (TimedScore(newEntry.score, newEntry.timestamp), post.attachments))
-
-		Update(oldEntry, Some(newEntry))
+		if (isBetter) {
+			val newRow = scoreIndex.put(newScore, post.entrant)
+			entrantIndex.put(post.entrant, (newScore, post.attachments))
+			Update(oldEntry, Some(Entry(newScore.score, newScore.timestamp, post.entrant, newRow.rank, post.attachments)))
+		} else {
+			Update(oldEntry, oldEntry)
+		}
 	}
 
 	override def clear() = {

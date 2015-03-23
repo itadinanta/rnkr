@@ -111,7 +111,7 @@ class InsertTest extends TreeBaseTest {
 	}
 
 	test("After 100 insertions in reverse should contain 100 entries in reverse") {
-		val tree = RankedTreeMap.intStringTree(IntDescending, 9)
+		val tree = RankedTreeMap.withIntKeys[String](IntDescending, 9)
 		1 to 100 foreach { i => tree.put(i, "Item" + i) }
 		debug(tree)
 		tree.keysReverse() should be((1 to 100))

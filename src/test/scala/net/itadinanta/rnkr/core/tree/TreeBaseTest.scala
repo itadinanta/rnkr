@@ -7,7 +7,7 @@ import net.itadinanta.rnkr.core.tree._
 import org.scalatest.Matchers
 
 abstract class TreeBaseTest extends FunSuite with Matchers with Logging {
-	def createTreeWithFanout(fanout: Int) = RankedTreeMap.intStringTree(IntAscending, fanout)
+	def createTreeWithFanout(fanout: Int) = RankedTreeMap.withStringValues(IntAscending, fanout)
 	def createTestTree() = createTreeWithFanout(4)
 	def createTestTree(items: Tuple2[Int, String]*) = {
 		val RankedTreeMap = createTreeWithFanout(4)

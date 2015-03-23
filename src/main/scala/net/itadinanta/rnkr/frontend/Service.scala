@@ -15,6 +15,7 @@ import net.itadinanta.rnkr.backend.Cassandra
 import net.itadinanta.rnkr.core.tree.Row
 import net.itadinanta.rnkr.core.tree.RankedTreeMap
 import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
+import net.itadinanta.rnkr.engine.leaderboard.UpdateMode._
 import net.itadinanta.rnkr.engine.leaderboard.Post
 import net.itadinanta.rnkr.engine.leaderboard.Update
 import net.itadinanta.rnkr.engine.leaderboard.Entry
@@ -32,7 +33,7 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 			JsString(new String(c.data.toArray, "UTF8"))
 
 		def read(value: JsValue) = value match {
-			case JsString(s) => new Attachments(ImmutableArray.fromArray(s.getBytes("UTF8")))
+			case JsString(s) => Attachments(s)
 			case _ => throw new DeserializationException("Invalid format for Attachments")
 		}
 	}
@@ -40,12 +41,12 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 
 	val manager = new Manager(Leaderboard())
 
-	val rnkrRoute = pathPrefix("rnkr" / "tree" / """[a-zA-Z0-9]+""".r) { treeId =>
+	val rnkrRoute = pathPrefix("rnkr" / "leaderboard" / """[a-zA-Z0-9]+""".r) { treeId =>
 		val lb = manager.get(treeId)
-		path("set" | "post") {
+		pathEnd {
 			(post | put) {
-				formFields('score, 'entrant) { (score, entrant) =>
-					complete(lb.flatMap(_.post(Post(score.toLong, entrant, None))).map(_.newEntry))
+				formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
+					complete(lb.flatMap(_.post(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins)).map(_.newEntry))
 				}
 			}
 		} ~ path("around") {

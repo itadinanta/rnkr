@@ -12,7 +12,7 @@ class FrontendServiceSpec extends FunSuite with Matchers with ScalatestRouteTest
 	val executionContext = system.dispatcher
 
 	test("process a count request") {
-		Get("/rnkr/tree/test/size") ~> rnkrRoute ~> check {
+		Get("/rnkr/leaderboard/test/size") ~> rnkrRoute ~> check {
 			handled should be(true)
 			responseAs[String] === "0"
 		}

@@ -155,7 +155,7 @@ class DeleteTest extends TreeBaseTest {
 		tree.indexCount should be(1)
 	}
 
-	test("After 1000 random insertions and 10000 random deletions should be empty") {
+	test("After 1000 random insertions and 1000 random deletions should be empty") {
 		val tree = createTreeWithFanout(32)
 		val ordered = new mutable.TreeSet[Int]
 		val n = 1000
