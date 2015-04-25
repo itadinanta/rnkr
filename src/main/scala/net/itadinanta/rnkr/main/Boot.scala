@@ -12,10 +12,12 @@ import net.itadinanta.rnkr.globals.ConfigActorApp
 import spray.can.Http
 import akka.actor.PoisonPill
 import grizzled.slf4j.Logging
+import net.itadinanta.rnkr.frontend.ServiceActor
+import net.itadinanta.rnkr.backend.Cassandra
 
-class Boot(override val system: ActorSystem, val host: String, val port: Int) extends ConfigActorApp with Logging {
+class Boot(val cassandra: Cassandra, override val system: ActorSystem, val host: String, val port: Int) extends ConfigActorApp with Logging {
 
-	val service = system.actorOf(Props[ServiceActor], "rnkr-service")
+	val service = system.actorOf(ServiceActor.props(cassandra), "rnkr-service")
 
 	def start() = {
 		debug(s"Starting service ${host}:${port}")

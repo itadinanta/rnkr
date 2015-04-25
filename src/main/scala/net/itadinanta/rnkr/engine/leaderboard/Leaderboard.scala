@@ -48,7 +48,7 @@ private[leaderboard] object TimedScoreOrdering extends Ordering[TimedScore] {
 }
 
 object Leaderboard {
-	val TimestampScale = 10000L
+	val TIMESTAMP_SCALE = 10000L
 	def apply(): Leaderboard = new LeaderboardTreeImpl()
 }
 
@@ -57,8 +57,8 @@ class LeaderboardTreeImpl extends Leaderboard {
 	val scoreIndex = RankedTreeMap[TimedScore, ByteString](ordering)
 	val entrantIndex = Map[ByteString, TimedScore]()
 
-	def makeByteString(s: String): ByteString = ByteString(s)
-	def makeString(s: ByteString): String = s.utf8String
+	implicit def asByteString(s: String): ByteString = ByteString(s)
+	implicit def asString(s: ByteString): String = s.utf8String
 
 	private[this] var _lastTime: Long = System.currentTimeMillis
 	private[this] var _lastCount: Long = 0
@@ -69,7 +69,7 @@ class LeaderboardTreeImpl extends Leaderboard {
 	override def get(entrants: String*) =
 		for {
 			e <- entrants
-			s <- entrantIndex.get(makeByteString(e))
+			s <- entrantIndex.get(asByteString(e))
 			r <- scoreIndex.get(s)
 		} yield Entry(s.score, s.timestamp, e, r.rank, s.attachments)
 
@@ -77,7 +77,7 @@ class LeaderboardTreeImpl extends Leaderboard {
 		for {
 			r <- scoreIndex.get(TimedScore(score, timestamp))
 			s <- entrantIndex.get(r.value)
-		} yield Entry(score, timestamp, makeString(r.value), r.rank, s.attachments)
+		} yield Entry(score, timestamp, asString(r.value), r.rank, s.attachments)
 
 	override def estimatedRank(score: Long): Long =
 		scoreIndex.rank(TimedScore(score, 0))
@@ -87,14 +87,14 @@ class LeaderboardTreeImpl extends Leaderboard {
 
 	override def post(post: Post, updateMode: UpdateMode = BestWins): Update = {
 		import UpdateMode._
-		val newScore = TimedScore(post.score, uniqueTimestamp, post.attachments)
-		val entrantKey = makeByteString(post.entrant)
+		val newScore = TimedScore(post.score, timestamp, post.attachments)
+		val entrantKey = asByteString(post.entrant)
 		val (isBetter, oldEntry) = entrantIndex.get(entrantKey) match {
 			case Some(oldScore) =>
 				if (updateMode == LastWins || better(newScore, oldScore))
-					(true, scoreIndex.remove(oldScore) map { o => Entry(o.key.score, o.key.timestamp, makeString(o.value), o.rank, o.key.attachments) })
+					(true, scoreIndex.remove(oldScore) map { o => Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments) })
 				else
-					(false, scoreIndex.get(oldScore) map { o => Entry(o.key.score, o.key.timestamp, makeString(o.value), o.rank, o.key.attachments) })
+					(false, scoreIndex.get(oldScore) map { o => Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments) })
 			case None => (true, None)
 		}
 
@@ -113,23 +113,23 @@ class LeaderboardTreeImpl extends Leaderboard {
 	}
 
 	override def remove(entrant: String) = {
-		val entrantKey = makeByteString(entrant)
+		val entrantKey = asByteString(entrant)
 		val deleted =
 			for {
 				oldScore <- entrantIndex.remove(entrantKey)
 				o <- scoreIndex.remove(oldScore)
-			} yield Entry(o.key.score, o.key.timestamp, makeString(o.value), o.rank, o.key.attachments)
+			} yield Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments)
 
 		Update(deleted, None)
 	}
 
 	private def updownrange(s: TimedScore, length: Int) =
 		(scoreIndex.range(s, -length - 1).tail.reverse ++ scoreIndex.range(s, length + 1)) map { r =>
-			Entry(r.key.score, r.key.timestamp, makeString(r.value), r.rank, r.key.attachments)
+			Entry(r.key.score, r.key.timestamp, asString(r.value), r.rank, r.key.attachments)
 		}
 
 	override def around(entrant: String, length: Int): Seq[Entry] =
-		entrantIndex.get(makeByteString(entrant)) match {
+		entrantIndex.get(asByteString(entrant)) match {
 			case Some(s) => updownrange(s, length)
 			case None => Seq()
 		}
@@ -149,9 +149,9 @@ class LeaderboardTreeImpl extends Leaderboard {
 		for {
 			r <- scoreIndex.page(start, length)
 			s <- entrantIndex.get(r.value)
-		} yield Entry(s.score, s.timestamp, makeString(r.value), r.rank, s.attachments)
+		} yield Entry(s.score, s.timestamp, asString(r.value), r.rank, s.attachments)
 
-	private[this] def uniqueTimestamp: Long = {
+	private[this] def timestamp(): Long = {
 		val now = System.currentTimeMillis()
 		if (now > _lastTime) {
 			_lastTime = now
@@ -159,6 +159,6 @@ class LeaderboardTreeImpl extends Leaderboard {
 		} else {
 			_lastCount += 1
 		}
-		_lastTime * Leaderboard.TimestampScale + _lastCount
+		_lastTime * Leaderboard.TIMESTAMP_SCALE + _lastCount
 	}
 }

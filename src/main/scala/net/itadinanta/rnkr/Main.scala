@@ -34,19 +34,18 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 			s.awaitTermination(30 seconds)
 	}
 
-	val boot = bean("boot") {
-		val host = cfg.string("host")
-		val port = cfg.int("port")
-		val system = actorSystem()
-		new Boot(system, host getOrElse "localhost", port getOrElse 8080)
-	} destroy {
-		_.shutdown()
-	}
-
 	val cassandra = bean("cassandra") {
 		val hosts = cfg.strings("hosts")
 		val port = cfg.int("port")
 		new Cassandra(hosts getOrElse Seq("127.0.0.1"), port getOrElse 9042)
+	} destroy {
+		_.shutdown()
+	}
+
+	val boot = bean("boot") {
+		val host = cfg.string("host")
+		val port = cfg.int("port")
+		new Boot(cassandra(), actorSystem(), host getOrElse "localhost", port getOrElse 8080)
 	} destroy {
 		_.shutdown()
 	}

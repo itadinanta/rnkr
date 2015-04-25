@@ -25,8 +25,10 @@ import spray.json.JsString
 import spray.json.JsValue
 import scalaz.ImmutableArray
 import spray.json.DeserializationException
+import akka.actor.Props
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
+	val cassandra: Cassandra
 	implicit val executionContext: ExecutionContext
 	implicit object AttachmentJsonFormat extends JsonFormat[Attachments] {
 		def write(c: Attachments) =
@@ -39,7 +41,7 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 	}
 	implicit val jsonEntry = jsonFormat5(Entry)
 
-	val manager = new Manager(Leaderboard())
+	val manager = new Manager(cassandra, Leaderboard())
 
 	val rnkrRoute = pathPrefix("rnkr" / "leaderboard" / """[a-zA-Z0-9]+""".r) { treeId =>
 		val lb = manager.get(treeId)
@@ -52,6 +54,10 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 		} ~ path("around") {
 			parameter('entrant, 'count ? 0) { (entrant, count) =>
 				complete(lb.flatMap(_.around(entrant, count)))
+			}
+		} ~ path("get") {
+			parameterMultiMap { map =>
+				complete(lb.flatMap(_.get(map.getOrElse("entrant", Seq()): _*)))
 			}
 		} ~ path("rank") {
 			parameter('score) { score =>
@@ -71,7 +77,11 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 	}
 }
 
-class ServiceActor extends Actor with Service {
+object ServiceActor {
+	def props(cassandra: Cassandra) = Props(new ServiceActor(cassandra))
+}
+
+class ServiceActor(override val cassandra: Cassandra) extends Actor with Service {
 	def actorRefFactory = context
 	val executionContext = context.dispatcher
 	def receive = runRoute(rnkrRoute)

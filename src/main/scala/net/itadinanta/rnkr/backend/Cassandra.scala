@@ -4,7 +4,7 @@ import com.datastax.driver.core.{ ProtocolOptions, Cluster }
 import akka.actor.ActorSystem
 import net.itadinanta.common.GlobalConfig
 
-class Cassandra(val hosts: Seq[String], val port: Int) {
+class Cassandra(val hosts: Seq[String] = Seq("localhost"), val port: Int = 9042) {
 	import scala.collection.JavaConversions._
 
 	val cluster: Cluster =

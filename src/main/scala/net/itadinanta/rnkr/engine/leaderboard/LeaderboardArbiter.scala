@@ -4,6 +4,7 @@ import akka.actor.ActorContext
 import net.itadinanta.rnkr.core.arbiter.Arbiter
 import net.itadinanta.rnkr.core.arbiter.ActorArbiter
 import net.itadinanta.rnkr.engine.leaderboard.UpdateMode._
+import akka.actor.ActorRefFactory
 
 trait LeaderboardArbiter extends Arbiter[Leaderboard] {
 
@@ -23,6 +24,6 @@ trait LeaderboardArbiter extends Arbiter[Leaderboard] {
 }
 
 object LeaderboardArbiter {
-	def create(t: Leaderboard)(implicit context: ActorContext) = new ActorArbiter(t) with LeaderboardArbiter
+	def create(t: Leaderboard, context: ActorRefFactory) = new ActorArbiter(t, context) with LeaderboardArbiter
 }
 

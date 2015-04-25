@@ -21,6 +21,6 @@ trait TreeArbiter[K, V] extends Arbiter[RankedTreeMap[K, V]] {
 }
 
 object TreeArbiter {
-	def create[K, V](t: RankedTreeMap[K, V])(implicit context: ActorContext) = new ActorArbiter(t) with TreeArbiter[K, V]
+	def create[K, V](t: RankedTreeMap[K, V])(implicit context: ActorContext) = new ActorArbiter(t, context) with TreeArbiter[K, V]
 }
 
