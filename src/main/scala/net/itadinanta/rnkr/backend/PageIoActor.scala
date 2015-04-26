@@ -16,6 +16,7 @@ import com.google.common.util.concurrent.FutureCallback
 import scala.concurrent.Promise
 import scala.collection.JavaConversions._
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import akka.actor.Props
 
 case class PageReadRequest(id: String, page: Int)
 case class PageWriteRequest(id: String, page: Int, rows: Seq[Row[Long, String]])
@@ -35,9 +36,15 @@ trait PageIoActor extends Actor {
 	}
 }
 
+object PageReaderActor {
+	def props(cluster: Cassandra, id: String) = Props(new PageReaderActor(cluster, id))
+}
+
 class PageReaderActor(override val cluster: Cassandra, val id: String) extends PageIoActor {
 
-	val query = QueryBuilder.select("score", "entrant").from("pages").where(QueryBuilder.eq("id", "?"))
+	val query = QueryBuilder.select("score", "entrant")
+		.from("pages")
+		.where(QueryBuilder.eq("id", QueryBuilder.bindMarker()))
 	val readPageStatement = session.prepare(query).setConsistencyLevel(ConsistencyLevel.ONE)
 
 	def loadRows(page: Int): Future[Seq[Row[Long, String]]] = {
@@ -54,13 +61,20 @@ class PageReaderActor(override val cluster: Cassandra, val id: String) extends P
 	}
 
 	def receive = {
-		case PageReadRequest(id, page) => loadRows(page) pipeTo sender()
+		case PageReadRequest(id, page) => loadRows(page) pipeTo sender
 	}
+}
+
+object PageWriterActor {
+	def props(cluster: Cassandra, id: String) = Props(new PageWriterActor(cluster, id))
 }
 
 class PageWriterActor(override val cluster: Cassandra, val id: String) extends PageIoActor {
 
-	val query = QueryBuilder.insertInto("pages").value("id", "?").value("score", "?").value("entrant", "?")
+	val query = QueryBuilder.insertInto("pages")
+		.value("id", QueryBuilder.bindMarker())
+		.value("score", QueryBuilder.bindMarker())
+		.value("entrant", QueryBuilder.bindMarker())
 	val insertRowStatement = session.prepare(query).setConsistencyLevel(ConsistencyLevel.ONE)
 
 	def storeRows(id: String, page: Int, rows: Seq[Row[Long, String]]): Future[Boolean] = {

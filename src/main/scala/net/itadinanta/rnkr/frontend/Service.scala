@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import net.itadinanta.rnkr.backend.Cassandra
 import net.itadinanta.rnkr.core.tree.Row
 import net.itadinanta.rnkr.core.tree.RankedTreeMap
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
+import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
 import net.itadinanta.rnkr.engine.leaderboard.UpdateMode._
 import net.itadinanta.rnkr.engine.leaderboard.Post
 import net.itadinanta.rnkr.engine.leaderboard.Update
@@ -41,7 +41,7 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 	}
 	implicit val jsonEntry = jsonFormat5(Entry)
 
-	val manager = new Manager(cassandra, Leaderboard())
+	val manager = new Manager(cassandra, () => LeaderboardBuffer())
 
 	val rnkrRoute = pathPrefix("rnkr" / "leaderboard" / """[a-zA-Z0-9]+""".r) { treeId =>
 		val lb = manager.get(treeId)
