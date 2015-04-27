@@ -27,6 +27,6 @@ trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
 
 object LeaderboardArbiter {
 	def create(t: LeaderboardBuffer, context: ActorRefFactory): Leaderboard = new ActorArbiter(t, context) with LeaderboardArbiter
-	def wrap(gate: ActorRef): Leaderboard = new ActorGateWrapper[LeaderboardBuffer](gate) with LeaderboardArbiter
+	def wrap(gate: ActorRef): LeaderboardArbiter = new ActorGateWrapper[LeaderboardBuffer](gate) with LeaderboardArbiter
 }
 

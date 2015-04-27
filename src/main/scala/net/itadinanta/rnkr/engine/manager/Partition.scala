@@ -16,31 +16,32 @@ import net.itadinanta.rnkr.backend.Cassandra
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardArbiter
 import scala.concurrent.Promise
+import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
 
 sealed trait ManagerCommand
 
-class Manager[K, V](cassandra: Cassandra, constructor: () => LeaderboardBuffer)(implicit actorRefFactory: ActorRefFactory) {
+class Partition[K, V](cassandra: Cassandra, constructor: () => LeaderboardBuffer)(implicit actorRefFactory: ActorRefFactory) {
 	val duration = FiniteDuration(30, TimeUnit.SECONDS)
 	implicit val timeout: Timeout = new Timeout(duration)
 	case class Find(val name: String) extends ManagerCommand
 
-	val manager = actorRefFactory.actorOf(ManagerActor.props, "manager")
+	val partitionManager = actorRefFactory.actorOf(PartitionActor.props, "partition")
 
-	def get(name: String): Future[LeaderboardArbiter] = {
+	def get(name: String): Future[Leaderboard] = {
 		implicit val executionContext = actorRefFactory.dispatcher
 
-		val found = (manager ? Find(name)).mapTo[LeaderboardArbiter]
+		val found = (partitionManager ? Find(name)).mapTo[Leaderboard]
 		found map {
 			_.isEmpty
 		}
 		found
 	}
 
-	object ManagerActor {
-		def props = Props(new ManagerActor)
+	object PartitionActor {
+		def props = Props(new PartitionActor)
 	}
 
-	class ManagerActor extends Actor {
+	class PartitionActor extends Actor {
 		implicit val executionContext = context.dispatcher
 		val registry = mutable.Map[String, Lifecycle]()
 		def receive() = {

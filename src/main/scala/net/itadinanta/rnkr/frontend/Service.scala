@@ -6,7 +6,6 @@ import spray.http._
 import MediaTypes._
 import spray.json.DefaultJsonProtocol
 import scala.concurrent.ExecutionContext
-import net.itadinanta.rnkr.engine.manager.Manager
 import akka.actor.ActorContext
 import spray.httpx.SprayJsonSupport
 import spray.httpx.marshalling.MetaMarshallers
@@ -26,6 +25,7 @@ import spray.json.JsValue
 import scalaz.ImmutableArray
 import spray.json.DeserializationException
 import akka.actor.Props
+import net.itadinanta.rnkr.engine.manager.Partition
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
 	val cassandra: Cassandra
@@ -41,7 +41,7 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 	}
 	implicit val jsonEntry = jsonFormat5(Entry)
 
-	val manager = new Manager(cassandra, () => LeaderboardBuffer())
+	val manager = new Partition(cassandra, () => LeaderboardBuffer())
 
 	val rnkrRoute = pathPrefix("rnkr" / "leaderboard" / """[a-zA-Z0-9]+""".r) { treeId =>
 		val lb = manager.get(treeId)

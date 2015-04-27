@@ -35,3 +35,20 @@ trait Leaderboard {
 	def remove(entrant: String): Future[Update]
 	def clear(): Future[Int]
 }
+
+abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) extends Leaderboard {
+	import UpdateMode._
+	override def size = target.size
+	override def isEmpty = target.isEmpty
+	override def get(entrant: String*) = target.get(entrant: _*)
+	override def get(score: Long, timestamp: Long) = target.get(score, timestamp)
+	override def at(rank: Long) = target.at(rank)
+	override def estimatedRank(score: Long) = target.estimatedRank(score)
+	override def around(entrant: String, length: Int) = target.around(entrant, length)
+	override def around(score: Long, length: Int) = target.around(score, length)
+	override def page(start: Long, length: Int) = target.page(start, length)
+
+	override def post(post: Post, updateMode: UpdateMode = BestWins) = target.post(post, updateMode)
+	override def remove(entrant: String) = target.remove(entrant)
+	override def clear() = target.clear()
+}
