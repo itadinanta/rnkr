@@ -16,6 +16,7 @@ object Attachments {
 	def apply(s: Option[String]): Option[Attachments] = for { v <- s } yield Attachments(v)
 }
 
+case class Replay(updateMode: UpdateMode.UpdateMode, score: Long, timestamp: Long, entrant: String, attachments: Option[Attachments])
 case class Entry(score: Long, timestamp: Long, entrant: String, rank: Long, attachments: Option[Attachments])
 case class Post(score: Long, entrant: String, attachments: Option[Attachments])
 case class Update(oldEntry: Option[Entry], newEntry: Option[Entry])

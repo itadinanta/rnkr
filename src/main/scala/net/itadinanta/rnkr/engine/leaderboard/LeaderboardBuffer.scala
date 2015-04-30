@@ -11,8 +11,6 @@ import net.itadinanta.rnkr.core.tree.RankedTreeMap
 import net.itadinanta.rnkr.core.tree.Row
 import scalaz._
 
-
-
 trait LeaderboardBuffer {
 	def size: Int
 	def isEmpty: Boolean
@@ -27,6 +25,10 @@ trait LeaderboardBuffer {
 	def remove(entrant: String): Update
 	def post(post: Post, updateMode: UpdateMode = BestWins): Update
 	def clear(): Int
+
+	def replay(entries: Seq[Replay]): Seq[Update]
+	def append(entries: Seq[Entry]): Seq[Update]
+	def export(): Seq[Entry]
 }
 
 private[leaderboard] case class TimedScore(val score: Long, val timestamp: Long, val attachments: Option[Attachments] = None) {
@@ -76,10 +78,12 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 	protected def better(newScore: TimedScore, oldScore: TimedScore) =
 		ordering.lt(newScore, oldScore)
 
-	override def post(post: Post, updateMode: UpdateMode = BestWins): Update = {
+	override def post(p: Post, updateMode: UpdateMode = BestWins): Update =
+		post(TimedScore(p.score, timestamp, p.attachments), p.entrant, updateMode)
+
+	private[this] def post(newScore: TimedScore, entrant: String, updateMode: UpdateMode): Update = {
 		import UpdateMode._
-		val newScore = TimedScore(post.score, timestamp, post.attachments)
-		val entrantKey = asByteString(post.entrant)
+		val entrantKey = asByteString(entrant)
 		val (isBetter, oldEntry) = entrantIndex.get(entrantKey) match {
 			case Some(oldScore) =>
 				if (updateMode == LastWins || better(newScore, oldScore))
@@ -92,7 +96,7 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 		if (isBetter) {
 			val newRow = scoreIndex.put(newScore, entrantKey)
 			entrantIndex.put(entrantKey, newScore)
-			Update(oldEntry, Some(Entry(newScore.score, newScore.timestamp, post.entrant, newRow.rank, post.attachments)))
+			Update(oldEntry, Some(Entry(newScore.score, newScore.timestamp, entrant, newRow.rank, newScore.attachments)))
 		} else {
 			Update(oldEntry, oldEntry)
 		}
@@ -141,6 +145,18 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 			r <- scoreIndex.page(start, length)
 			s <- entrantIndex.get(r.value)
 		} yield Entry(s.score, s.timestamp, asString(r.value), r.rank, s.attachments)
+
+	override def export() =
+		for {
+			((k, value), rank) <- scoreIndex.entries().zipWithIndex
+			s <- entrantIndex.get(value)
+		} yield Entry(s.score, s.timestamp, asString(value), rank + 1, s.attachments)
+
+	def replay(entries: Seq[Replay]): Seq[Update] = entries map { p =>
+		post(TimedScore(p.score, p.timestamp, p.attachments), p.entrant, p.updateMode)
+	}
+
+	def append(entries: Seq[Entry]): Seq[Update] = ???
 
 	private[this] def timestamp(): Long = {
 		val now = System.currentTimeMillis()

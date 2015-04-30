@@ -35,6 +35,8 @@ trait RankedTreeMap[K, V] {
 	def put(k: K, value: V): Row[K, V]
 	def append(k: K, value: V): Row[K, V]
 	def keys(): Seq[K]
+	def values(): Seq[V]
+	def entries(): Seq[(K,V)]
 	def keysReverse(): Seq[K]
 	def rank(k: K): Position
 	def range(k: K, length: Int): Seq[Row[K, V]]
@@ -119,25 +121,23 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 		row(root, 0)
 	}
 
-	override def keys() = {
-		val buf = new ListBuffer[K]
-		def appendNode(node: LeafNode[K, V]): Unit = if (node != null) {
-			buf ++= node.keys
-			appendNode(node.next)
+	private[this] def traverse[I](node: LeafNode[K, V], nav: (LeafNode[K, V]) => LeafNode[K, V])(app: (LeafNode[K, V]) => Seq[I]) = {
+		val buf = new ListBuffer[I]
+		@tailrec def traverse(node: LeafNode[K, V]): Unit = if (node != null) {
+			buf ++= app(node)
+			traverse(nav(node))
 		}
-		appendNode(head)
+		traverse(node)
 		buf.toList
 	}
 
-	override def keysReverse() = {
-		val buf = new ListBuffer[K]
-		def appendNode(node: LeafNode[K, V]): Unit = if (node != null) {
-			buf ++= node.keys.reverse
-			appendNode(node.prev)
-		}
-		appendNode(tail)
-		buf.toList
-	}
+	private[this] def forwards[I](app: (LeafNode[K, V]) => Seq[I]) = traverse(head, { _.next })(app)
+	private[this] def backwards[I](app: (LeafNode[K, V]) => Seq[I]) = traverse(tail, { _.prev })(app)
+
+	override def keys() = forwards { _.keys }
+	override def entries() = forwards { node => node.keys zip node.values }
+	override def values() = forwards { _.values }
+	override def keysReverse() = backwards { _.keys }
 
 	override def remove(k: K) = checkVersion(newVersion) {
 		delete(k) match {
