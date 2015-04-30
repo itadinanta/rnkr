@@ -20,7 +20,7 @@ import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
 
 sealed trait ManagerCommand
 
-class Partition[K, V](cassandra: Cassandra, constructor: () => LeaderboardBuffer)(implicit actorRefFactory: ActorRefFactory) {
+class Partition(cassandra: Cassandra, constructor: () => LeaderboardBuffer)(implicit actorRefFactory: ActorRefFactory) {
 	val duration = FiniteDuration(30, TimeUnit.SECONDS)
 	implicit val timeout: Timeout = new Timeout(duration)
 	case class Find(val name: String) extends ManagerCommand

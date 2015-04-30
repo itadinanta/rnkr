@@ -11,6 +11,7 @@ object UpdateMode extends Enumeration {
 class Attachments(val data: ImmutableArray[Byte]) extends AnyVal;
 
 object Attachments {
+	def apply(data: Array[Byte]) = new Attachments(ImmutableArray.fromArray(data))
 	def apply(s: String): Attachments = new Attachments(ImmutableArray.fromArray(s.getBytes("UTF8")))
 	def apply(s: Option[String]): Option[Attachments] = for { v <- s } yield Attachments(v)
 }

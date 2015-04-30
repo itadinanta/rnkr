@@ -26,10 +26,15 @@ import net.itadinanta.rnkr.engine.leaderboard.Post
 import net.itadinanta.rnkr.engine.leaderboard.Attachments
 import net.itadinanta.rnkr.engine.leaderboard.UpdateMode._
 import java.nio.ByteBuffer
+import net.itadinanta.rnkr.engine.leaderboard.UpdateMode
 
 case object Load
 case object Save
 case class WriteAheadLog(w: Post, mode: UpdateMode, seq: Long)
+
+object Storage {
+	val NORM = 1L << 63
+}
 
 trait Storage extends Actor {
 	val cluster: Cassandra
@@ -51,18 +56,53 @@ object Reader {
 }
 
 class Reader(override val cluster: Cassandra, val id: String, val leaderboard: LeaderboardBuffer) extends Storage {
-
+	import QueryBuilder._
 	case class PageReadRequest(page: Int)
 
 	val readPageStatement = session.prepare(
-		QueryBuilder.select("score", "entrant")
+		select("score", "entrant")
 			.from("pages")
-			.where(QueryBuilder.eq("id", QueryBuilder.bindMarker()))).setConsistencyLevel(ConsistencyLevel.ONE)
+			.where(QueryBuilder.eq("id", bindMarker()))).setConsistencyLevel(ConsistencyLevel.ONE)
 
 	def loadRows(page: Int): Future[Seq[Row[Long, String]]] = {
 		val select = readPageStatement.bind(id)
 		session.executeAsync(select) map { resultSet =>
 			resultSet.all.zipWithIndex.map { case (r, i) => parseRow(i, r) }
+		}
+	}
+
+	val readWal = session.prepare(
+		select("seq", "scoredata")
+			.from("wal")
+			.where(QueryBuilder.eq("id", bindMarker()))).setConsistencyLevel(ConsistencyLevel.ONE)
+
+	def decode(s: String) = s match {
+		case "" => None
+		case o => Some(Attachments(BaseEncoding.base64().decode(o)))
+	}
+
+	def replayWal(sender: ActorRef) = {
+		val select = readWal.bind(id)
+		session.executeAsync(select) map {
+			_.foreach { r =>
+				val timestamp = r.getLong("seq")
+				val scoredata = r.getBytes("scoredata")
+				val scoredataBuffer = new Array[Byte](scoredata.remaining())
+				scoredata.get(scoredataBuffer)
+				val scoredataString = new String(scoredataBuffer, "UTF8")
+				val s = scoredataString.split(';')
+
+				val mode = UpdateMode.withName(s(0))
+				val score = s(1).toLong
+
+				val entrant = s(3)
+				val attachments = if (s.size < 5) None else decode(s(4))
+				// we need an "import" call rather than 
+				leaderboard.post(Post(score, entrant, attachments), mode)
+				// "${mode};${w.score};${timestamp};${w.entrant};${encode(w.attachments)}"
+			}
+		} onComplete {
+			_ => sender ! Load
 		}
 	}
 
@@ -73,7 +113,7 @@ class Reader(override val cluster: Cassandra, val id: String, val leaderboard: L
 	}
 
 	def receive = {
-		case Load => loadRows(0) pipeTo sender
+		case Load => replayWal(sender)
 		case PageReadRequest(page) => loadRows(page) pipeTo sender
 	}
 }
@@ -108,7 +148,7 @@ class Writer(override val cluster: Cassandra, val id: String, val leaderboard: L
 	def storeRows(page: Int, rows: Seq[Entry]): Future[Int] = {
 		val batch = new BatchStatement(BatchStatement.Type.UNLOGGED)
 		rows foreach { row =>
-			val score = (BigInt(1) << 128) | (BigInt(row.score)) << 64 | BigInt(row.timestamp)
+			val score = (BigInt(1) << 128) | (BigInt(row.score + Storage.NORM)) << 64 | BigInt(row.timestamp)
 			val entrant = s"${row.entrant};${encode(row.attachments)}"
 			batch.add(storePageRowStatement.bind(id + "/" + page, ByteBuffer.wrap(score.toByteArray), ByteBuffer.wrap(entrant.getBytes)))
 		}

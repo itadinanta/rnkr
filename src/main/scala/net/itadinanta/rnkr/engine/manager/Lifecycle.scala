@@ -47,7 +47,7 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 		reader ! Load
 
 		def receive = {
-			case page: Seq[Row[Long, String]] => {
+			case Load => {
 				import UpdateMode._
 				reader ! PoisonPill
 				val gate = context.actorOf(Gate.props(target), "gate_" + name)

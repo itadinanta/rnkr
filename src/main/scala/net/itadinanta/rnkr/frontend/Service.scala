@@ -41,37 +41,42 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 	}
 	implicit val jsonEntry = jsonFormat5(Entry)
 
-	val manager = new Partition(cassandra, () => LeaderboardBuffer())
+	val defaultPartition = new Partition(cassandra, () => LeaderboardBuffer())
 
-	val rnkrRoute = pathPrefix("rnkr" / "leaderboard" / """[a-zA-Z0-9]+""".r) { treeId =>
-		val lb = manager.get(treeId)
-		pathEnd {
-			(post | put) {
-				formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
-					complete(lb.flatMap(_.post(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins)).map(_.newEntry))
+	val partitions = Map("leaderboard" -> defaultPartition, "default" -> defaultPartition)
+
+	val rnkrRoute = pathPrefix("rnkr" / Segment) { partitionName =>
+		val manager = partitions(partitionName)
+		pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
+			val lb = manager.get(treeId)
+			pathEnd {
+				(post | put) {
+					formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
+						complete(lb.flatMap(_.post(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins)).map(_.newEntry))
+					}
 				}
-			}
-		} ~ path("around") {
-			parameter('entrant, 'count ? 0) { (entrant, count) =>
-				complete(lb.flatMap(_.around(entrant, count)))
-			}
-		} ~ path("get") {
-			parameterMultiMap { map =>
-				complete(lb.flatMap(_.get(map.getOrElse("entrant", Seq()): _*)))
-			}
-		} ~ path("rank") {
-			parameter('score) { score =>
-				complete(lb.flatMap(_.estimatedRank(score.toLong).map(_.toString)))
-			}
-		} ~ path("size") {
-			complete(lb.flatMap(_.size).map(_.toString))
-		} ~ path("range") {
-			parameters('score, 'length ? 1) { (score, length) =>
-				complete(lb.flatMap(_.around(score.toLong, length.toInt)))
-			}
-		} ~ path("page") {
-			parameters('start ? 0, 'length ? 10) { (start, length) =>
-				complete(lb.flatMap(_.page(start.toInt, length.toInt)))
+			} ~ path("around") {
+				parameter('entrant, 'count ? 0) { (entrant, count) =>
+					complete(lb.flatMap(_.around(entrant, count)))
+				}
+			} ~ path("get") {
+				parameterMultiMap { map =>
+					complete(lb.flatMap(_.get(map.getOrElse("entrant", Seq()): _*)))
+				}
+			} ~ path("rank") {
+				parameter('score) { score =>
+					complete(lb.flatMap(_.estimatedRank(score.toLong).map(_.toString)))
+				}
+			} ~ path("size") {
+				complete(lb.flatMap(_.size).map(_.toString))
+			} ~ path("range") {
+				parameters('score, 'length ? 1) { (score, length) =>
+					complete(lb.flatMap(_.around(score.toLong, length.toInt)))
+				}
+			} ~ path("page") {
+				parameters('start ? 0, 'length ? 10) { (start, length) =>
+					complete(lb.flatMap(_.page(start.toInt, length.toInt)))
+				}
 			}
 		}
 	}
