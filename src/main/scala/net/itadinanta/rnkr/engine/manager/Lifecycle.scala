@@ -57,8 +57,8 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 				arbiter.success(new LeaderboardDecorator(l) {
 					override def post(post: Post, updateMode: UpdateMode = BestWins) = {
 						implicit val timeout = Timeout(1 minute)
-						super.post(post, updateMode) flatMap {
-							update => (writer ? WriteAheadLog(post, updateMode, update.newEntry.get.timestamp)) map { _ => update }
+						super.post(post, updateMode) flatMap { update =>
+							writer ask WriteAheadLog(post, updateMode, update.newEntry.get.timestamp) map { _ => update }
 						}
 					}
 				})

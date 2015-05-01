@@ -27,6 +27,7 @@ import net.itadinanta.rnkr.engine.leaderboard.Attachments
 import net.itadinanta.rnkr.engine.leaderboard.UpdateMode._
 import java.nio.ByteBuffer
 import net.itadinanta.rnkr.engine.leaderboard.UpdateMode
+import net.itadinanta.rnkr.engine.leaderboard.Replay
 
 case object Load
 case object Save
@@ -83,24 +84,24 @@ class Reader(override val cluster: Cassandra, val id: String, val leaderboard: L
 
 	def replayWal(sender: ActorRef) = {
 		val select = readWal.bind(id)
-		session.executeAsync(select) map {
-			_.foreach { r =>
-				val timestamp = r.getLong("seq")
-				val scoredata = r.getBytes("scoredata")
-				val scoredataBuffer = new Array[Byte](scoredata.remaining())
-				scoredata.get(scoredataBuffer)
-				val scoredataString = new String(scoredataBuffer, "UTF8")
-				val s = scoredataString.split(';')
+		session.executeAsync(select) map { results =>
+			leaderboard.replay(
+				results.map { r =>
+					val timestamp = r.getLong("seq")
+					// "${mode};${w.score};${timestamp};${w.entrant};${encode(w.attachments)}"
+					val scoredata = r.getBytes("scoredata")
+					val scoredataBuffer = new Array[Byte](scoredata.remaining())
+					scoredata.get(scoredataBuffer)
+					val scoredataString = new String(scoredataBuffer, "UTF8")
+					val s = scoredataString.split(';')
 
-				val mode = UpdateMode.withName(s(0))
-				val score = s(1).toLong
+					val mode = UpdateMode.withName(s(0))
+					val score = s(1).toLong
 
-				val entrant = s(3)
-				val attachments = if (s.size < 5) None else decode(s(4))
-				// we need an "import" call rather than 
-				leaderboard.post(Post(score, entrant, attachments), mode)
-				// "${mode};${w.score};${timestamp};${w.entrant};${encode(w.attachments)}"
-			}
+					val entrant = s(3)
+					val attachments = if (s.size < 5) None else decode(s(4))
+					Replay(mode, score, timestamp, entrant, attachments)
+				})
 		} onComplete {
 			_ => sender ! Load
 		}

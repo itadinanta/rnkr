@@ -26,9 +26,9 @@ trait LeaderboardBuffer {
 	def post(post: Post, updateMode: UpdateMode = BestWins): Update
 	def clear(): Int
 
-	def replay(entries: Seq[Replay]): Seq[Update]
-	def append(entries: Seq[Entry]): Seq[Update]
-	def export(): Seq[Entry]
+	def replay(entries: Iterable[Replay]): Iterable[Update]
+	def append(entries: Iterable[Entry]): Iterable[Update]
+	def export(): Iterable[Entry]
 }
 
 private[leaderboard] case class TimedScore(val score: Long, val timestamp: Long, val attachments: Option[Attachments] = None) {
@@ -152,11 +152,11 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 			s <- entrantIndex.get(value)
 		} yield Entry(s.score, s.timestamp, asString(value), rank + 1, s.attachments)
 
-	def replay(entries: Seq[Replay]): Seq[Update] = entries map { p =>
+	override def replay(entries: Iterable[Replay]): Iterable[Update] = entries map { p =>
 		post(TimedScore(p.score, p.timestamp, p.attachments), p.entrant, p.updateMode)
 	}
 
-	def append(entries: Seq[Entry]): Seq[Update] = ???
+	override def append(entries: Iterable[Entry]): Iterable[Update] = ???
 
 	private[this] def timestamp(): Long = {
 		val now = System.currentTimeMillis()
