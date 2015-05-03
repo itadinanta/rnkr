@@ -517,7 +517,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 				else Cursor(l.keyAt(index), l.childAt(index), l, index, rank - index)
 			}
 			case c: IndexNode[K] => {
-				val next = c.partialRanks.lastIndexWhere(rank >= _) + 1
+				val next = c.partialRanks.lastIndexWhere(remainder >= _) + 1
 				if (next >= c.partialRanks.size) null
 				else searchByRank(c.childAt(next), remainder - (if (next == 0) 0: Position else c.partialRanks(next - 1)))
 			}
