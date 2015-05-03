@@ -178,6 +178,16 @@ class Writer(override val cluster: Cassandra, val id: String, initialWatermark: 
 		session.executeAsync(statement) map { _ => page }
 	}
 
+	lazy val storeWatermarks = session.prepare(QueryBuilder.insertInto("watermarks")
+		.value("id", QueryBuilder.bindMarker())
+		.value("watermark", QueryBuilder.bindMarker())
+		.value("pages", QueryBuilder.bindMarker()))
+		.setConsistencyLevel(ConsistencyLevel.ONE)
+
+	def storeWatermark(watermark: Long, pages: Int) {
+		session.executeAsync(storeWatermarks.bind(id, JLong.valueOf(watermark), Integer.valueOf(pages)))
+	}
+
 	case class PageWriteRequest(page: Int)
 
 	def receive = {
@@ -189,8 +199,13 @@ class Writer(override val cluster: Cassandra, val id: String, initialWatermark: 
 			this.watermark = snapshot.timestamp
 			val src = sender()
 			Future.sequence(snapshot.entries.grouped(1000).zipWithIndex.map {
-				case (pageItems, pageIndex) => storeRows(snapshot.timestamp, pageIndex, pageItems)
-			}) onSuccess {
+				case (pageItems, pageIndex) =>
+					storeRows(snapshot.timestamp, pageIndex, pageItems)
+			}) map { pages =>
+				storeWatermark(snapshot.timestamp, pages.size)
+			} map {
+				_ => //	
+			} onSuccess {
 				case _ => src ! Save
 			}
 	}
