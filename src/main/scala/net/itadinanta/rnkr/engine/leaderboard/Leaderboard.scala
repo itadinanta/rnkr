@@ -13,13 +13,13 @@ class Attachments(val data: ImmutableArray[Byte]) extends AnyVal;
 object Attachments {
 	def apply(data: Array[Byte]) = new Attachments(ImmutableArray.fromArray(data))
 	def apply(s: String): Attachments = new Attachments(ImmutableArray.fromArray(s.getBytes("UTF8")))
-	def apply(s: Option[String]): Option[Attachments] = for { v <- s } yield Attachments(v)
+	def apply(s: Option[String]): Option[Attachments] = s map { Attachments(_) }
 }
 
-case class Replay(updateMode: UpdateMode.UpdateMode, score: Long, timestamp: Long, entrant: String, attachments: Option[Attachments])
 case class Entry(score: Long, timestamp: Long, entrant: String, rank: Long, attachments: Option[Attachments])
 case class Post(score: Long, entrant: String, attachments: Option[Attachments])
-case class Update(oldEntry: Option[Entry], newEntry: Option[Entry])
+case class Update(timestamp: Long, oldEntry: Option[Entry], newEntry: Option[Entry])
+case class Snapshot(timestamp: Long, entries: Seq[Entry])
 
 trait Leaderboard {
 	import UpdateMode._
@@ -32,10 +32,12 @@ trait Leaderboard {
 	def around(entrant: String, length: Int): Future[Seq[Entry]]
 	def around(score: Long, length: Int): Future[Seq[Entry]]
 	def page(start: Long, length: Int): Future[Seq[Entry]]
+	
+	def export(): Future[Snapshot]
 
 	def post(post: Post, updateMode: UpdateMode = BestWins): Future[Update]
 	def remove(entrant: String): Future[Update]
-	def clear(): Future[Int]
+	def clear(): Future[Update]
 }
 
 abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) extends Leaderboard {
@@ -49,6 +51,7 @@ abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) ext
 	override def around(entrant: String, length: Int) = target.around(entrant, length)
 	override def around(score: Long, length: Int) = target.around(score, length)
 	override def page(start: Long, length: Int) = target.page(start, length)
+	override def export() = target.export()
 
 	override def post(post: Post, updateMode: UpdateMode = BestWins) = target.post(post, updateMode)
 	override def remove(entrant: String) = target.remove(entrant)

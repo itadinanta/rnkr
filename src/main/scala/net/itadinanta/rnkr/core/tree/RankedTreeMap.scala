@@ -137,7 +137,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 	override def keys() = forwards { _.keys }
 	override def entries() = forwards { node => node.keys zip node.values }
 	override def values() = forwards { _.values }
-	override def keysReverse() = backwards { _.keys }
+	override def keysReverse() = backwards { _.keys.reverse }
 
 	override def remove(k: K) = checkVersion(newVersion) {
 		delete(k) match {
@@ -334,12 +334,12 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 					val deleted = factory.data.delete(leaf, k)
 					valueCount -= 1
 					val cursor = Cursor(k, deleted.child, leaf, deleted.index, 0)
-					LOG.debug("Deleted index {} from {}", deleted.index, deleted.a);
+					// LOG.debug("Deleted index {} from {}", deleted.index, deleted.a);
 					if (factory.data.balanced(leaf) || (av eq bv))
 						DeletedResult(pos, if (leaf.isEmpty) k else leaf.keyAt(0), leafK, leaf, None, None, -1, 0, cursor)
 					else (av, bv) match {
 						case (a: LeafNode[K, V], b: LeafNode[K, V]) => {
-							LOG.debug("Leaf needs rebalancing after deletion {} {}", Array[Object](a, b): _*);
+							// LOG.debug("Leaf needs rebalancing after deletion {} {}", Array[Object](a, b): _*);
 							val oldAk = if (a eq leaf) leafK else a.keys.head
 							val oldBk = if (b eq leaf) leafK else b.keys.head
 							val initialACount = a.count + (if (a eq leaf) 1 else 0)
@@ -354,7 +354,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 								if (balanced.b eq tail) tail = balanced.a
 								leafCount -= 1
 							}
-							LOG.debug("Rebalanced leaf {} {}", Array[Object](balanced.a, balanced.b): _*);
+							// LOG.debug("Rebalanced leaf {} {}", Array[Object](balanced.a, balanced.b): _*);
 							DeletedResult(firstSibling, balanced.a.keyAt(0), oldAk, balanced.a, balanced.b.keyOption(0), Some(oldBk),
 								balanced.a.count - initialACount, balanced.b.count - initialBCount,
 								cursor)
@@ -365,7 +365,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 					val candidateChild = index.keys.lastIndexWhere(factory.ordering.ge(k, _)) + 1
 					deleteRecursively(k, candidateChild, index.childOption(candidateChild - 1), index.childAt(candidateChild), index.childOption(candidateChild + 1)) match {
 						case DeletedResult(child, ak, oldAk, a, None, Some(oldPivot), takenA, takenB, cursor) => {
-							LOG.debug("Removed empty node {} {} {}", Array[Object](toLong(takenA), toLong(takenB), index))
+							// LOG.debug("Removed empty node {} {} {}", Array[Object](toLong(takenA), toLong(takenB), index))
 							factory.index.grow(index, child, takenA)
 							if (candidateChild > 0 && index.keyAt(candidateChild - 1) == oldAk) factory.index.renameKeyAt(index, candidateChild - 1, ak)
 							val deleted = factory.index.deleteAt(index, child)
@@ -377,9 +377,9 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 									val oldBk = if (b eq index) oldPivot else b.keys.head
 									val initialACount = a.count + (if (a eq index) 1 else 0)
 									val initialBCount = b.count + (if (b eq index) 1 else 0)
-									LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(initialACount), b, toLong(initialBCount)): _*)
+									// LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(initialACount), b, toLong(initialBCount)): _*)
 									val balanced = factory.index.redistribute(a, Seq(pivot), b)
-									LOG.debug("Rebalanced {} {}", Array[Object](balanced.a, balanced.b): _*);
+									// LOG.debug("Rebalanced {} {}", Array[Object](balanced.a, balanced.b): _*);
 									if (balanced.b.isEmpty) {
 										indexCount -= 1
 										DeletedResult(firstSibling, ak, oldAk, balanced.a, None, Some(pivot),
@@ -395,7 +395,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 						}
 
 						case DeletedResult(child, ak, oldAk, a, Some(bk), oldBk, takenA, takenB, cursor) => {
-							LOG.debug("Rebalanced both nodes {} {} {}", Array[Object](toLong(takenA), toLong(takenB), index))
+							// LOG.debug("Rebalanced both nodes {} {} {}", Array[Object](toLong(takenA), toLong(takenB), index))
 							if (takenA != 0)
 								factory.index.grow(index, child, takenA)
 							if (takenB != 0)
@@ -412,7 +412,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 						}
 
 						case DeletedResult(child, k, oldK, node, None, None, takenA, takenB, cursor) => {
-							LOG.debug("Propagating deletion [{}] {} {} {} to {}", Array[Object](toInt(child), toLong(takenA), toLong(takenB), index, toInt(candidateChild - 1)))
+							// LOG.debug("Propagating deletion [{}] {} {} {} to {}", Array[Object](toInt(child), toLong(takenA), toLong(takenB), index, toInt(candidateChild - 1)))
 							factory.index.grow(index, child, takenA + takenB) // WTF?
 							if (k != oldK && candidateChild > 0 && index.keyAt(candidateChild - 1) == oldK) factory.index.renameKeyAt(index, candidateChild - 1, k)
 							DeletedResult(pos, k, oldK, index, None, None, takenA, takenB, cursor)

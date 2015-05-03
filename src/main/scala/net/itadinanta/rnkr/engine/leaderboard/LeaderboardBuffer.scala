@@ -1,15 +1,15 @@
 package net.itadinanta.rnkr.engine.leaderboard
 
 import scala.collection.mutable.Map
-
 import UpdateMode.BestWins
 import UpdateMode.LastWins
 import UpdateMode.UpdateMode
 import akka.util.ByteString
+import net.itadinanta.rnkr.backend.Replay
 import net.itadinanta.rnkr.core.tree.Ordering
 import net.itadinanta.rnkr.core.tree.RankedTreeMap
 import net.itadinanta.rnkr.core.tree.Row
-import scalaz._
+import net.itadinanta.rnkr.backend.ReplayMode
 
 trait LeaderboardBuffer {
 	def size: Int
@@ -22,13 +22,14 @@ trait LeaderboardBuffer {
 	def around(score: Long, length: Int): Seq[Entry]
 	def page(start: Long, length: Int): Seq[Entry]
 
+	def export(): Snapshot
+
 	def remove(entrant: String): Update
 	def post(post: Post, updateMode: UpdateMode = BestWins): Update
-	def clear(): Int
+	def clear(): Update
 
 	def replay(entries: Iterable[Replay]): Iterable[Update]
 	def append(entries: Iterable[Entry]): Iterable[Update]
-	def export(): Iterable[Entry]
 }
 
 private[leaderboard] case class TimedScore(val score: Long, val timestamp: Long, val attachments: Option[Attachments] = None) {
@@ -41,7 +42,7 @@ private[leaderboard] object TimedScoreOrdering extends Ordering[TimedScore] {
 }
 
 object LeaderboardBuffer {
-	val TIMESTAMP_SCALE = 10000L
+	val TIMESTAMP_SCALE = 1000000L
 	def apply(): LeaderboardBuffer = new LeaderboardTreeImpl()
 }
 
@@ -96,15 +97,16 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 		if (isBetter) {
 			val newRow = scoreIndex.put(newScore, entrantKey)
 			entrantIndex.put(entrantKey, newScore)
-			Update(oldEntry, Some(Entry(newScore.score, newScore.timestamp, entrant, newRow.rank, newScore.attachments)))
+			Update(newScore.timestamp, oldEntry, Some(Entry(newScore.score, newScore.timestamp, entrant, newRow.rank, newScore.attachments)))
 		} else {
-			Update(oldEntry, oldEntry)
+			Update(newScore.timestamp, oldEntry, oldEntry)
 		}
 	}
 
 	override def clear() = {
 		entrantIndex.clear()
 		scoreIndex.clear()
+		Update(timestamp(), None, None)
 	}
 
 	override def remove(entrant: String) = {
@@ -115,7 +117,7 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 				o <- scoreIndex.remove(oldScore)
 			} yield Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments)
 
-		Update(deleted, None)
+		Update(timestamp(), deleted, None)
 	}
 
 	private def updownrange(s: TimedScore, length: Int) =
@@ -146,17 +148,33 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 			s <- entrantIndex.get(r.value)
 		} yield Entry(s.score, s.timestamp, asString(r.value), r.rank, s.attachments)
 
-	override def export() =
+	override def export() = Snapshot(timestamp(),
 		for {
 			((k, value), rank) <- scoreIndex.entries().zipWithIndex
 			s <- entrantIndex.get(value)
-		} yield Entry(s.score, s.timestamp, asString(value), rank + 1, s.attachments)
+		} yield Entry(s.score, s.timestamp, asString(value), rank + 1, s.attachments))
 
-	override def replay(entries: Iterable[Replay]): Iterable[Update] = entries map { p =>
-		post(TimedScore(p.score, p.timestamp, p.attachments), p.entrant, p.updateMode)
+	override def replay(entries: Iterable[Replay]): Iterable[Update] = entries map {
+		_ match {
+			case Replay(ReplayMode.LastWins, score, timestamp, entrant, attachments) =>
+				post(TimedScore(score, timestamp, attachments), entrant, UpdateMode.LastWins)
+			case Replay(ReplayMode.BestWins, score, timestamp, entrant, attachments) =>
+				post(TimedScore(score, timestamp, attachments), entrant, UpdateMode.BestWins)
+			case Replay(ReplayMode.Delete, _, _, entrant, _) =>
+				remove(entrant)
+			case Replay(ReplayMode.Clear, timestamp, _, _, _) =>
+				clear()
+				Update(timestamp, None, None)
+		}
 	}
 
-	override def append(entries: Iterable[Entry]): Iterable[Update] = ???
+	override def append(entries: Iterable[Entry]): Iterable[Update] = entries map { e =>
+		val key = TimedScore(e.score, e.timestamp, e.attachments)
+		val value = e.entrant
+		scoreIndex.append(key, value)
+		entrantIndex.put(value, key)
+		Update(e.timestamp, None, Some(e))
+	}
 
 	private[this] def timestamp(): Long = {
 		val now = System.currentTimeMillis()

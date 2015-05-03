@@ -54,6 +54,10 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 					formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
 						complete(lb.flatMap(_.post(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins)).map(_.newEntry))
 					}
+				} ~ delete {
+					parameter('entrant) { entrant =>
+						complete(lb.flatMap(_.remove(entrant) map (_.oldEntry)))
+					}
 				}
 			} ~ path("around") {
 				parameter('entrant, 'count ? 0) { (entrant, count) =>

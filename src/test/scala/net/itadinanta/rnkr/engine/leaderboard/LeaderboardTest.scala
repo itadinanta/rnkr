@@ -57,8 +57,11 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 		lb.get("Me").headOption should be(updated.newEntry)
 		lb.at(0) should be(updated.newEntry)
 
-		lb.post(Post(10, "Me", None)) should be(Update(updated.newEntry, updated.newEntry))
-		lb.post(Post(10, "Me", None), LastWins) should be(Update(updated.newEntry, lb.at(0)))
+		val p1 = lb.post(Post(10, "Me", None))
+		p1 should be(Update(p1.timestamp, updated.newEntry, updated.newEntry))
+
+		val p2 = lb.post(Post(10, "Me", None), LastWins)
+		p2 should be(Update(p2.timestamp, updated.newEntry, lb.at(0)))
 	}
 
 	test("Simple insert and delete") {
@@ -113,6 +116,14 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 		lb.estimatedRank(100) should be(99)
 		lb.estimatedRank(101) should be(100)
 		lb.estimatedRank(110) should be(100)
+	}
+
+	test("After 1000000 sequential appends should contain 1000000 entries in order") {
+		val large = LeaderboardBuffer()
+
+		large.append(for (i <- 1 to 1000000) yield Entry(i, i, "Item" + i, i, None))
+
+		large.size should be(1000000)
 	}
 
 	test("After 1000000 sequential insertions should contain 1000000 entries in order") {

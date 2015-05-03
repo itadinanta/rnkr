@@ -19,7 +19,8 @@ trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
 	override def around(entrant: String, length: Int) = rqueue(_.around(entrant, length))
 	override def around(score: Long, length: Int) = rqueue(_.around(score, length))
 	override def page(start: Long, length: Int) = rqueue(_.page(start, length))
-
+	override def export() = rqueue(_.export())
+	
 	override def post(post: Post, updateMode: UpdateMode = BestWins) = wqueue(_.post(post, updateMode))
 	override def remove(entrant: String) = wqueue(_.remove(entrant))
 	override def clear() = wqueue(_.clear())

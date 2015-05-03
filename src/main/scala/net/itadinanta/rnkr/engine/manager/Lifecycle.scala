@@ -31,7 +31,12 @@ import net.itadinanta.rnkr.engine.leaderboard.LeaderboardDecorator
 import net.itadinanta.rnkr.backend.WriteAheadLog
 import scala.concurrent.duration._
 import akka.pattern.ask
+import akka.pattern.pipe
 import net.itadinanta.rnkr.engine.leaderboard.Update
+import net.itadinanta.rnkr.backend.ReplayMode
+import net.itadinanta.rnkr.backend.Storage
+import net.itadinanta.rnkr.backend.Flush
+import net.itadinanta.rnkr.backend.Save
 
 class Lifecycle(name: String, cassandra: Cassandra, constructor: () => LeaderboardBuffer, actorRefFactory: ActorRefFactory) {
 	implicit val executionContext = actorRefFactory.dispatcher
@@ -47,22 +52,41 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 		reader ! Load
 
 		def receive = {
-			case Load => {
+			case Load(watermark, walLength) =>
 				import UpdateMode._
 				reader ! PoisonPill
-				val gate = context.actorOf(Gate.props(target), "gate_" + name)
-				val l = LeaderboardArbiter.wrap(gate)
-				writer = context.actorOf(Writer.props(cassandra, name, l), "writer_" + name)
+				writer = context.actorOf(Writer.props(cassandra, name, watermark), "writer_" + name)
 
-				arbiter.success(new LeaderboardDecorator(l) {
-					override def post(post: Post, updateMode: UpdateMode = BestWins) = {
-						implicit val timeout = Timeout(1 minute)
-						super.post(post, updateMode) flatMap { update =>
-							writer ask WriteAheadLog(post, updateMode, update.newEntry.get.timestamp) map { _ => update }
+				val leaderboard = new LeaderboardDecorator(LeaderboardArbiter.wrap(context.actorOf(Gate.props(target), "gate_" + name))) {
+					var flushCount: Int = walLength
+					implicit val timeout = Timeout(1 minute)
+					def onUpdate(update: Update) = {
+						flushCount += 1
+						if (flushCount > 10) {
+							super.export() onSuccess { case snapshot => self ! Flush(snapshot) }
+							flushCount = 0
 						}
+						update
 					}
-				})
-			}
+
+					override def post(post: Post, updateMode: UpdateMode) = super.post(post, updateMode) flatMap { update =>
+						writer ask WriteAheadLog(ReplayMode(updateMode), update.timestamp, post) map { _ => onUpdate(update) }
+					}
+
+					override def remove(entrant: String) = super.remove(entrant) flatMap { update =>
+						writer ask WriteAheadLog(ReplayMode.Delete, update.timestamp, Storage.tombstone(entrant)) map { _ => onUpdate(update) }
+					}
+
+					override def clear() = super.clear() flatMap { update =>
+						writer ask WriteAheadLog(ReplayMode.Clear, update.timestamp, Storage.tombstone()) map { _ => onUpdate(update) }
+					}
+				}
+
+				arbiter.success(leaderboard)
+
+			case Flush(snapshot) =>
+				writer ! Save(snapshot)
+
 		}
 	}
 

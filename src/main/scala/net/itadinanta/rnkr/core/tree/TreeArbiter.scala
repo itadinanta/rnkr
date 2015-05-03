@@ -9,7 +9,8 @@ trait TreeArbiter[K, V] extends Arbiter[RankedTreeMap[K, V]] {
 	def put(k: K, v: V) = wqueue(_.put(k, v))
 	def append(k: K, v: V) = wqueue(_.append(k, v))
 	def remove(k: K) = wqueue(_.remove(k))
-
+	def clear() = wqueue(_.clear())
+	
 	def size = rqueue(_.size)
 	def version = rqueue(_.version)
 	def get(k: K) = rqueue(_.get(k))
