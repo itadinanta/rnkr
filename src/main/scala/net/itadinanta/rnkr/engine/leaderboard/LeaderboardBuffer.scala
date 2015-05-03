@@ -97,16 +97,20 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 		if (isBetter) {
 			val newRow = scoreIndex.put(newScore, entrantKey)
 			entrantIndex.put(entrantKey, newScore)
-			Update(newScore.timestamp, oldEntry, Some(Entry(newScore.score, newScore.timestamp, entrant, newRow.rank, newScore.attachments)))
+			Update(newScore.timestamp, true, oldEntry, Some(Entry(newScore.score, newScore.timestamp, entrant, newRow.rank, newScore.attachments)))
 		} else {
-			Update(newScore.timestamp, oldEntry, oldEntry)
+			Update(newScore.timestamp, false, oldEntry, oldEntry)
 		}
 	}
 
 	override def clear() = {
-		entrantIndex.clear()
-		scoreIndex.clear()
-		Update(timestamp(), None, None)
+		if (entrantIndex.isEmpty) {
+			Update(timestamp(), false, None, None)
+		} else {
+			entrantIndex.clear()
+			scoreIndex.clear()
+			Update(timestamp(), true, None, None)
+		}
 	}
 
 	override def remove(entrant: String) = {
@@ -117,7 +121,7 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 				o <- scoreIndex.remove(oldScore)
 			} yield Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments)
 
-		Update(timestamp(), deleted, None)
+		Update(timestamp(), !deleted.isEmpty, deleted, None)
 	}
 
 	private def updownrange(s: TimedScore, length: Int) =
@@ -164,7 +168,6 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 				remove(entrant)
 			case Replay(ReplayMode.Clear, timestamp, _, _, _) =>
 				clear()
-				Update(timestamp, None, None)
 		}
 	}
 
@@ -173,7 +176,7 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 		val value = e.entrant
 		scoreIndex.append(key, value)
 		entrantIndex.put(value, key)
-		Update(e.timestamp, None, Some(e))
+		Update(e.timestamp, true, None, Some(e))
 	}
 
 	private[this] def timestamp(): Long = {

@@ -58,10 +58,10 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 		lb.at(0) should be(updated.newEntry)
 
 		val p1 = lb.post(Post(10, "Me", None))
-		p1 should be(Update(p1.timestamp, updated.newEntry, updated.newEntry))
+		p1 should be(Update(p1.timestamp, false, updated.newEntry, updated.newEntry))
 
 		val p2 = lb.post(Post(10, "Me", None), LastWins)
-		p2 should be(Update(p2.timestamp, updated.newEntry, lb.at(0)))
+		p2 should be(Update(p2.timestamp, true, updated.newEntry, lb.at(0)))
 	}
 
 	test("Simple insert and delete") {

@@ -44,7 +44,8 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 	def leaderboard: Future[Leaderboard] = arbiter.future
 
 	class LifecycleActor extends Actor {
-
+		val flushThreshold = 100
+		var lastFlush = System.currentTimeMillis()
 		val target = constructor()
 		var writer: ActorRef = _
 
@@ -60,26 +61,27 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 				val leaderboard = new LeaderboardDecorator(LeaderboardArbiter.wrap(context.actorOf(Gate.props(target), "gate_" + name))) {
 					var flushCount: Int = walLength
 					implicit val timeout = Timeout(1 minute)
-					def onUpdate(update: Update) = {
-						flushCount += 1
-						if (flushCount > 10) {
-							super.export() onSuccess { case snapshot => self ! Flush(snapshot) }
-							flushCount = 0
+
+					def writeAheadLog(replayMode: ReplayMode.ReplayMode, update: Update, post: Post) =
+						if (update.hasChanged) {
+							writer ask WriteAheadLog(replayMode, update.timestamp, post) map { _ =>
+								flushCount += 1
+								if (flushCount > flushThreshold) {
+									flush()
+									flushCount = 0
+								}
+								update
+							}
+						} else {
+							// no changes, don't bother updating
+							Future.successful(update)
 						}
-						update
-					}
 
-					override def post(post: Post, updateMode: UpdateMode) = super.post(post, updateMode) flatMap { update =>
-						writer ask WriteAheadLog(ReplayMode(updateMode), update.timestamp, post) map { _ => onUpdate(update) }
-					}
+					override def post(post: Post, updateMode: UpdateMode) = super.post(post, updateMode) flatMap { writeAheadLog(ReplayMode(updateMode), _, post) }
+					override def remove(entrant: String) = super.remove(entrant) flatMap { writeAheadLog(ReplayMode.Delete, _, Storage.tombstone(entrant)) }
+					override def clear() = super.clear() flatMap { writeAheadLog(ReplayMode.Clear, _, Storage.tombstone()) }
 
-					override def remove(entrant: String) = super.remove(entrant) flatMap { update =>
-						writer ask WriteAheadLog(ReplayMode.Delete, update.timestamp, Storage.tombstone(entrant)) map { _ => onUpdate(update) }
-					}
-
-					override def clear() = super.clear() flatMap { update =>
-						writer ask WriteAheadLog(ReplayMode.Clear, update.timestamp, Storage.tombstone()) map { _ => onUpdate(update) }
-					}
+					def flush() = super.export() onSuccess { case snapshot => self ! Flush(snapshot) }
 				}
 
 				arbiter.success(leaderboard)

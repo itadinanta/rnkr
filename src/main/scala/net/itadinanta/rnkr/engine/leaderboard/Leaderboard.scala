@@ -18,7 +18,7 @@ object Attachments {
 
 case class Entry(score: Long, timestamp: Long, entrant: String, rank: Long, attachments: Option[Attachments])
 case class Post(score: Long, entrant: String, attachments: Option[Attachments])
-case class Update(timestamp: Long, oldEntry: Option[Entry], newEntry: Option[Entry])
+case class Update(timestamp: Long, hasChanged: Boolean, oldEntry: Option[Entry], newEntry: Option[Entry])
 case class Snapshot(timestamp: Long, entries: Seq[Entry])
 
 trait Leaderboard {
