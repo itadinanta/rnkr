@@ -51,8 +51,8 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 	val scoreIndex = RankedTreeMap[TimedScore, ByteString](ordering)
 	val entrantIndex = Map[ByteString, TimedScore]()
 
-	implicit def asByteString(s: String): ByteString = ByteString(s)
-	implicit def asString(s: ByteString): String = s.utf8String
+	def asByteString(s: String): ByteString = ByteString(s)
+	def asString(s: ByteString): String = s.utf8String
 
 	private[this] var _lastTime: Long = System.currentTimeMillis
 	private[this] var _lastCount: Long = 0
@@ -173,7 +173,7 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 
 	override def append(entries: Iterable[Entry]): Iterable[Update] = entries map { e =>
 		val key = TimedScore(e.score, e.timestamp, e.attachments)
-		val value = e.entrant
+		val value = asByteString(e.entrant)
 		scoreIndex.append(key, value)
 		entrantIndex.put(value, key)
 		Update(e.timestamp, true, None, Some(e))

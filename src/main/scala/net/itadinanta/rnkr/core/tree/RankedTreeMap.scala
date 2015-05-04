@@ -101,7 +101,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 
 	override def put(k: K, v: V) = checkVersion(newVersion) {
 		val inserted = insert(k, v)
-		Row(k, v, inserted.index)
+		Row(k, v, inserted.offset + inserted.index)
 	}
 
 	override def get(k: K) = {
@@ -248,15 +248,15 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 		case class InsertedResult(override val a: Node[K], override val key: K, val b: Option[Node[K]], val taken: Position, override val cursor: Cursor) extends ChangedResult
 		case class UpdatedResult(override val a: Node[K], override val key: K, override val cursor: Cursor) extends ChangedResult
 
-		def insertRecursively(node: Node[K], k: K, v: V): ChangedResult = node match {
+		def insertRecursively(node: Node[K], k: K, v: V, offset: Position): ChangedResult = node match {
 			case leaf: LeafNode[K, V] => {
 				val i = node.indexOfKey(k)
 				if (i >= 0)
-					UpdatedResult(leaf, k, Cursor(k, v, leaf, factory.data.update(leaf, k, v).index, 0))
+					UpdatedResult(leaf, k, Cursor(k, v, leaf, factory.data.update(leaf, k, v).index, offset))
 				else {
 					val inserted = factory.data.insert(leaf, k, v, 1)
 					valueCount += 1
-					val cursor = Cursor(k, v, leaf, inserted.index, 0)
+					val cursor = Cursor(k, v, leaf, inserted.index, offset)
 					if (inserted.split) {
 						inserted.b.next = leaf.next
 						inserted.a.next = inserted.b
@@ -272,7 +272,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 			}
 			case index: IndexNode[K] => {
 				val i = index.keys.lastIndexWhere(factory.ordering.ge(k, _)) + 1
-				insertRecursively(index.childAt(i), k, v) match {
+				insertRecursively(index.childAt(i), k, v, offset + index.partialRankAt(i - 1)) match {
 					case u: UpdatedResult => { u }
 					case InsertedResult(a, newKey, None, taken, cursor) => {
 						InsertedResult(factory.index.grow(index, i, -taken), newKey, None, taken, cursor)
@@ -290,7 +290,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 			}
 		}
 
-		val inserted = insertRecursively(root, k, v)
+		val inserted = insertRecursively(root, k, v, 0)
 		root = inserted match {
 			case InsertedResult(a, key, Some(b), _, cursor) => newRoot(key, a, b)
 			case _ => root
@@ -344,7 +344,7 @@ class SeqTree[K, V](val factory: NodeFactory[K, V]) extends RankedTreeMap[K, V] 
 							val oldBk = if (b eq leaf) leafK else b.keys.head
 							val initialACount = a.count + (if (a eq leaf) 1 else 0)
 							val initialBCount = b.count + (if (b eq leaf) 1 else 0)
-							LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(initialACount), b, toLong(initialBCount)))
+							// LOG.debug("Rebalancing {}[{}] {}[{}]", Array[Object](a, toLong(initialACount), b, toLong(initialBCount)))
 							val balanced = factory.data.redistribute(a, Seq(), b)
 
 							if (balanced.b.isEmpty) {

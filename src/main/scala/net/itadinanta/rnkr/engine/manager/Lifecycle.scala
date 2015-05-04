@@ -37,6 +37,7 @@ import net.itadinanta.rnkr.backend.ReplayMode
 import net.itadinanta.rnkr.backend.Storage
 import net.itadinanta.rnkr.backend.Flush
 import net.itadinanta.rnkr.backend.Save
+import net.itadinanta.rnkr.backend.Metadata
 
 class Lifecycle(name: String, cassandra: Cassandra, constructor: () => LeaderboardBuffer, actorRefFactory: ActorRefFactory) {
 	implicit val executionContext = actorRefFactory.dispatcher
@@ -44,7 +45,7 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 	def leaderboard: Future[Leaderboard] = arbiter.future
 
 	class LifecycleActor extends Actor {
-		val flushThreshold = 100
+		var metadata = Metadata()
 		var lastFlush = System.currentTimeMillis()
 		val target = constructor()
 		var writer: ActorRef = _
@@ -53,11 +54,10 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 		reader ! Load
 
 		def receive = {
-			case Load(watermark, walLength) =>
+			case Load(watermark, walLength, metadata) =>
 				import UpdateMode._
-				reader ! PoisonPill
-				writer = context.actorOf(Writer.props(cassandra, name, watermark), "writer_" + name)
-
+				this.metadata = metadata
+				this.writer = context.actorOf(Writer.props(cassandra, name, watermark, metadata), "writer_" + name)
 				val leaderboard = new LeaderboardDecorator(LeaderboardArbiter.wrap(context.actorOf(Gate.props(target), "gate_" + name))) {
 					var flushCount: Int = walLength
 					implicit val timeout = Timeout(1 minute)
@@ -66,7 +66,7 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 						if (update.hasChanged) {
 							writer ask WriteAheadLog(replayMode, update.timestamp, post) map { _ =>
 								flushCount += 1
-								if (flushCount > flushThreshold) {
+								if (flushCount > metadata.walSizeLimit) {
 									flush()
 									flushCount = 0
 								}
@@ -77,11 +77,12 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 							Future.successful(update)
 						}
 
+					def flush() = super.export() onSuccess { case snapshot => self ! Flush(snapshot) }
+
 					override def post(post: Post, updateMode: UpdateMode) = super.post(post, updateMode) flatMap { writeAheadLog(ReplayMode(updateMode), _, post) }
 					override def remove(entrant: String) = super.remove(entrant) flatMap { writeAheadLog(ReplayMode.Delete, _, Storage.tombstone(entrant)) }
 					override def clear() = super.clear() flatMap { writeAheadLog(ReplayMode.Clear, _, Storage.tombstone()) }
 
-					def flush() = super.export() onSuccess { case snapshot => self ! Flush(snapshot) }
 				}
 
 				arbiter.success(leaderboard)

@@ -39,7 +39,7 @@ trait DataNode[K, V] extends Node[K] with Children[V] {
 
 trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 	def partialRanks: Seq[Position]
-	def partialRankAt(index: Int) = partialRanks(index)
+	def partialRankAt(index: Int) = if (index < 0) 0L else partialRanks(index)
 	override def count: Position = partialRanks.last
 	def topLevel = {
 		val buf = new StringBuilder

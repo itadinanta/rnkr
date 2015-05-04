@@ -31,6 +31,9 @@ import net.itadinanta.rnkr.engine.leaderboard.Update
 import net.itadinanta.rnkr.engine.leaderboard.Snapshot
 import java.lang.{ Long => JLong }
 import grizzled.slf4j.Logging
+import scala.annotation.tailrec
+import com.datastax.driver.core.Session
+import akka.actor.PoisonPill
 
 object ReplayMode extends Enumeration {
 	type ReplayMode = Value
@@ -41,9 +44,10 @@ object ReplayMode extends Enumeration {
 	}
 }
 case class Watermark(watermark: Long, pages: Int)
+case class Metadata(val comment: String = "", val pageSize: Int = 2500, val walSizeLimit: Int = 10000, val walTimeLimit: Long = 1800000L)
 case class Replay(replayMode: ReplayMode.ReplayMode, score: Long, timestamp: Long, entrant: String, attachments: Option[Attachments])
 
-case class Load(watermark: Long, walLength: Int)
+case class Load(watermark: Long, walLength: Int, metadata: Metadata)
 case class Save(snapshot: Snapshot)
 case class WriteAheadLog(mode: ReplayMode.ReplayMode, seq: Long, w: Post)
 case class Flush(snapshot: Snapshot)
@@ -70,31 +74,27 @@ trait Storage extends Actor {
 		})
 		return p.future
 	}
+
+	override def postStop() {
+		session.close
+	}
 }
 
 object Reader {
 	def props(cluster: Cassandra, id: String, leaderboard: LeaderboardBuffer) = Props(new Reader(cluster, id, leaderboard))
 }
 
-class Reader(override val cluster: Cassandra, val id: String, val leaderboard: LeaderboardBuffer) extends Storage with Logging {
+trait ReaderStatements {
 	import QueryBuilder._
-	case class Page(page: Int, entries: Iterable[Entry])
-	case class PageReadRequest(page: Int)
+	val session: Session
+	val consistencyLevel = ConsistencyLevel.ONE
 
 	lazy val readLastWatermarkStatement = session.prepare(
 		select("watermark", "pages")
 			.from("watermarks")
 			.where(QueryBuilder.eq("id", bindMarker()))
 			.orderBy(desc("watermark")).limit(1))
-		.setConsistencyLevel(ConsistencyLevel.ONE)
-
-	def loadWatermark() =
-		session.executeAsync(readLastWatermarkStatement.bind(id)) map {
-			_.headOption match {
-				case Some(data) => Watermark(data.getLong("watermark"), data.getInt("pages"))
-				case None => Watermark(0, 0)
-			}
-		}
+		.setConsistencyLevel(consistencyLevel)
 
 	lazy val readPageStatement = session.prepare(
 		select("scoredata")
@@ -102,40 +102,62 @@ class Reader(override val cluster: Cassandra, val id: String, val leaderboard: L
 			.where(QueryBuilder.eq("id", bindMarker()))
 			.and(QueryBuilder.eq("watermark", bindMarker()))
 			.and(QueryBuilder.eq("page", bindMarker())))
-		.setConsistencyLevel(ConsistencyLevel.ONE)
-
-	def loadPages(watermark: Long, pages: Int) = {
-
-		def loadPage(watermark: Long, page: Int) =
-			session.executeAsync(readPageStatement.bind(id, JLong.valueOf(watermark), Integer.valueOf(page))) map { resultSet =>
-				val entries = resultSet.flatMap { resultItem =>
-					resultItem.getString("scoredata").lines map { line =>
-						val s = line.split(Storage.CSV_SEPARATOR)
-						Entry(decodeScore(s(0)), s(1).toLong, s(2), s(3).toLong, if (s.length < 5) None else decodeAttachments(s(4)))
-					}
-				}
-				debug(s"Loaded ${entries.size} for page ${page}")
-				Page(page, entries)
-			}
-
-		def append(l: List[Future[Page]]): Future[Int] =
-			if (l.isEmpty)
-				Future { pages }
-			else
-				l.head flatMap { p =>
-					leaderboard.append(p.entries)
-					append(l.tail)
-				}
-
-		append((0 to pages - 1).toList.map { loadPage(watermark, _) })
-	}
+		.setConsistencyLevel(consistencyLevel)
 
 	lazy val readWalStatement = session.prepare(
 		select("seq", "scoredata")
 			.from("wal")
 			.where(QueryBuilder.eq("id", bindMarker()))
-			.and(QueryBuilder.gte("watermark", bindMarker())))
-		.setConsistencyLevel(ConsistencyLevel.ONE)
+			.and(QueryBuilder.eq("watermark", bindMarker())))
+		.setConsistencyLevel(consistencyLevel)
+
+	lazy val readMetadataStatement = session.prepare(
+		select("sorting", "encoding", "comment", "page_size", "wal_size_limit", "wal_time_limit")
+			.from("metadata")
+			.where(QueryBuilder.eq("id", bindMarker())))
+		.setConsistencyLevel(consistencyLevel)
+}
+
+class Reader(override val cluster: Cassandra, val id: String, val leaderboard: LeaderboardBuffer)
+	extends Storage
+	with ReaderStatements
+	with Logging {
+
+	case class Page(page: Int, entries: Iterable[Entry])
+	case class PageReadRequest(page: Int)
+
+	def loadWatermark() =
+		for { wmRow <- session.executeAsync(readLastWatermarkStatement.bind(id)) } yield wmRow.headOption match {
+			case Some(data) => Watermark(data.getLong("watermark"), data.getInt("pages"))
+			case None => Watermark(0, 0)
+		}
+
+	def loadPages(watermark: Long, pages: Int) = {
+		def loadPage(watermark: Long, page: Int) =
+			for {
+				resultSet <- session.executeAsync(readPageStatement.bind(id, JLong.valueOf(watermark), Integer.valueOf(page)))
+				val entries = for {
+					row <- resultSet
+					line <- row.getString("scoredata").lines
+					val s = line.split(Storage.CSV_SEPARATOR)
+				} yield Entry(decodeScore(s(0)), s(1).toLong, s(2), s(3).toLong, if (s.length < 5) None else decodeAttachments(s(4)))
+			} yield Page(page, entries)
+
+		def append(l: List[Future[Page]]): Future[Int] =
+			if (l.isEmpty)
+				Future.successful(pages)
+			else l.head flatMap { p =>
+				leaderboard.append(p.entries)
+				append(l.tail)
+			}
+
+		debug(s"Loading of ${pages} pages started at watermark ${watermark} for ${id}")
+		val job = append(for { i <- (0 to pages - 1).toList } yield loadPage(watermark, i))
+		job onSuccess {
+			case _ => debug(s"Loading completed of ${pages} pages for up to ${leaderboard.size} entries for ${id}")
+		}
+		job
+	}
 
 	def decodeAttachments(s: String) = s match {
 		case "" => None
@@ -147,62 +169,73 @@ class Reader(override val cluster: Cassandra, val id: String, val leaderboard: L
 		case o => o.toLong
 	}
 
-	def replayWal(watermark: Long) = {
-		var walLength = 0
-		session.executeAsync(readWalStatement.bind(id, JLong.valueOf(watermark))) map { results =>
-			leaderboard.replay(
-				results.map { r =>
-					val timestamp = r.getLong("seq")
-					val s = r.getString("scoredata").split(Storage.CSV_SEPARATOR)
-					walLength += 1
-					Replay(ReplayMode(s(0).toInt), decodeScore(s(1)), timestamp, s(2), if (s.size < 4) None else decodeAttachments(s(3)))
-				})
-		} map {
-			_ => Load(watermark, walLength)
+	def replayWal(watermark: Long) =
+		for { results <- session.executeAsync(readWalStatement.bind(id, JLong.valueOf(watermark))) } yield {
+			debug(s"Replaying wal for ${id}")
+			var walLength = 0
+			val log = for { r <- results } yield {
+				val timestamp = r.getLong("seq")
+				val s = r.getString("scoredata").split(Storage.CSV_SEPARATOR)
+				walLength += 1
+				Replay(ReplayMode(s(0).toInt),
+					if (s.size > 1) decodeScore(s(1)) else Storage.TOMBSTONE,
+					timestamp,
+					if (s.size > 2) s(2) else "",
+					if (s.size > 3) decodeAttachments(s(3)) else None)
+			}
+			leaderboard.replay(log)
+			debug(s"Replayed ${walLength} posts from wal")
+			walLength
 		}
-	}
 
-	def receive = {
+	def loadMetadata() =
+		for { md <- session.executeAsync(readMetadataStatement.bind(id)) } yield {
+			for { r <- md.headOption } yield {
+				val m = Metadata(r.getString("comment"),
+					r.getInt("page_size"),
+					r.getInt("wal_size_limit"),
+					r.getLong("wal_time_limit"))
+				debug(s"Loaded stored metadata ${m} for ${id}")
+				m
+			}
+		} getOrElse {
+			val m = Metadata()
+			debug(s"Loaded default metadata ${m} for ${id}")
+			m
+		}
+
+	override def receive = {
 		case Load =>
 			val src = sender()
-			loadWatermark() map { w =>
-				loadPages(w.watermark, w.pages) map { r => // always true
-					replayWal(w.watermark) onSuccess {
-						case result =>
-							debug(s"Load complete for ${id}")
-							src ! result
-					}
-				}
+			for {
+				w <- loadWatermark()
+				pagesRead <- loadPages(w.watermark, w.pages)
+				walLength <- replayWal(w.watermark)
+				metadata <- loadMetadata()
+			} yield {
+				debug(s"Load complete for ${id}")
+				src ! Load(w.watermark, walLength, metadata)
+				self ! PoisonPill
 			}
 	}
 }
 
 object Writer {
-	val PAGESIZE = 1000
-	def props(cluster: Cassandra, id: String, watermark: Long) = Props(new Writer(cluster, id, watermark))
+	def props(cluster: Cassandra, id: String, watermark: Long, metadata: Metadata) = Props(new Writer(cluster, id, watermark, metadata))
 }
 
-class Writer(override val cluster: Cassandra, val id: String, initialWatermark: Long) extends Storage {
+trait WriterStatements {
 	import QueryBuilder._
-	var watermark = initialWatermark
-	lazy val storeWalStatement = session.prepare(QueryBuilder.insertInto("wal")
-		.value("id", bindMarker())
-		.value("watermark", bindMarker())
-		.value("seq", bindMarker())
-		.value("scoredata", bindMarker()))
-		.setConsistencyLevel(ConsistencyLevel.ONE)
+	val session: Session
+	val consistencyLevel = ConsistencyLevel.ONE
 
-	// TODO: attachments need printf escaping
-	def encode(attachments: Option[Attachments]) = attachments map { s => new String(s.data.toArray, "UTF8") } getOrElse ("")
-	def encode(score: Long) = if (score == Storage.TOMBSTONE) "" else score.toString
-
-	def storeWal(mode: ReplayMode.ReplayMode, timestamp: Long, w: Post) = {
-		val seq = JLong.valueOf(timestamp)
-		val wm = JLong.valueOf(watermark)
-		val scoredata = Seq(mode.id, encode(w.score), w.entrant, encode(w.attachments)).mkString(Storage.CSV_SEPARATOR)
-		val statement = storeWalStatement.bind(id, wm, seq, scoredata)
-		session.executeAsync(statement) map { _ => w }
-	}
+	lazy val storeWalStatement = session.prepare(
+		insertInto("wal")
+			.value("id", bindMarker())
+			.value("watermark", bindMarker())
+			.value("seq", bindMarker())
+			.value("scoredata", bindMarker()))
+		.setConsistencyLevel(consistencyLevel)
 
 	lazy val storePageStatement = session.prepare(
 		insertInto("pages")
@@ -210,50 +243,122 @@ class Writer(override val cluster: Cassandra, val id: String, initialWatermark: 
 			.value("watermark", bindMarker())
 			.value("page", bindMarker())
 			.value("scoredata", bindMarker()))
-		.setConsistencyLevel(ConsistencyLevel.ONE)
-
-	def storeRows(watermark: Long, page: Int, rows: Seq[Entry]): Future[Int] = {
-		val scoredata = rows map { row =>
-			Seq(encode(row.score), row.timestamp, row.entrant, row.rank, encode(row.attachments)).mkString(Storage.CSV_SEPARATOR)
-		} mkString ("\n")
-		val statement = storePageStatement.bind(id, JLong.valueOf(watermark), Integer.valueOf(page), scoredata)
-		session.executeAsync(statement) map { _ => page }
-	}
+		.setConsistencyLevel(consistencyLevel)
 
 	lazy val storeWatermarks = session.prepare(
 		insertInto("watermarks")
 			.value("id", bindMarker())
 			.value("watermark", bindMarker())
 			.value("pages", bindMarker()))
-		.setConsistencyLevel(ConsistencyLevel.ONE)
+		.setConsistencyLevel(consistencyLevel)
 
-	def storeWatermark(watermark: Long, pages: Int) = session.executeAsync(storeWatermarks.bind(id, JLong.valueOf(watermark), Integer.valueOf(pages))) map {
-		_ => Watermark(watermark, pages)
+	lazy val readOldWatermarksStatement = session.prepare(
+		select("watermark", "pages")
+			.from("watermarks")
+			.where(QueryBuilder.eq("id", bindMarker()))
+			.and(lt("watermark", bindMarker())))
+		.setConsistencyLevel(consistencyLevel)
+
+	lazy val readOldWalStatement = session.prepare(
+		select("watermark", "seq")
+			.from("wal")
+			.where(QueryBuilder.eq("id", bindMarker()))
+			.and(lt("watermark", bindMarker())))
+		.setConsistencyLevel(consistencyLevel)
+
+	lazy val deleteOldWatermarksStatement = session.prepare(
+		delete().all()
+			.from("watermarks")
+			.where(QueryBuilder.eq("id", bindMarker()))
+			.and(QueryBuilder.eq("watermark", bindMarker())))
+		.setConsistencyLevel(consistencyLevel)
+
+	lazy val deleteOldPagesStatement = session.prepare(
+		delete().all()
+			.from("pages")
+			.where(QueryBuilder.eq("id", bindMarker()))
+			.and(QueryBuilder.eq("watermark", bindMarker()))
+			.and(QueryBuilder.eq("page", bindMarker())))
+		.setConsistencyLevel(consistencyLevel)
+
+	lazy val deleteOldWalStatement = session.prepare(
+		delete().all()
+			.from("wal")
+			.where(QueryBuilder.eq("id", bindMarker()))
+			.and(QueryBuilder.eq("watermark", bindMarker())))
+		.setConsistencyLevel(consistencyLevel)
+}
+
+class Writer(override val cluster: Cassandra, val id: String, initialWatermark: Long, val metadata: Metadata)
+	extends Storage
+	with WriterStatements
+	with Logging {
+
+	import QueryBuilder._
+
+	// TODO: attachments need printf escaping
+	def encode(attachments: Option[Attachments]) = attachments map { s => new String(s.data.toArray, "UTF8") } getOrElse ""
+	def encode(score: Long) = if (score == Storage.TOMBSTONE) "" else score.toString
+
+	def storeWal(mode: ReplayMode.ReplayMode, timestamp: Long, watermark: Long, w: Post) = {
+		val seq = JLong.valueOf(timestamp)
+		val wm = JLong.valueOf(watermark)
+		val scoredata = Seq(mode.id, encode(w.score), w.entrant, encode(w.attachments)) mkString Storage.CSV_SEPARATOR
+		for { _ <- session.executeAsync(storeWalStatement.bind(id, wm, seq, scoredata)) } yield w
 	}
+
+	def storeSnapshot(watermark: Long, snapshot: Snapshot) = {
+		def storeRows(page: Int, rows: Seq[Entry]): Future[Int] = {
+			val scorerows = for { row <- rows } yield Seq(encode(row.score), row.timestamp, row.entrant, row.rank, encode(row.attachments)) mkString Storage.CSV_SEPARATOR
+			val scoredata = scorerows mkString "\n"
+			val statement = storePageStatement.bind(id, JLong.valueOf(watermark), Integer.valueOf(page), scoredata)
+			for { _ <- session.executeAsync(statement) } yield page
+		}
+
+		Future.sequence {
+			for ((pageItems, pageIndex) <- snapshot.entries.grouped(metadata.pageSize).zipWithIndex)
+				yield storeRows(pageIndex, pageItems)
+		}
+	}
+	def storeWatermark(watermark: Long, pages: Int) =
+		for { _ <- session.executeAsync(storeWatermarks.bind(id, JLong.valueOf(watermark), Integer.valueOf(pages))) }
+			yield Watermark(watermark, pages)
 
 	def compact(watermark: Watermark) = {
-		watermark
+		debug(s"Deleting up to ${watermark}")
+		val watermarkFuture = for { row <- session.executeAsync(readOldWatermarksStatement.bind(id, JLong.valueOf(watermark.watermark))) } yield {
+			val watermarks = row map { wmRow => Watermark(wmRow.getLong("watermark"), wmRow.getInt("pages")) }
+			if (!watermarks.isEmpty) {
+				val batch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+				debug(s"Found ${watermarks}")
+				for (wm <- watermarks; page <- 0 to wm.pages - 1) batch.add(
+					deleteOldPagesStatement.bind(id, JLong.valueOf(wm.watermark), Integer.valueOf(page)))
+				for (wm <- watermarks) batch.add(
+					deleteOldWalStatement.bind(id, JLong.valueOf(wm.watermark)))
+				for (wm <- watermarks) batch.add(
+					deleteOldWatermarksStatement.bind(id, JLong.valueOf(wm.watermark)))
+
+				session.executeAsync(batch) onFailure { case e => error(e) }
+			}
+		}
+		watermarkFuture onFailure { case e => error(e) }
 	}
 
-	case class PageWriteRequest(page: Int)
-
+	var watermark = initialWatermark
 	def receive = {
-		case WriteAheadLog(mode, seq, w) =>
+		case WriteAheadLog(mode, seq, action) =>
 			val src = sender()
-			storeWal(mode, seq, w) foreach { src ! WriteAheadLog(mode, seq, _) }
+			for (savedLine <- storeWal(mode, seq, watermark, action)) yield src ! WriteAheadLog(mode, seq, savedLine)
 
 		case Save(snapshot) =>
 			this.watermark = snapshot.timestamp
 			val src = sender()
-			Future.sequence(snapshot.entries.grouped(Writer.PAGESIZE).zipWithIndex.map {
-				case (pageItems, pageIndex) => storeRows(snapshot.timestamp, pageIndex, pageItems)
-			}) map { pages =>
-				storeWatermark(snapshot.timestamp, pages.size) map {
-					watermark =>
-						src ! Save
-						// this can be done in background
-						compact(watermark)
-				}
+			for {
+				savedPages <- storeSnapshot(watermark, snapshot)
+				watermark <- storeWatermark(watermark, savedPages.size)
+			} yield {
+				src ! Save
+				compact(watermark)
 			}
 	}
 }
