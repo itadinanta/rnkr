@@ -30,11 +30,7 @@ class Partition(cassandra: Cassandra, constructor: () => LeaderboardBuffer)(impl
 	def get(name: String): Future[Leaderboard] = {
 		implicit val executionContext = actorRefFactory.dispatcher
 
-		val found = (partitionManager ? Find(name)).mapTo[Leaderboard]
-		found map {
-			_.isEmpty
-		}
-		found
+		partitionManager.ask(Find(name)).mapTo[Leaderboard]
 	}
 
 	object PartitionActor {

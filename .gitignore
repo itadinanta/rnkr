@@ -3,3 +3,5 @@ target
 /.cache
 /.history
 /bin
+/.cache-main
+/.cache-tests

@@ -53,9 +53,6 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 }
 
 object Main extends App {
-	implicit val system = ActorSystem("node")
-	implicit val executionContext = system.dispatchers.lookup("main-app-dispatcher")
-
 	val ctx = FunctionalConfigApplicationContext(classOf[ApplicationConfiguration])
 
 	ctx.getBean("boot", classOf[Boot]).start()
