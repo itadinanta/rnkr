@@ -10,7 +10,7 @@ import akka.pattern.pipe
 import scala.collection.mutable.ListBuffer
 import scala.util.Success
 import scala.util.Failure
-
+/*
 object Timer extends App {
 	implicit val system = ActorSystem("node")
 	implicit val executionContext = system.dispatchers.lookup("main-app-dispatcher")
@@ -90,3 +90,4 @@ object Timer extends App {
 			}
 	}
 }
+*/
