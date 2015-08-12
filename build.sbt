@@ -1,8 +1,6 @@
 
 organization := "net.itadinanta" 
-
 name := "rnkr"
-
 version := "0.1.0-SNAPSHOT"
 
 scalaVersion := "2.11.7"
@@ -16,10 +14,11 @@ resolvers ++= Seq(
 )
 
 EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer)
-
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
-
 EclipseKeys.eclipseOutput := Some("target")
+
+unmanagedSourceDirectories in Compile := (scalaSource in Compile).value :: Nil
+unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil
 
 retrieveManaged := false
 
