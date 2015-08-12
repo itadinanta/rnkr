@@ -3,7 +3,7 @@ organization := "net.itadinanta"
 
 name := "rnkr"
 
-version := "0.1"
+version := "0.1.0-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
@@ -11,6 +11,7 @@ net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 resolvers ++= Seq(
 	"repository.springsource.milestone" at "http://repo.springsource.org/libs",
+	"jitpack.io" at "https://jitpack.io",
 	"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
 )
 
@@ -33,7 +34,7 @@ libraryDependencies ++= Seq(
 	"ch.qos.logback" 			% "logback-classic" % "1.1.2",
 
 	// framework
-	"org.springframework.scala" %% "spring-scala"	% "1.0.0.RC3",
+	"com.github.norru" 			%  "spring-scala"	% "1.0.0",
 	"org.scalaz"				%% "scalaz-core"	% "7.1.1",
 	"com.typesafe.akka"			%% "akka-actor"		% akkaV,
 	"com.typesafe.akka"			%% "akka-cluster"	% akkaV,
