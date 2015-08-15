@@ -11,7 +11,6 @@ import scala.concurrent.Future._
 import scala.concurrent.Promise
 import scala.collection.mutable.ListBuffer
 import net.itadinanta.rnkr.core.tree.Row
-import net.itadinanta.rnkr.core.tree.TreeArbiter
 import org.springframework.context.support.ClassPathXmlApplicationContext
 import org.springframework.beans.factory.InitializingBean
 import net.itadinanta.rnkr.main.Boot
