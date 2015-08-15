@@ -1,60 +1,77 @@
+import Versions._
 
-organization := "net.itadinanta" 
-name := "rnkr"
-version := "0.1.0-SNAPSHOT"
-
-scalaVersion := "2.11.7"
+organization := "net.itadinanta"
+version := "0.2.0-SNAPSHOT"
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
-resolvers ++= Seq(
-	"repository.springsource.milestone" at "http://repo.springsource.org/libs",
-	"jitpack.io" at "https://jitpack.io",
-	"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
+val commonSettings = Seq(
+	scalaVersion := "2.11.7",
+	resolvers ++= Seq(
+		"Springsource" at "http://repo.springsource.org/libs",
+		"JitPack.io" at "https://jitpack.io",
+		"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
+	),
+
+	EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer),
+	EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource,
+	EclipseKeys.eclipseOutput := Some("target"),
+
+	unmanagedSourceDirectories in Compile := (scalaSource in Compile).value :: Nil,
+	unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil,
+	
+	retrieveManaged := false,
+
+	libraryDependencies ++= Seq(
+		// logging
+		"org.slf4j" 				% "slf4j-api"		% "1.7.7",
+		"org.slf4j" 				% "jcl-over-slf4j"	% "1.7.7",
+		"org.clapper"				%% "grizzled-slf4j"	% "1.0.2",
+		"ch.qos.logback" 			% "logback-classic" % "1.1.2" % "test",
+	
+		// test
+		"org.scalatest"				%% "scalatest"		% "2.1.3"	% "test"
+	)
 )
 
-EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer)
-EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
-EclipseKeys.eclipseOutput := Some("target")
+lazy val rnkr = project.in( file(".") ).settings(commonSettings: _*)
+	.settings(
+		EclipseKeys.createSrc := EclipseCreateSrc.Unmanaged + EclipseCreateSrc.Resource
+	)
+	.aggregate(
+		`rnkr-core`,
+		`rnkr-engine`,
+		`rnkr-cluster`,
+		`rnkr-frontend`,
+		`rnkr-app`
+	)
 
-unmanagedSourceDirectories in Compile := (scalaSource in Compile).value :: Nil
-unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil
+lazy val `rnkr-app` = project.in( file("rnkr-app") ).settings(commonSettings: _*)
+	.dependsOn(
+		`rnkr-core`,
+		`rnkr-engine`,
+		`rnkr-cluster`,
+		`rnkr-frontend`
+	)
 
-retrieveManaged := false
 
-val akkaV = "2.3.8"
-val sprayV = "1.3.2"
+lazy val `rnkr-frontend` = project.in( file("rnkr-frontend") ).settings(commonSettings: _*)
+	.dependsOn(
+		`rnkr-core`,
+		`rnkr-engine`,
+		`rnkr-cluster`
+	)
 
-libraryDependencies ++= Seq(
-	// logging
-	"org.slf4j" 				% "slf4j-api"		% "1.7.7",
-	"org.slf4j" 				% "jcl-over-slf4j"	% "1.7.7",
-	"org.clapper"				%% "grizzled-slf4j"	% "1.0.2",
-	"ch.qos.logback" 			% "logback-classic" % "1.1.2",
+lazy val `rnkr-cluster` = project.in( file("rnkr-cluster") ).settings(commonSettings: _*)
 
-	// framework
-	"com.github.norru" 			%  "spring-scala"	% "1.0.0",
-	"org.scalaz"				%% "scalaz-core"	% "7.1.1",
-	"com.typesafe.akka"			%% "akka-actor"		% akkaV,
-	"com.typesafe.akka"			%% "akka-cluster"	% akkaV,
+lazy val `rnkr-engine` = project.in( file("rnkr-engine") ).settings(commonSettings: _*)
+	.dependsOn(`rnkr-core`)
 
-	// frontend
-	"io.spray"					%% "spray-can"		% sprayV,
-	"io.spray"					%% "spray-routing"	% sprayV,
-	"io.spray"					%% "spray-json"		% "1.3.1",
-
-	// backend
-	"com.datastax.cassandra"	% "cassandra-driver-core" % "2.1.4",
-
-	// compression
-	"net.jpountz.lz4"			% "lz4"				% "1.3.0",
-	"org.xerial.snappy"			% "snappy-java"		% "1.1.1.6",
-
-	// test
-	"org.scalatest"				%% "scalatest"		% "2.1.3"	% "test",
-	"io.spray"					%% "spray-testkit"	% sprayV	% "test",
-	"com.typesafe.akka"			%% "akka-testkit"	% akkaV		% "test"
-)
+lazy val `rnkr-testlib` = project.in( file("rnkr-testlib") ).settings(commonSettings: _*)
+lazy val `rnkr-test` = project.in( file("rnkr-test") ).settings(commonSettings: _*)
+	
+lazy val `rnkr-support` = project.in( file("rnkr-support") ).settings(commonSettings: _*)
+lazy val `rnkr-core` = project.in( file("rnkr-core") ).settings(commonSettings: _*)
 
 enablePlugins(DockerPlugin)
 
@@ -80,3 +97,4 @@ dockerfile in docker := {
     entryPoint("java", "-cp", classpathString, mainclass)
   }
 }
+

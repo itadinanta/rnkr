@@ -1,5 +1,7 @@
 <classpath>
+  <classpathentry output="target" kind="src" path="src/main/scala"/>
   <classpathentry output="target" kind="src" path="src/main/resources"/>
+  <classpathentry output="target" kind="src" path="src/test/scala"/>
   <classpathentry output="target" kind="src" path="src/test/resources"/>
   <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
   <classpathentry kind="var" path="IVY_HOME/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.7.7.jar"/>
