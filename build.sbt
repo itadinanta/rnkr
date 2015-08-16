@@ -8,13 +8,13 @@ val commonSettings = Seq(
 	organization := "net.itadinanta",
 	version := "0.2.1-SNAPSHOT",
 	startYear := Some(2015),
-	crossPaths := false,
+	crossPaths := true,
 	licenses += ("GPL-2.0", url("http://opensource.org/licenses/GPL-2.0")),
 	
 	scalaVersion := "2.11.7",
 	resolvers ++= Seq(
 		"Springsource" at "http://repo.springsource.org/libs",
-		"JitPack.io" at "https://jitpack.io",
+		"Bintray Itadinanta" at "https://dl.bintray.com/itadinanta/maven/",
 		"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
 	),
 

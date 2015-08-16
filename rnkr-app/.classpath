@@ -38,7 +38,7 @@
   <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-json_2.11/bundles/spray-json_2.11-1.3.1.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-classic/jars/logback-classic-1.1.2.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-core/jars/logback-core-1.1.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.github.norru/spring-scala/jars/spring-scala-1.0.0.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/net.itadinanta/spring-scala_2.11/jars/spring-scala_2.11-1.0.0.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-core/jars/spring-core-3.2.14.RELEASE.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/commons-logging/commons-logging/jars/commons-logging-1.1.3.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-beans/jars/spring-beans-3.2.14.RELEASE.jar"/>
