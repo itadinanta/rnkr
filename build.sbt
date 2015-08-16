@@ -1,17 +1,24 @@
 import Versions._
 
-organization := "net.itadinanta"
-version := "0.2.0-SNAPSHOT"
-
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
+name := "rnkr"
+
 val commonSettings = Seq(
+	organization := "net.itadinanta",
+	version := "0.2.1-SNAPSHOT",
+	startYear := Some(2015),
+	crossPaths := false,
+	licenses += ("GPL-2.0", url("http://opensource.org/licenses/GPL-2.0")),
+	
 	scalaVersion := "2.11.7",
 	resolvers ++= Seq(
 		"Springsource" at "http://repo.springsource.org/libs",
 		"JitPack.io" at "https://jitpack.io",
 		"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
 	),
+
+	bintrayOrganization := Some("itadinanta"),
 
 	EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer),
 	EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource,
