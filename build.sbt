@@ -14,7 +14,6 @@ val commonSettings = Seq(
 	scalaVersion := "2.11.7",
 	resolvers ++= Seq(
 		"Springsource" at "http://repo.springsource.org/libs",
-		"Bintray Itadinanta" at "https://dl.bintray.com/itadinanta/maven/",
 		"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
 	),
 
