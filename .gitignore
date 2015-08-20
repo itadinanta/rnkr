@@ -1,7 +1,7 @@
 target
 .worksheet
-/.cache
-/.history
+.cache
+.history
 /bin
-/.cache-main
-/.cache-tests
+.cache-main
+.cache-tests
