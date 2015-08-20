@@ -13,6 +13,7 @@ trait Ordering[T] {
 object Rank {
 	type Position = Long
 }
+
 import Rank.Position
 
 trait Node[K] {
@@ -89,30 +90,30 @@ trait LeafNode[K, V] extends DataNode[K, V] {
 }
 
 object IntAscending extends Ordering[Int] {
-	override def lt(a: Int, b: Int): Boolean = a < b
+	override def lt(a: Int, b: Int) = a < b
 }
 
 object LongAscending extends Ordering[Long] {
-	override def lt(a: Long, b: Long): Boolean = a < b
+	override def lt(a: Long, b: Long) = a < b
 }
 
 object IntDescending extends Ordering[Int] {
-	override def lt(a: Int, b: Int): Boolean = a > b
+	override def lt(a: Int, b: Int) = a > b
 }
 
 object StringAscending extends Ordering[String] {
-	override def lt(a: String, b: String): Boolean = a < b
+	override def lt(a: String, b: String) = a < b
 }
 
 object StringDescending extends Ordering[String] {
-	override def lt(a: String, b: String): Boolean = a > b
+	override def lt(a: String, b: String) = a > b
 }
 
 object StringCIAscending extends Ordering[String] {
-	override def lt(a: String, b: String): Boolean = a.toLowerCase < b.toLowerCase
+	override def lt(a: String, b: String) = a.toLowerCase < b.toLowerCase
 }
 
 object StringCIDescending extends Ordering[String] {
-	override def lt(a: String, b: String): Boolean = a.toLowerCase > b.toLowerCase
+	override def lt(a: String, b: String) = a.toLowerCase > b.toLowerCase
 }
 
