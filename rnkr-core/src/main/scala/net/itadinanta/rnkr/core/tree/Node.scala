@@ -48,17 +48,17 @@ trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 		if (!isEmpty) {
 			(values, keys, partialRanks).zipped.toList foreach { i =>
 				buf.append(sep)
-				buf.append(i._1.count)
-				buf.append("(").append(i._3).append(")")
-				buf.append("<" + i._2)
+					.append(i._1.count)
+					.append("(").append(i._3).append(")")
+					.append("<" + i._2)
 				sep = ">"
 			}
 			buf.append(">")
-			buf.append(values.last.count)
-			buf.append("(").append(partialRanks.last).append(")")
+				.append(values.last.count)
+				.append("(").append(partialRanks.last).append(")")
 		}
-		buf.append("}");
-		buf.toString
+		buf.append("}")
+			.toString
 	}
 	override def toString = {
 		val buf = new StringBuilder
@@ -67,17 +67,17 @@ trait IndexNode[K] extends Node[K] with Children[Node[K]] {
 		if (!isEmpty) {
 			(values, keys, partialRanks).zipped.toList foreach { i =>
 				buf.append(sep)
-				buf.append(i._1)
-				buf.append("(").append(i._3).append(")")
-				buf.append("<" + i._2)
+					.append(i._1)
+					.append("(").append(i._3).append(")")
+					.append("<" + i._2)
 				sep = ">"
 			}
 			buf.append(">")
-			buf.append(values.last)
-			buf.append("(").append(partialRanks.last).append(")")
+				.append(values.last)
+				.append("(").append(partialRanks.last).append(")")
 		}
-		buf.append("}");
-		buf.toString
+		buf.append("}")
+			.toString
 	}
 }
 
