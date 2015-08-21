@@ -12,10 +12,10 @@ class FrontendServiceSpec extends FunSuite with Matchers with ScalatestRouteTest
 	def actorRefFactory = system
 	val executionContext = system.dispatcher
 	val cassandra = new Cassandra()
-	test("process a count request") {
-		Get("/rnkr/leaderboard/test/size") ~> rnkrRoute ~> check {
-			handled should be(true)
-			responseAs[String] === "0"
-		}
-	}
+//	test("process a count request") {
+//		Get("/rnkr/leaderboard/test1/size") ~> rnkrRoute ~> check {
+//			handled should be(true)
+//			responseAs[String] === "0"
+//		}
+//	}
 }

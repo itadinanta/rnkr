@@ -11,7 +11,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Success
 import scala.util.Failure
 
-object Timer extends App {
+object Timer {
 	implicit val system = ActorSystem("node")
 	implicit val executionContext = system.dispatchers.lookup("main-app-dispatcher")
 	case class Message(val n: String) {

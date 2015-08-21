@@ -22,6 +22,14 @@ EclipseKeys.eclipseOutput := Some("target")
 
 retrieveManaged := false
 
+// If you need to specify main classes manually, use packSettings and packMain
+packSettings
+
+// [Optional] Creating `hello` command that calls org.mydomain.Hello#main(Array[String]) 
+packMain := Map("rnkr" -> "net.itadinanta.rnkr.Main")
+
+packExtraClasspath := Map("rnkr" -> Seq("${PROG_HOME}/etc"))
+
 val akkaV = "2.3.8"
 val sprayV = "1.3.2"
 
@@ -55,3 +63,7 @@ libraryDependencies ++= Seq(
 	"io.spray"					%% "spray-testkit"	% sprayV	% "test",
 	"com.typesafe.akka"			%% "akka-testkit"	% akkaV		% "test"
 )
+
+enablePlugins(DockerPlugin)
+
+dockerAutoPackageJavaApplication()
