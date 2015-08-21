@@ -4,6 +4,8 @@ net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 name := "rnkr"
 
+sbtVersion := "0.13.9"
+
 val commonSettings = Seq(
 	organization := "net.itadinanta",
 	version := "0.2.1-SNAPSHOT",
