@@ -10,8 +10,18 @@ object ClasspathentryRewriteRule extends RewriteRule {
 	override def transform(parent: Node): Seq[Node] = {
 		val ivyHome = System.getProperty("user.home") + "/.ivy2"
 		parent match {
-			case c @ <classpathentry/> if (((c \ "@kind").toString() == "lib") && ((c \ "@path").toString() startsWith ivyHome)) => {
-				<classpathentry kind="var" path={ (c \ "@path").toString.replaceAll(ivyHome, "IVY_HOME") }/>
+			case c @ <classpathentry/> if (
+					((c \ "@kind").toString() == "lib") 
+					&& ((c \ "@path").toString() startsWith ivyHome) 
+					&& ((c \ "@sourcepath").toString() startsWith ivyHome)) => {
+				<classpathentry kind="var" path={ (c \ "@path").toString.replaceAll(ivyHome, "IVY_HOME") } 
+					sourcepath={ (c \ "@sourcepath").toString.replaceAll(ivyHome, "IVY_HOME") }  />
+			}
+
+			case c @ <classpathentry/> if (
+					((c \ "@kind").toString() == "lib") 
+					&& ((c \ "@path").toString() startsWith ivyHome)) => {
+				<classpathentry kind="var" path={ (c \ "@path").toString.replaceAll(ivyHome, "IVY_HOME") }  />
 			}
 			case other => other
 		}
