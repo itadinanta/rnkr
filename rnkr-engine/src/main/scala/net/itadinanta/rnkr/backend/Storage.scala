@@ -119,9 +119,9 @@ trait ReaderStatements {
 }
 
 class Reader(override val cluster: Cassandra, val id: String, val leaderboard: LeaderboardBuffer)
-	extends Storage
-	with ReaderStatements
-	with Logging {
+		extends Storage
+		with ReaderStatements
+		with Logging {
 
 	case class Page(page: Int, entries: Iterable[Entry])
 	case class PageReadRequest(page: Int)
@@ -136,10 +136,10 @@ class Reader(override val cluster: Cassandra, val id: String, val leaderboard: L
 		def loadPage(watermark: Long, page: Int) =
 			for {
 				resultSet <- session.executeAsync(readPageStatement.bind(id, JLong.valueOf(watermark), Integer.valueOf(page)))
-				val entries = for {
+				entries = for {
 					row <- resultSet
 					line <- row.getString("scoredata").lines
-					val s = line.split(Storage.CSV_SEPARATOR)
+					s = line.split(Storage.CSV_SEPARATOR)
 				} yield Entry(decodeScore(s(0)), s(1).toLong, s(2), s(3).toLong, if (s.length < 5) None else decodeAttachments(s(4)))
 			} yield Page(page, entries)
 
@@ -290,9 +290,9 @@ trait WriterStatements {
 }
 
 class Writer(override val cluster: Cassandra, val id: String, initialWatermark: Long, val metadata: Metadata)
-	extends Storage
-	with WriterStatements
-	with Logging {
+		extends Storage
+		with WriterStatements
+		with Logging {
 
 	import QueryBuilder._
 

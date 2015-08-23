@@ -10,7 +10,7 @@ import grizzled.slf4j.Logging
 class LeaderboardTest extends FunSuite with Matchers with Logging {
 
 	test("empty leaderboard") {
-		LeaderboardBuffer().size should be === 0
+		LeaderboardBuffer().size shouldBe 0
 	}
 
 	test("TimedScore as key") {
