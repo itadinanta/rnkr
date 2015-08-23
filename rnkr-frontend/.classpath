@@ -15,6 +15,7 @@
   <classpathentry kind="var" path="IVY_HOME/cache/org.scala-lang.modules/scala-xml_2.11/bundles/scala-xml_2.11-1.0.2.jar" sourcepath="IVY_HOME/cache/org.scala-lang.modules/scala-xml_2.11/srcs/scala-xml_2.11-1.0.2-sources.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe/config/bundles/config-1.2.1.jar" sourcepath="IVY_HOME/cache/com.typesafe/config/srcs/config-1.2.1-sources.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-actor_2.11/jars/akka-actor_2.11-2.3.8.jar" sourcepath="IVY_HOME/cache/com.typesafe.akka/akka-actor_2.11/srcs/akka-actor_2.11-2.3.8-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-slf4j_2.11/jars/akka-slf4j_2.11-2.3.8.jar" sourcepath="IVY_HOME/cache/com.typesafe.akka/akka-slf4j_2.11/srcs/akka-slf4j_2.11-2.3.8-sources.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.datastax.cassandra/cassandra-driver-core/bundles/cassandra-driver-core-2.1.4.jar" sourcepath="IVY_HOME/cache/com.datastax.cassandra/cassandra-driver-core/srcs/cassandra-driver-core-2.1.4-sources.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.google.guava/guava/bundles/guava-14.0.1.jar" sourcepath="IVY_HOME/cache/com.google.guava/guava/srcs/guava-14.0.1-sources.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/com.codahale.metrics/metrics-core/bundles/metrics-core-3.0.2.jar" sourcepath="IVY_HOME/cache/com.codahale.metrics/metrics-core/srcs/metrics-core-3.0.2-sources.jar"/>

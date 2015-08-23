@@ -8,9 +8,10 @@ abstract class GlobalConfig {
 	val cfg: Config
 	val root: String
 
-	private def withKey[T](f: (String) => T, key: String): Option[T] = {
+	private def withKey[T](f: (String) => T, key: String): T = {
 		val path = root + "." + key
-		if (cfg.hasPath(path)) Option(f(path)) else None
+		f(path)
+//		if (cfg.hasPath(path)) Option(f(path)) else None
 	}
 	def string(key: String) = withKey(cfg.getString _, key)
 	def strings(key: String) = withKey(cfg.getStringList(_).toList, key)

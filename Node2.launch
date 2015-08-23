@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="scala.application">
+<stringAttribute key="bad_container_name" value="/rnkr-"/>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/rnkr-app/src/main/scala/net/itadinanta/rnkr/Main.scala"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="net.itadinanta.rnkr.Main"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="rnkr-app"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx4G&#10;-Dakka.remote.netty.tcp.port=2552&#10;-Dnet.itadinanta.rnkr.listen.port=8081"/>
+<stringAttribute key="pde.version" value="3.2a"/>
+</launchConfiguration>

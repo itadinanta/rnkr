@@ -26,7 +26,7 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 
 	val actorSystem = bean("system") {
 		val name = cfg.string("system.name")
-		ActorSystem(name getOrElse "rnkr")
+		ActorSystem(name)
 	} destroy {
 		s =>
 			s.shutdown()
@@ -34,17 +34,17 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 	}
 
 	val cassandra = bean("cassandra") {
-		val hosts = cfg.strings("hosts")
-		val port = cfg.int("port")
-		new Cassandra(hosts getOrElse Seq("127.0.0.1"), port getOrElse 9042)
+		val hosts = cfg.strings("cassandra.hosts")
+		val port = cfg.int("cassandra.port")
+		new Cassandra(hosts, port)
 	} destroy {
 		_.shutdown()
 	}
 
 	val boot = bean("boot") {
-		val host = cfg.string("host")
-		val port = cfg.int("port")
-		new Boot(cassandra(), actorSystem(), host getOrElse "localhost", port getOrElse 8080)
+		val host = cfg.string("listen.host")
+		val port = cfg.int("listen.port")
+		new Boot(cassandra(), actorSystem(), host, port)
 	} destroy {
 		_.shutdown()
 	}

@@ -1,6 +1,7 @@
 import Versions._
 libraryDependencies ++= Seq(
 	"com.typesafe.akka"			%% "akka-actor"		% akkaV,
+	"com.typesafe.akka"			%% "akka-slf4j"		% akkaV,
 
 	// backend
 	"com.datastax.cassandra"	% "cassandra-driver-core" % "2.1.4",
