@@ -4,7 +4,6 @@ net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 name := "rnkr"
 
-sbtVersion := "0.13.9"
 
 val commonSettings = Seq(
 	organization := "net.itadinanta",
@@ -12,9 +11,10 @@ val commonSettings = Seq(
 	startYear := Some(2015),
 	crossPaths := true,
 	licenses += ("GPL-2.0", url("http://opensource.org/licenses/GPL-2.0")),
-	
+	sbtVersion := "0.13.9",
 	scalaVersion := "2.11.7",
 	resolvers ++= Seq(
+		Resolver.jcenterRepo,
 		"Springsource" at "http://repo.springsource.org/libs",
 		"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
 	),
