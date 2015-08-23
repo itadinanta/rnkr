@@ -69,7 +69,7 @@ class Gate[T](val target: T) extends Actor with Logging {
 
 trait GateWrapper[T] extends Arbiter[T] {
 	val gate: ActorRef
-	implicit val timeout = Timeout.intToTimeout(Int.MaxValue)
+	implicit val timeout = Timeout(Int.MaxValue seconds)
 	import Gate._
 
 	override def wqueue[R](f: T => R)(implicit t: ClassTag[R]): Future[R] = ask(gate, WriteRequest(f)).mapTo[R]
