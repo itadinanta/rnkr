@@ -38,7 +38,7 @@ val commonSettings = Seq(
 		"ch.qos.logback" 			% "logback-classic" % "1.1.2" % "test",
 	
 		// test
-		"org.scalatest"				%% "scalatest"		% "2.1.3"	% "test"
+		"org.scalatest"				%% "scalatest"		% "2.2.5" % "test"
 	)
 )
 

@@ -11,7 +11,8 @@
   <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe/config/bundles/config-1.2.1.jar" sourcepath="IVY_HOME/cache/com.typesafe/config/srcs/config-1.2.1-sources.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-classic/jars/logback-classic-1.1.2.jar" sourcepath="IVY_HOME/cache/ch.qos.logback/logback-classic/srcs/logback-classic-1.1.2-sources.jar"/>
   <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-core/jars/logback-core-1.1.2.jar" sourcepath="IVY_HOME/cache/ch.qos.logback/logback-core/srcs/logback-core-1.1.2-sources.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.scalatest/scalatest_2.11/jars/scalatest_2.11-2.1.3.jar" sourcepath="IVY_HOME/cache/org.scalatest/scalatest_2.11/srcs/scalatest_2.11-2.1.3-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.scalatest/scalatest_2.11/bundles/scalatest_2.11-2.2.5.jar" sourcepath="IVY_HOME/cache/org.scalatest/scalatest_2.11/srcs/scalatest_2.11-2.2.5-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.scala-lang.modules/scala-xml_2.11/bundles/scala-xml_2.11-1.0.2.jar" sourcepath="IVY_HOME/cache/org.scala-lang.modules/scala-xml_2.11/srcs/scala-xml_2.11-1.0.2-sources.jar"/>
   <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
   <classpathentry kind="output" path="bin"/>
 </classpath>
