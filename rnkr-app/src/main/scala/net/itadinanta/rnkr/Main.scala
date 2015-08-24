@@ -19,6 +19,8 @@ import org.springframework.scala.context.function.FunctionalConfiguration
 import org.springframework.context.ApplicationContext
 import net.itadinanta.common.GlobalConfig
 import net.itadinanta.rnkr.backend.Cassandra
+import scala.concurrent.Await
+import net.itadinanta.rnkr.cluster.Cluster
 
 class ApplicationConfiguration extends FunctionalConfiguration {
 	implicit val ctx = beanFactory.asInstanceOf[ApplicationContext]
@@ -28,9 +30,7 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		val name = cfg.string("system.name")
 		ActorSystem(name)
 	} destroy {
-		s =>
-			s.shutdown()
-			s.awaitTermination(30 seconds)
+		s => Await.ready(s.terminate(), 1 minute)
 	}
 
 	val cassandra = bean("cassandra") {
@@ -39,6 +39,10 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		new Cassandra(hosts, port)
 	} destroy {
 		_.shutdown()
+	}
+
+	val cluster = bean("cluster") {
+		new Cluster(actorSystem())
 	}
 
 	val boot = bean("boot") {
