@@ -8,50 +8,60 @@
   <classpathentry kind="src" path="/rnkr-cluster" exported="true" combineaccessrules="false"/>
   <classpathentry kind="src" path="/rnkr-frontend" exported="true" combineaccessrules="false"/>
   <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.slf4j/jcl-over-slf4j/jars/jcl-over-slf4j-1.7.7.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.clapper/grizzled-slf4j_2.11/jars/grizzled-slf4j_2.11-1.0.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.scalaz/scalaz-core_2.11/bundles/scalaz-core_2.11-7.1.1.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.scala-lang.modules/scala-parser-combinators_2.11/bundles/scala-parser-combinators_2.11-1.0.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-actor_2.11/jars/akka-actor_2.11-2.4-M3.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe/config/bundles/config-1.3.0.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-slf4j_2.11/jars/akka-slf4j_2.11-2.4-M3.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.7.12.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.datastax.cassandra/cassandra-driver-core/bundles/cassandra-driver-core-2.1.4.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.google.guava/guava/bundles/guava-14.0.1.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.codahale.metrics/metrics-core/bundles/metrics-core-3.0.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/net.jpountz.lz4/lz4/jars/lz4-1.3.0.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.xerial.snappy/snappy-java/bundles/snappy-java-1.1.1.6.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-cluster_2.11/jars/akka-cluster_2.11-2.4-M3.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-remote_2.11/jars/akka-remote_2.11-2.4-M3.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/io.netty/netty/bundles/netty-3.10.3.Final.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.google.protobuf/protobuf-java/bundles/protobuf-java-2.5.0.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.uncommons.maths/uncommons-maths/jars/uncommons-maths-1.2.2a.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-cluster-sharding_2.11/jars/akka-cluster-sharding_2.11-2.4-M3.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-persistence_2.11/jars/akka-persistence_2.11-2.4-M3.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-cluster-tools_2.11/jars/akka-cluster-tools_2.11-2.4-M3.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-can_2.11/bundles/spray-can_2.11-1.3.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-io_2.11/bundles/spray-io_2.11-1.3.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-util_2.11/bundles/spray-util_2.11-1.3.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-http_2.11/bundles/spray-http_2.11-1.3.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.parboiled/parboiled-scala_2.11/bundles/parboiled-scala_2.11-1.1.6.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.parboiled/parboiled-core/bundles/parboiled-core-1.1.6.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-routing_2.11/bundles/spray-routing_2.11-1.3.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-httpx_2.11/bundles/spray-httpx_2.11-1.3.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.jvnet.mimepull/mimepull/jars/mimepull-1.9.4.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/com.chuusai/shapeless_2.11/jars/shapeless_2.11-1.2.4.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-json_2.11/bundles/spray-json_2.11-1.3.1.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-classic/jars/logback-classic-1.1.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-core/jars/logback-core-1.1.2.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/net.itadinanta/spring-scala_2.11/jars/spring-scala_2.11-1.0.0.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-core/jars/spring-core-3.2.14.RELEASE.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/commons-logging/commons-logging/jars/commons-logging-1.1.3.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-beans/jars/spring-beans-3.2.14.RELEASE.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-context/jars/spring-context-3.2.14.RELEASE.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-aop/jars/spring-aop-3.2.14.RELEASE.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/aopalliance/aopalliance/jars/aopalliance-1.0.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-expression/jars/spring-expression-3.2.14.RELEASE.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.scala-lang.modules/scala-xml_2.11/bundles/scala-xml_2.11-1.0.5.jar"/>
-  <classpathentry kind="var" path="IVY_HOME/cache/org.scalatest/scalatest_2.11/bundles/scalatest_2.11-2.2.5.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.7.7.jar" sourcepath="IVY_HOME/cache/org.slf4j/slf4j-api/srcs/slf4j-api-1.7.7-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.slf4j/jcl-over-slf4j/jars/jcl-over-slf4j-1.7.7.jar" sourcepath="IVY_HOME/cache/org.slf4j/jcl-over-slf4j/srcs/jcl-over-slf4j-1.7.7-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.clapper/grizzled-slf4j_2.11/jars/grizzled-slf4j_2.11-1.0.2.jar" sourcepath="IVY_HOME/cache/org.clapper/grizzled-slf4j_2.11/srcs/grizzled-slf4j_2.11-1.0.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.scalaz/scalaz-core_2.11/bundles/scalaz-core_2.11-7.1.1.jar" sourcepath="IVY_HOME/cache/org.scalaz/scalaz-core_2.11/srcs/scalaz-core_2.11-7.1.1-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.scala-lang.modules/scala-parser-combinators_2.11/bundles/scala-parser-combinators_2.11-1.0.2.jar" sourcepath="IVY_HOME/cache/org.scala-lang.modules/scala-parser-combinators_2.11/srcs/scala-parser-combinators_2.11-1.0.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe/config/bundles/config-1.2.1.jar" sourcepath="IVY_HOME/cache/com.typesafe/config/srcs/config-1.2.1-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-actor_2.11/jars/akka-actor_2.11-2.3.12.jar" sourcepath="IVY_HOME/cache/com.typesafe.akka/akka-actor_2.11/srcs/akka-actor_2.11-2.3.12-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-slf4j_2.11/jars/akka-slf4j_2.11-2.3.12.jar" sourcepath="IVY_HOME/cache/com.typesafe.akka/akka-slf4j_2.11/srcs/akka-slf4j_2.11-2.3.12-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.google.guava/guava/bundles/guava-14.0.1.jar" sourcepath="IVY_HOME/cache/com.google.guava/guava/srcs/guava-14.0.1-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.codahale.metrics/metrics-core/bundles/metrics-core-3.0.2.jar" sourcepath="IVY_HOME/cache/com.codahale.metrics/metrics-core/srcs/metrics-core-3.0.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/net.jpountz.lz4/lz4/jars/lz4-1.3.0.jar" sourcepath="IVY_HOME/cache/net.jpountz.lz4/lz4/srcs/lz4-1.3.0-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.xerial.snappy/snappy-java/bundles/snappy-java-1.1.1.6.jar" sourcepath="IVY_HOME/cache/org.xerial.snappy/snappy-java/srcs/snappy-java-1.1.1.6-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-contrib_2.11/jars/akka-contrib_2.11-2.3.12.jar" sourcepath="IVY_HOME/cache/com.typesafe.akka/akka-contrib_2.11/srcs/akka-contrib_2.11-2.3.12-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-remote_2.11/jars/akka-remote_2.11-2.3.12.jar" sourcepath="IVY_HOME/cache/com.typesafe.akka/akka-remote_2.11/srcs/akka-remote_2.11-2.3.12-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.google.protobuf/protobuf-java/bundles/protobuf-java-2.5.0.jar" sourcepath="IVY_HOME/cache/com.google.protobuf/protobuf-java/srcs/protobuf-java-2.5.0-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.uncommons.maths/uncommons-maths/jars/uncommons-maths-1.2.2a.jar" sourcepath="IVY_HOME/cache/org.uncommons.maths/uncommons-maths/srcs/uncommons-maths-1.2.2a-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-cluster_2.11/jars/akka-cluster_2.11-2.3.12.jar" sourcepath="IVY_HOME/cache/com.typesafe.akka/akka-cluster_2.11/srcs/akka-cluster_2.11-2.3.12-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.typesafe.akka/akka-persistence-experimental_2.11/jars/akka-persistence-experimental_2.11-2.3.12.jar" sourcepath="IVY_HOME/cache/com.typesafe.akka/akka-persistence-experimental_2.11/srcs/akka-persistence-experimental_2.11-2.3.12-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.iq80.leveldb/leveldb/jars/leveldb-0.5.jar" sourcepath="IVY_HOME/cache/org.iq80.leveldb/leveldb/srcs/leveldb-0.5-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.iq80.leveldb/leveldb-api/jars/leveldb-api-0.5.jar" sourcepath="IVY_HOME/cache/org.iq80.leveldb/leveldb-api/srcs/leveldb-api-0.5-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni-all/bundles/leveldbjni-all-1.7.jar" sourcepath="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni-all/srcs/leveldbjni-all-1.7-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni/jars/leveldbjni-1.7.jar" sourcepath="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni/srcs/leveldbjni-1.7-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.fusesource.hawtjni/hawtjni-runtime/jars/hawtjni-runtime-1.8.jar" sourcepath="IVY_HOME/cache/org.fusesource.hawtjni/hawtjni-runtime/srcs/hawtjni-runtime-1.8-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni-osx/jars/leveldbjni-osx-1.5.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni-linux32/jars/leveldbjni-linux32-1.5.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni-linux64/jars/leveldbjni-linux64-1.5.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni-win32/jars/leveldbjni-win32-1.5.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.fusesource.leveldbjni/leveldbjni-win64/jars/leveldbjni-win64-1.5.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.github.krasserm/akka-persistence-cassandra_2.11/jars/akka-persistence-cassandra_2.11-0.3.9.jar" sourcepath="IVY_HOME/cache/com.github.krasserm/akka-persistence-cassandra_2.11/srcs/akka-persistence-cassandra_2.11-0.3.9-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.datastax.cassandra/cassandra-driver-core/bundles/cassandra-driver-core-2.1.5.jar" sourcepath="IVY_HOME/cache/com.datastax.cassandra/cassandra-driver-core/srcs/cassandra-driver-core-2.1.5-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/io.netty/netty/bundles/netty-3.9.0.Final.jar" sourcepath="IVY_HOME/cache/io.netty/netty/srcs/netty-3.9.0.Final-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-can_2.11/bundles/spray-can_2.11-1.3.2.jar" sourcepath="IVY_HOME/cache/io.spray/spray-can_2.11/srcs/spray-can_2.11-1.3.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-io_2.11/bundles/spray-io_2.11-1.3.2.jar" sourcepath="IVY_HOME/cache/io.spray/spray-io_2.11/srcs/spray-io_2.11-1.3.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-util_2.11/bundles/spray-util_2.11-1.3.2.jar" sourcepath="IVY_HOME/cache/io.spray/spray-util_2.11/srcs/spray-util_2.11-1.3.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-http_2.11/bundles/spray-http_2.11-1.3.2.jar" sourcepath="IVY_HOME/cache/io.spray/spray-http_2.11/srcs/spray-http_2.11-1.3.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.parboiled/parboiled-scala_2.11/bundles/parboiled-scala_2.11-1.1.6.jar" sourcepath="IVY_HOME/cache/org.parboiled/parboiled-scala_2.11/srcs/parboiled-scala_2.11-1.1.6-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.parboiled/parboiled-core/bundles/parboiled-core-1.1.6.jar" sourcepath="IVY_HOME/cache/org.parboiled/parboiled-core/srcs/parboiled-core-1.1.6-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-routing_2.11/bundles/spray-routing_2.11-1.3.2.jar" sourcepath="IVY_HOME/cache/io.spray/spray-routing_2.11/srcs/spray-routing_2.11-1.3.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-httpx_2.11/bundles/spray-httpx_2.11-1.3.2.jar" sourcepath="IVY_HOME/cache/io.spray/spray-httpx_2.11/srcs/spray-httpx_2.11-1.3.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.jvnet.mimepull/mimepull/jars/mimepull-1.9.4.jar" sourcepath="IVY_HOME/cache/org.jvnet.mimepull/mimepull/srcs/mimepull-1.9.4-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/com.chuusai/shapeless_2.11/jars/shapeless_2.11-1.2.4.jar" sourcepath="IVY_HOME/cache/com.chuusai/shapeless_2.11/srcs/shapeless_2.11-1.2.4-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/io.spray/spray-json_2.11/bundles/spray-json_2.11-1.3.1.jar" sourcepath="IVY_HOME/cache/io.spray/spray-json_2.11/srcs/spray-json_2.11-1.3.1-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-classic/jars/logback-classic-1.1.2.jar" sourcepath="IVY_HOME/cache/ch.qos.logback/logback-classic/srcs/logback-classic-1.1.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/ch.qos.logback/logback-core/jars/logback-core-1.1.2.jar" sourcepath="IVY_HOME/cache/ch.qos.logback/logback-core/srcs/logback-core-1.1.2-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/net.itadinanta/spring-scala_2.11/jars/spring-scala_2.11-1.0.0.jar" sourcepath="IVY_HOME/cache/net.itadinanta/spring-scala_2.11/srcs/spring-scala_2.11-1.0.0-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-core/jars/spring-core-3.2.14.RELEASE.jar" sourcepath="IVY_HOME/cache/org.springframework/spring-core/srcs/spring-core-3.2.14.RELEASE-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/commons-logging/commons-logging/jars/commons-logging-1.1.3.jar" sourcepath="IVY_HOME/cache/commons-logging/commons-logging/srcs/commons-logging-1.1.3-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-beans/jars/spring-beans-3.2.14.RELEASE.jar" sourcepath="IVY_HOME/cache/org.springframework/spring-beans/srcs/spring-beans-3.2.14.RELEASE-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-context/jars/spring-context-3.2.14.RELEASE.jar" sourcepath="IVY_HOME/cache/org.springframework/spring-context/srcs/spring-context-3.2.14.RELEASE-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-aop/jars/spring-aop-3.2.14.RELEASE.jar" sourcepath="IVY_HOME/cache/org.springframework/spring-aop/srcs/spring-aop-3.2.14.RELEASE-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/aopalliance/aopalliance/jars/aopalliance-1.0.jar" sourcepath="IVY_HOME/cache/aopalliance/aopalliance/srcs/aopalliance-1.0-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.springframework/spring-expression/jars/spring-expression-3.2.14.RELEASE.jar" sourcepath="IVY_HOME/cache/org.springframework/spring-expression/srcs/spring-expression-3.2.14.RELEASE-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.scala-lang.modules/scala-xml_2.11/bundles/scala-xml_2.11-1.0.5.jar" sourcepath="IVY_HOME/cache/org.scala-lang.modules/scala-xml_2.11/srcs/scala-xml_2.11-1.0.5-sources.jar"/>
+  <classpathentry kind="var" path="IVY_HOME/cache/org.scalatest/scalatest_2.11/bundles/scalatest_2.11-2.2.5.jar" sourcepath="IVY_HOME/cache/org.scalatest/scalatest_2.11/srcs/scalatest_2.11-2.2.5-sources.jar"/>
   <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
   <classpathentry kind="output" path="bin"/>
 </classpath>

@@ -30,7 +30,10 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		val name = cfg.string("system.name")
 		ActorSystem(name)
 	} destroy {
-		s => Await.ready(s.terminate(), 1 minute)
+		//		s => Await.ready(s.terminate(), 1 minute)
+		s =>
+			s.shutdown()
+			s.awaitTermination()
 	}
 
 	val cassandra = bean("cassandra") {

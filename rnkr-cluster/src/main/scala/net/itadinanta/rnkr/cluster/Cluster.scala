@@ -1,12 +1,11 @@
 package net.itadinanta.rnkr.cluster
 
-import akka.cluster.sharding.ClusterSharding
 import akka.actor.ActorSystem
 import akka.actor.Actor
 import akka.actor.Props
 import akka.actor.ActorRefFactory
-import akka.cluster.sharding.ShardRegion
-import akka.cluster.sharding.ClusterShardingSettings
+import akka.contrib.pattern.ShardRegion
+import akka.contrib.pattern.ClusterSharding
 
 private object Cluster {
 	class Clusterable extends Actor {
@@ -21,19 +20,19 @@ private object Cluster {
 
 class Cluster(val actorSystem: ActorSystem) {
 	import Cluster._
-	val extractShardId: ShardRegion.ExtractShardId = {
+	val extractShardId: ShardRegion.ShardResolver = {
 		case LookupShard(userId) => userId.toString
 	}
 
-	val extractEntityId: ShardRegion.ExtractEntityId = {
+	val extractEntityId: ShardRegion.IdExtractor = {
 		case LookupShard(userId) => (userId, userId)
 	}
 
 	val clusterSharding = ClusterSharding(actorSystem).start(
 		typeName = Cluster.shardName,
-		entityProps = Cluster.props,
-		settings = ClusterShardingSettings(actorSystem),
-		extractEntityId = extractEntityId,
-		extractShardId = extractShardId)
+		entryProps = Some(Cluster.props),
+		//		settings = ClusterShardingSettings(actorSystem),
+		idExtractor = extractEntityId,
+		shardResolver = extractShardId)
 
 }
