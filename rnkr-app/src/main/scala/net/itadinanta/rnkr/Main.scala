@@ -21,6 +21,7 @@ import net.itadinanta.common.GlobalConfig
 import net.itadinanta.rnkr.backend.Cassandra
 import scala.concurrent.Await
 import net.itadinanta.rnkr.cluster.Cluster
+import grizzled.slf4j.Logging
 
 class ApplicationConfiguration extends FunctionalConfiguration {
 	implicit val ctx = beanFactory.asInstanceOf[ApplicationContext]
@@ -58,7 +59,8 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 
 }
 
-object Main extends App {
+object Main extends App with Logging {
+	debug("Starting...")
 	val ctx = FunctionalConfigApplicationContext(classOf[ApplicationConfiguration])
 
 	ctx.getBean("boot", classOf[Boot]).start()

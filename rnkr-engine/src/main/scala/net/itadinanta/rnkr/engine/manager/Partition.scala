@@ -24,13 +24,16 @@ class Partition(cassandra: Cassandra, constructor: () => LeaderboardBuffer)(impl
 	val duration = FiniteDuration(30, TimeUnit.SECONDS)
 	implicit val timeout: Timeout = new Timeout(duration)
 	case class Find(val name: String) extends ManagerCommand
+	case class Ping(val shardingKey: String) extends ManagerCommand
 
 	val partitionManager = actorRefFactory.actorOf(PartitionActor.props, "partition")
 
+	implicit val executionContext = actorRefFactory.dispatcher
+	def ping(shardingKey: String): Future[String] = 
+		(partitionManager ? Ping(shardingKey)).mapTo[String]
+	
 	def get(name: String): Future[Leaderboard] = {
-		implicit val executionContext = actorRefFactory.dispatcher
-
-		partitionManager.ask(Find(name)).mapTo[Leaderboard]
+		(partitionManager ? Find(name)).mapTo[Leaderboard]
 	}
 
 	object PartitionActor {
@@ -42,6 +45,7 @@ class Partition(cassandra: Cassandra, constructor: () => LeaderboardBuffer)(impl
 		val registry = mutable.Map[String, Lifecycle]()
 		def receive() = {
 			case Find(name) => find(name) pipeTo sender()
+			case Ping(shardingKey) => 
 		}
 
 		def lifecycleOf(name: String) = registry.getOrElseUpdate(name, new Lifecycle(name, cassandra, constructor, context))

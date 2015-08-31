@@ -46,9 +46,9 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 	val partitions = Map("leaderboard" -> defaultPartition, "default" -> defaultPartition)
 
 	val rnkrRoute = pathPrefix("rnkr" / Segment) { partitionName =>
-		val manager = partitions(partitionName)
+		val partition = partitions(partitionName)
 		pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
-			val lb = manager.get(treeId)
+			val lb = partition.get(treeId)
 			pathEnd {
 				(post | put) {
 					formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
@@ -84,6 +84,8 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 				parameters('start ? 0, 'length ? 10) { (start, length) =>
 					complete(lb flatMap { _.page(start.toInt, length.toInt) })
 				}
+			} ~ path("ping") {
+				complete(partition.ping(treeId))
 			}
 		}
 	}
