@@ -8,26 +8,30 @@ import akka.contrib.pattern.ShardRegion
 import akka.contrib.pattern.ClusterSharding
 import scala.concurrent.Future
 import akka.pattern.ask
+import akka.pattern.pipe
 import scala.concurrent.duration._
 import akka.util.Timeout
 import grizzled.slf4j.Logging
+import net.itadinanta.rnkr.engine.manager.Partition
+import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
 
 private object Cluster {
-	class Clusterable extends Actor with Logging {
+	class Shard(partition: Partition) extends Actor with Logging {
+		implicit val executionContext = context.dispatcher
 		override def receive = {
-			case s: String => {
-				info(s"Responding to ${s}")
-				sender() ! s
+			case id: String => {
+				println(s"Looking up ${id}")
+				partition.get(id) pipeTo sender
 			}
 		}
 	}
 
-	def props = Props(classOf[Clusterable])
+	def props(partition: Partition) = Props(new Shard(partition))
 	val shardName = "leaderboard"
 	case class LookupShard(leaderboardId: String)
 }
 
-class Cluster(val actorSystem: ActorSystem) {
+class Cluster(val actorSystem: ActorSystem, val partition: Partition) {
 	import Cluster._
 	private implicit val timeout = Timeout(1 minute)
 
@@ -41,10 +45,10 @@ class Cluster(val actorSystem: ActorSystem) {
 
 	private val clusterSharding = ClusterSharding(actorSystem).start(
 		typeName = Cluster.shardName,
-		entryProps = Some(Cluster.props),
+		entryProps = Some(Cluster.props(partition)),
 		idExtractor = extractEntityId,
 		shardResolver = extractShardId)
 
-	def ping(leaderboardId: String): Future[String] =
-		(clusterSharding ? LookupShard(leaderboardId)).mapTo[String]
+	def find(leaderboardId: String): Future[Leaderboard] =
+		(clusterSharding ? LookupShard(leaderboardId)).mapTo[Leaderboard]
 }

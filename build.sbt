@@ -72,6 +72,9 @@ lazy val `rnkr-frontend` = project.in( file("rnkr-frontend") ).settings(commonSe
 	)
 
 lazy val `rnkr-cluster` = project.in( file("rnkr-cluster") ).settings(commonSettings: _*)
+	.dependsOn(
+		`rnkr-engine`
+	)
 
 lazy val `rnkr-engine` = project.in( file("rnkr-engine") ).settings(commonSettings: _*)
 	.dependsOn(

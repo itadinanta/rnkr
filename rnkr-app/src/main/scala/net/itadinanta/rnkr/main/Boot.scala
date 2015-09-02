@@ -13,10 +13,11 @@ import akka.actor.PoisonPill
 import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.frontend.ServiceActor
 import net.itadinanta.rnkr.backend.Cassandra
+import net.itadinanta.rnkr.cluster.Cluster
 
-class Boot(val cassandra: Cassandra, val system: ActorSystem, val host: String, val port: Int) extends Logging {
+class Boot(val cassandra: Cassandra, val cluster: Cluster, val system: ActorSystem, val host: String, val port: Int) extends Logging {
 
-	val service = system.actorOf(ServiceActor.props(cassandra), "rnkr-service")
+	val service = system.actorOf(ServiceActor.props(cassandra, cluster), "rnkr-service")
 
 	def start() = {
 		debug(s"Starting service ${host}:${port}")

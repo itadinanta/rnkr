@@ -26,9 +26,12 @@ import scalaz.ImmutableArray
 import spray.json.DeserializationException
 import akka.actor.Props
 import net.itadinanta.rnkr.engine.manager.Partition
+import net.itadinanta.rnkr.cluster.Cluster
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
 	val cassandra: Cassandra
+	val cluster: Cluster
+
 	implicit val executionContext: ExecutionContext
 	implicit object AttachmentJsonFormat extends JsonFormat[Attachments] {
 		def write(c: Attachments) =
@@ -41,14 +44,14 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 	}
 	implicit val jsonEntry = jsonFormat5(Entry)
 
-	val defaultPartition = new Partition(cassandra, () => LeaderboardBuffer())
-
-	val partitions = Map("leaderboard" -> defaultPartition, "default" -> defaultPartition)
+	//	val defaultPartition =
+	//
+	//	val partitions = Map("leaderboard" -> defaultPartition, "default" -> defaultPartition)
 
 	val rnkrRoute = pathPrefix("rnkr" / Segment) { partitionName =>
-		val partition = partitions(partitionName)
+		// val partition = partitions(partitionName)
 		pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
-			val lb = partition.get(treeId)
+			val lb = cluster.find(treeId)
 			pathEnd {
 				(post | put) {
 					formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
@@ -84,18 +87,16 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 				parameters('start ? 0, 'length ? 10) { (start, length) =>
 					complete(lb flatMap { _.page(start.toInt, length.toInt) })
 				}
-			} ~ path("ping") {
-				complete(partition.ping(treeId))
 			}
 		}
 	}
 }
 
 object ServiceActor {
-	def props(cassandra: Cassandra) = Props(new ServiceActor(cassandra))
+	def props(cassandra: Cassandra, cluster: Cluster) = Props(new ServiceActor(cassandra, cluster))
 }
 
-class ServiceActor(override val cassandra: Cassandra) extends Actor with Service {
+class ServiceActor(override val cassandra: Cassandra, override val cluster: Cluster) extends Actor with Service {
 	def actorRefFactory = context
 	val executionContext = context.dispatcher
 	def receive = runRoute(rnkrRoute)

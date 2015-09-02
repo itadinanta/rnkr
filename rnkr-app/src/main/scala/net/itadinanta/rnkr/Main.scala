@@ -22,6 +22,8 @@ import net.itadinanta.rnkr.backend.Cassandra
 import scala.concurrent.Await
 import net.itadinanta.rnkr.cluster.Cluster
 import grizzled.slf4j.Logging
+import net.itadinanta.rnkr.engine.manager.Partition
+import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
 
 class ApplicationConfiguration extends FunctionalConfiguration {
 	implicit val ctx = beanFactory.asInstanceOf[ApplicationContext]
@@ -45,14 +47,18 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		_.shutdown()
 	}
 
+	val partition = bean("partition") {
+		new Partition(cassandra(), () => LeaderboardBuffer())(actorSystem())
+	}
+
 	val cluster = bean("cluster") {
-		new Cluster(actorSystem())
+		new Cluster(actorSystem(), partition())
 	}
 
 	val boot = bean("boot") {
 		val host = cfg.string("listen.host")
 		val port = cfg.int("listen.port")
-		new Boot(cassandra(), actorSystem(), host, port)
+		new Boot(cassandra(), cluster(), actorSystem(), host, port)
 	} destroy {
 		_.shutdown()
 	}

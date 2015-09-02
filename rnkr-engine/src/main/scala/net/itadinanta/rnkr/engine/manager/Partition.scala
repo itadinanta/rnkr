@@ -29,9 +29,7 @@ class Partition(cassandra: Cassandra, constructor: () => LeaderboardBuffer)(impl
 	val partitionManager = actorRefFactory.actorOf(PartitionActor.props, "partition")
 
 	implicit val executionContext = actorRefFactory.dispatcher
-	def ping(shardingKey: String): Future[String] = 
-		(partitionManager ? Ping(shardingKey)).mapTo[String]
-	
+
 	def get(name: String): Future[Leaderboard] = {
 		(partitionManager ? Find(name)).mapTo[Leaderboard]
 	}
@@ -45,7 +43,6 @@ class Partition(cassandra: Cassandra, constructor: () => LeaderboardBuffer)(impl
 		val registry = mutable.Map[String, Lifecycle]()
 		def receive() = {
 			case Find(name) => find(name) pipeTo sender()
-			case Ping(shardingKey) => 
 		}
 
 		def lifecycleOf(name: String) = registry.getOrElseUpdate(name, new Lifecycle(name, cassandra, constructor, context))
