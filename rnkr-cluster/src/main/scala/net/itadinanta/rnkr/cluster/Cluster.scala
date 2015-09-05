@@ -14,6 +14,9 @@ import akka.util.Timeout
 import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.engine.manager.Partition
 import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
+import net.itadinanta.rnkr.engine.leaderboard.LeaderboardActor
+import akka.actor.ActorRef
+import net.itadinanta.rnkr.engine.leaderboard.LeaderboardActor.LeaderboardActorWrapper
 
 private object Cluster {
 	class Shard(partition: Partition) extends Actor with Logging {
@@ -21,7 +24,9 @@ private object Cluster {
 		override def receive = {
 			case id: String => {
 				println(s"Looking up ${id}")
-				partition.get(id) pipeTo sender
+				partition.get(id) map { leaderboard =>
+					context.actorOf(LeaderboardActor.props(leaderboard))
+				} pipeTo sender()
 			}
 		}
 	}
@@ -49,6 +54,10 @@ class Cluster(val actorSystem: ActorSystem, val partition: Partition) {
 		idExtractor = extractEntityId,
 		shardResolver = extractShardId)
 
-	def find(leaderboardId: String): Future[Leaderboard] =
-		(clusterSharding ? LookupShard(leaderboardId)).mapTo[Leaderboard]
+	def find(leaderboardId: String): Future[Leaderboard] = {
+		implicit val executionContext = actorSystem.dispatcher
+		for {
+			a <- (clusterSharding ? LookupShard(leaderboardId)).mapTo[ActorRef]
+		} yield LeaderboardActor.wrap(a)
+	}
 }
