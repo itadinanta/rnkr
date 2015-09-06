@@ -61,9 +61,9 @@ object Storage {
 
 trait Storage extends Actor {
 
-	val cluster: Cassandra
+	val cassandra: Cassandra
 	// TODO: share session and statements
-	val session = cluster.cluster.connect("akkacassandra")
+	val session = cassandra.cluster.connect("akkacassandra")
 	implicit lazy val executionContext = context.system.dispatcher
 
 	implicit def akkaFuture(arg: ResultSetFuture): Future[ResultSet] = {
@@ -81,7 +81,8 @@ trait Storage extends Actor {
 }
 
 object Reader {
-	def props(cluster: Cassandra, id: String, leaderboard: LeaderboardBuffer) = Props(new Reader(cluster, id, leaderboard))
+	def props(cassandra: Cassandra, id: String, leaderboard: LeaderboardBuffer) =
+		Props(new Reader(cassandra, id, leaderboard))
 }
 
 trait ReaderStatements {
@@ -118,7 +119,7 @@ trait ReaderStatements {
 		.setConsistencyLevel(consistencyLevel)
 }
 
-class Reader(override val cluster: Cassandra, val id: String, val leaderboard: LeaderboardBuffer)
+class Reader(override val cassandra: Cassandra, val id: String, val leaderboard: LeaderboardBuffer)
 		extends Storage
 		with ReaderStatements
 		with Logging {
@@ -221,7 +222,8 @@ class Reader(override val cluster: Cassandra, val id: String, val leaderboard: L
 }
 
 object Writer {
-	def props(cluster: Cassandra, id: String, watermark: Long, metadata: Metadata) = Props(new Writer(cluster, id, watermark, metadata))
+	def props(cassandra: Cassandra, id: String, watermark: Long, metadata: Metadata) =
+		Props(new Writer(cassandra, id, watermark, metadata))
 }
 
 trait WriterStatements {
@@ -289,7 +291,7 @@ trait WriterStatements {
 		.setConsistencyLevel(consistencyLevel)
 }
 
-class Writer(override val cluster: Cassandra, val id: String, initialWatermark: Long, val metadata: Metadata)
+class Writer(override val cassandra: Cassandra, val id: String, initialWatermark: Long, val metadata: Metadata)
 		extends Storage
 		with WriterStatements
 		with Logging {

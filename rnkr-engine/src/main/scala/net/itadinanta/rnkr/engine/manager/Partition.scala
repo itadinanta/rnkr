@@ -18,13 +18,11 @@ import net.itadinanta.rnkr.engine.leaderboard.LeaderboardArbiter
 import scala.concurrent.Promise
 import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
 
-sealed trait ManagerCommand
-
-class Partition(cassandra: Cassandra, constructor: () => LeaderboardBuffer)(implicit actorRefFactory: ActorRefFactory) {
+class Partition(cassandra: Cassandra)(implicit actorRefFactory: ActorRefFactory) {
 	val duration = FiniteDuration(30, TimeUnit.SECONDS)
 	implicit val timeout: Timeout = new Timeout(duration)
+	sealed trait ManagerCommand
 	case class Find(val name: String) extends ManagerCommand
-	case class Ping(val shardingKey: String) extends ManagerCommand
 
 	val partitionManager = actorRefFactory.actorOf(PartitionActor.props, "partition")
 
@@ -40,12 +38,12 @@ class Partition(cassandra: Cassandra, constructor: () => LeaderboardBuffer)(impl
 
 	class PartitionActor extends Actor {
 		implicit val executionContext = context.dispatcher
-		val registry = mutable.Map[String, Lifecycle]()
+		val registry = mutable.Map[String, PersistentLeaderboard]()
 		def receive() = {
 			case Find(name) => find(name) pipeTo sender()
 		}
 
-		def lifecycleOf(name: String) = registry.getOrElseUpdate(name, new Lifecycle(name, cassandra, constructor, context))
-		def find(name: String) = lifecycleOf(name).leaderboard
+		def find(name: String) =
+			registry.getOrElseUpdate(name, new PersistentLeaderboard(name, cassandra, context)).leaderboard
 	}
 }

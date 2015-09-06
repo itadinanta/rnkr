@@ -37,8 +37,10 @@ import net.itadinanta.rnkr.backend.Flush
 import net.itadinanta.rnkr.backend.Save
 import net.itadinanta.rnkr.backend.Metadata
 import scala.reflect.ClassTag
+import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBufferFactory
 
-class Lifecycle(name: String, cassandra: Cassandra, constructor: () => LeaderboardBuffer, actorRefFactory: ActorRefFactory) {
+class PersistentLeaderboard(name: String, cassandra: Cassandra, actorRefFactory: ActorRefFactory)
+		extends LeaderboardBufferFactory {
 	implicit val executionContext = actorRefFactory.dispatcher
 	val arbiter = Promise[Leaderboard]
 	def leaderboard: Future[Leaderboard] = arbiter.future
@@ -46,7 +48,7 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 	class LifecycleActor extends Actor {
 		var metadata = Metadata()
 		var lastFlush = System.currentTimeMillis()
-		val target = constructor()
+		val target = build()
 		var writer: ActorRef = _
 
 		val reader = context.actorOf(Reader.props(cassandra, name, target), "reader_" + name)

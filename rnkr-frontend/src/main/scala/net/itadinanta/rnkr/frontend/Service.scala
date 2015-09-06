@@ -10,7 +10,6 @@ import akka.actor.ActorContext
 import spray.httpx.SprayJsonSupport
 import spray.httpx.marshalling.MetaMarshallers
 import scala.concurrent.Future
-import net.itadinanta.rnkr.backend.Cassandra
 import net.itadinanta.rnkr.core.tree.Row
 import net.itadinanta.rnkr.core.tree.RankedTreeMap
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
@@ -30,7 +29,6 @@ import net.itadinanta.rnkr.cluster.Cluster
 import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
-	val cassandra: Cassandra
 	val cluster: Cluster
 
 	implicit val executionContext: ExecutionContext
@@ -91,10 +89,10 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 }
 
 object ServiceActor {
-	def props(cassandra: Cassandra, cluster: Cluster) = Props(new ServiceActor(cassandra, cluster))
+	def props(cluster: Cluster) = Props(new ServiceActor(cluster))
 }
 
-class ServiceActor(override val cassandra: Cassandra, override val cluster: Cluster) extends Actor with Service {
+class ServiceActor(override val cluster: Cluster) extends Actor with Service {
 	def actorRefFactory = context
 	val executionContext = context.dispatcher
 	def receive = runRoute(rnkrRoute)

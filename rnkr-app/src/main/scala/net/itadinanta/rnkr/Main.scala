@@ -13,7 +13,7 @@ import scala.collection.mutable.ListBuffer
 import net.itadinanta.rnkr.core.tree.Row
 import org.springframework.context.support.ClassPathXmlApplicationContext
 import org.springframework.beans.factory.InitializingBean
-import net.itadinanta.rnkr.main.Boot
+import net.itadinanta.rnkr.main.Frontend
 import org.springframework.scala.context.function.FunctionalConfigApplicationContext
 import org.springframework.scala.context.function.FunctionalConfiguration
 import org.springframework.context.ApplicationContext
@@ -48,17 +48,22 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 	}
 
 	val partition = bean("partition") {
-		new Partition(cassandra(), () => LeaderboardBuffer())(actorSystem())
+		new Partition(cassandra())(actorSystem())
+	}
+
+	val partitionMap = bean("partitionMap") {
+		Map("default" -> partition(),
+			"leaderboard" -> partition())
 	}
 
 	val cluster = bean("cluster") {
-		new Cluster(actorSystem(), partition())
+		new Cluster(actorSystem(), partitionMap())
 	}
 
-	val boot = bean("boot") {
+	val frontend = bean("frontend") {
 		val host = cfg.string("listen.host")
 		val port = cfg.int("listen.port")
-		new Boot(cassandra(), cluster(), actorSystem(), host, port)
+		new Frontend(actorSystem(), cluster(), host, port)
 	} destroy {
 		_.shutdown()
 	}
@@ -69,7 +74,7 @@ object Main extends App with Logging {
 	debug("Starting...")
 	val ctx = FunctionalConfigApplicationContext(classOf[ApplicationConfiguration])
 
-	ctx.getBean("boot", classOf[Boot]).start()
+	ctx.getBean("boot", classOf[Frontend]).start()
 
 	sys.addShutdownHook {
 		ctx.close()

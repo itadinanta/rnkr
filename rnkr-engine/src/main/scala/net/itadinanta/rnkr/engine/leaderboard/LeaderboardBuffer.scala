@@ -32,6 +32,10 @@ trait LeaderboardBuffer {
 	def append(entries: Iterable[Entry]): Iterable[Update]
 }
 
+trait LeaderboardBufferFactory {
+	def build() = new LeaderboardTreeImpl
+}
+
 protected case class TimedScore(
 		val score: Long,
 		val timestamp: Long,

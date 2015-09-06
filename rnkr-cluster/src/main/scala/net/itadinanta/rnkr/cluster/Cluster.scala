@@ -12,31 +12,32 @@ import akka.pattern.pipe
 import scala.concurrent.duration._
 import akka.util.Timeout
 import grizzled.slf4j.Logging
-import net.itadinanta.rnkr.engine.manager.Partition
 import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardActor
 import akka.actor.ActorRef
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardActor.LeaderboardActorWrapper
+import net.itadinanta.rnkr.engine.manager.Partition
 
 private object Cluster {
 	case class LookupShard(partitionId: String, leaderboardId: String)
-	class Shard(partition: Partition) extends Actor with Logging {
+	class Shard(val partitions: Map[String, Partition]) extends Actor with Logging {
 		implicit val executionContext = context.dispatcher
 		override def receive = {
-			case LookupShard(partitionId, id) => {
-				println(s"Looking up ${id}")
-				partition get id map { leaderboard =>
+			case LookupShard(pid, lid) => {
+				info(s"Looking up ${lid}")
+				val partition = partitions get pid getOrElse { partitions.get("default").get }
+				partition get lid map { leaderboard =>
 					context.actorOf(LeaderboardActor.props(leaderboard))
 				} pipeTo sender()
 			}
 		}
 	}
 
-	def props(partition: Partition) = Props(new Shard(partition))
+	def props(partitions: Map[String, Partition]) = Props(new Shard(partitions))
 	val shardName = "leaderboard"
 }
 
-class Cluster(val actorSystem: ActorSystem, val partition: Partition) {
+class Cluster(val actorSystem: ActorSystem, val partitions: Map[String, Partition]) {
 	import Cluster._
 	private implicit val timeout = Timeout(1 minute)
 
@@ -50,7 +51,7 @@ class Cluster(val actorSystem: ActorSystem, val partition: Partition) {
 
 	private val clusterSharding = ClusterSharding(actorSystem).start(
 		typeName = Cluster.shardName,
-		entryProps = Some(Cluster.props(partition)),
+		entryProps = Some(Cluster.props(partitions)),
 		idExtractor = extractEntityId,
 		shardResolver = extractShardId)
 
