@@ -17,8 +17,9 @@ import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardArbiter
 import scala.concurrent.Promise
 import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
+import net.itadinanta.rnkr.backend.Datastore
 
-class Partition(cassandra: Cassandra)(implicit actorRefFactory: ActorRefFactory) {
+class Partition(datastore: Datastore)(implicit actorRefFactory: ActorRefFactory) {
 	val duration = FiniteDuration(30, TimeUnit.SECONDS)
 	implicit val timeout: Timeout = new Timeout(duration)
 	sealed trait ManagerCommand
@@ -44,6 +45,6 @@ class Partition(cassandra: Cassandra)(implicit actorRefFactory: ActorRefFactory)
 		}
 
 		def find(name: String) =
-			registry.getOrElseUpdate(name, new PersistentLeaderboard(name, cassandra, context)).leaderboard
+			registry.getOrElseUpdate(name, new PersistentLeaderboard(name, datastore, context)).leaderboard
 	}
 }

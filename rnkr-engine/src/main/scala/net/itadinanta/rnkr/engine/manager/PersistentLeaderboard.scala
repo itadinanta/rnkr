@@ -14,8 +14,6 @@ import net.itadinanta.rnkr.backend.Cassandra
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardArbiter
 import scala.concurrent.Promise
-import net.itadinanta.rnkr.backend.Reader
-import net.itadinanta.rnkr.backend.Writer
 import net.itadinanta.rnkr.core.arbiter.Gate
 import net.itadinanta.rnkr.core.tree.Row
 import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
@@ -38,8 +36,9 @@ import net.itadinanta.rnkr.backend.Save
 import net.itadinanta.rnkr.backend.Metadata
 import scala.reflect.ClassTag
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBufferFactory
+import net.itadinanta.rnkr.backend.Datastore
 
-class PersistentLeaderboard(name: String, cassandra: Cassandra, actorRefFactory: ActorRefFactory)
+class PersistentLeaderboard(name: String, datastore: Datastore, actorRefFactory: ActorRefFactory)
 		extends LeaderboardBufferFactory {
 	implicit val executionContext = actorRefFactory.dispatcher
 	val arbiter = Promise[Leaderboard]
@@ -51,14 +50,14 @@ class PersistentLeaderboard(name: String, cassandra: Cassandra, actorRefFactory:
 		val target = build()
 		var writer: ActorRef = _
 
-		val reader = context.actorOf(Reader.props(cassandra, name, target), "reader_" + name)
+		val reader = context.actorOf(datastore.readerProps(name, target), "reader_" + name)
 		reader ! Load
 
 		def receive = {
 			case Load(watermark, walLength, metadata) =>
 				import UpdateMode._
 				this.metadata = metadata
-				this.writer = context.actorOf(Writer.props(cassandra, name, watermark, metadata), "writer_" + name)
+				this.writer = context.actorOf(datastore.writerProps(name, watermark, metadata), "writer_" + name)
 				val leaderboard = new LeaderboardDecorator(LeaderboardArbiter.wrap(context.actorOf(Gate.props(target), "gate_" + name))) {
 					var flushCount: Int = walLength
 					import scala.concurrent.duration._

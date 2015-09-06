@@ -24,6 +24,8 @@ import net.itadinanta.rnkr.cluster.Cluster
 import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.engine.manager.Partition
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
+import net.itadinanta.rnkr.backend.Cassandra
+import net.itadinanta.rnkr.backend.Datastore
 
 class ApplicationConfiguration extends FunctionalConfiguration {
 	implicit val ctx = beanFactory.asInstanceOf[ApplicationContext]
@@ -33,7 +35,8 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		val name = cfg.string("system.name")
 		ActorSystem(name)
 	} destroy {
-		//		s => Await.ready(s.terminate(), 1 minute)
+		//	Akka 2.4, not ready as of today
+		//	s => Await.ready(s.terminate(), 1 minute)
 		s =>
 			s.shutdown()
 			s.awaitTermination()
@@ -47,10 +50,15 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		_.shutdown()
 	}
 
-	val partition = bean("partition") {
-		new Partition(cassandra())(actorSystem())
+	val datastore = bean[Datastore]("datastore") {
+		new Cassandra.Datastore(cassandra())
 	}
 
+	val partition = bean("partition") {
+		new Partition(datastore())(actorSystem())
+	}
+
+	// "default" partition must exist
 	val partitionMap = bean("partitionMap") {
 		Map("default" -> partition(),
 			"leaderboard" -> partition())
@@ -74,30 +82,9 @@ object Main extends App with Logging {
 	debug("Starting...")
 	val ctx = FunctionalConfigApplicationContext(classOf[ApplicationConfiguration])
 
-	ctx.getBean("boot", classOf[Frontend]).start()
+	ctx.getBean("frontend", classOf[Frontend]).start()
 
 	sys.addShutdownHook {
 		ctx.close()
 	}
-
-	//	val a = TreeArbiter.create(Tree.intStringTree())
-	//	val done = Promise[Boolean]
-	//
-	//	val b = new ListBuffer[Future[Option[Row[Int, String]]]]
-	//
-	//	for (i <- 1 to 1000) {
-	//		Future { b += a.put(i, i.toString()) map (Some(_)) }
-	//		for (j <- 1 to 1000) {
-	//			Future { b += a.get(i) }
-	//		}
-	//	}
-	//	
-	//	sequence(b.toList) map { r =>
-	//		//		a.page(40, 10).map { r => println(r); done.success(true) }
-	//		a.get(990).map { r => println(r); done.success(true) }
-	//	}
-	//
-	//	done.future map {
-	//		case _ => system.shutdown
-	//	}
 }
