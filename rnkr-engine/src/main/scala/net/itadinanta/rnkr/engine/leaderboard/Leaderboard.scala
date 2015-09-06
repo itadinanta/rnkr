@@ -93,7 +93,7 @@ trait Leaderboard {
 	import Leaderboard._
 	import UpdateMode._
 
-	def ->[T](cmd: Command[T])(implicit tag: ClassTag[T]): Future[T]
+	def ->[T](cmd: Command[T]): Future[T]
 }
 
 abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) extends Leaderboard {

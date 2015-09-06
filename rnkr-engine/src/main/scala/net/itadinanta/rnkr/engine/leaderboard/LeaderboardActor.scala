@@ -20,7 +20,9 @@ object LeaderboardActor {
 		import Leaderboard._
 		implicit val timeout = Timeout(1 minute)
 
-		override def ->[T](cmd: Command[T])(implicit tag: ClassTag[T] = cmd.tag) = (actor ? cmd).mapTo[T]
+		override def ->[T](cmd: Command[T]) = {
+			(actor ? cmd).mapTo(cmd.tag)
+		}
 	}
 
 	def props(target: Leaderboard) = Props(new LeaderboardActor(target))

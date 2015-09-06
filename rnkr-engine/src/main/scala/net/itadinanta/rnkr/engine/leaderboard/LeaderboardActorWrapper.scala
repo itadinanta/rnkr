@@ -14,5 +14,5 @@ class LeaderboardActorWrapper(actor: ActorRef)(implicit val executionContext: Ex
 	
 	implicit val timeout = Timeout(1 minute)
 
-	def ->[T](cmd: Command[T])(implicit tag: ClassTag[T]) = (actor ? cmd).mapTo[T]
+	def ->[T](cmd: Command[T]) = (actor ? cmd).mapTo(cmd.tag)
 }
