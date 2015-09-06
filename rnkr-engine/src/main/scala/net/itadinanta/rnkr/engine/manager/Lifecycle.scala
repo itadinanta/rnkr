@@ -1,10 +1,8 @@
 package net.itadinanta.rnkr.engine.manager
 
-import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationConversions._
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import akka.actor.Actor
 import akka.actor.ActorContext
 import akka.actor.ActorRefFactory
@@ -38,6 +36,7 @@ import net.itadinanta.rnkr.backend.Storage
 import net.itadinanta.rnkr.backend.Flush
 import net.itadinanta.rnkr.backend.Save
 import net.itadinanta.rnkr.backend.Metadata
+import scala.reflect.ClassTag
 
 class Lifecycle(name: String, cassandra: Cassandra, constructor: () => LeaderboardBuffer, actorRefFactory: ActorRefFactory) {
 	implicit val executionContext = actorRefFactory.dispatcher
@@ -60,7 +59,8 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 				this.writer = context.actorOf(Writer.props(cassandra, name, watermark, metadata), "writer_" + name)
 				val leaderboard = new LeaderboardDecorator(LeaderboardArbiter.wrap(context.actorOf(Gate.props(target), "gate_" + name))) {
 					var flushCount: Int = walLength
-					implicit val timeout = Timeout(1 minute)
+					import scala.concurrent.duration._
+					implicit val timeout = Timeout(DurationInt(1).minute)
 
 					def writeAheadLog(replayMode: ReplayMode.ReplayMode, update: Update, post: Post) =
 						if (update.hasChanged) {
@@ -77,11 +77,15 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 							Future.successful(update)
 						}
 
-					def flush() = super.export() onSuccess { case snapshot => self ! Flush(snapshot) }
+					import Leaderboard._
+					override def ->[T](cmd: Cmd[T])(implicit tag: ClassTag[T]) = cmd match {
+						case c @ PostScore(post, updateMode) => (super.->(c)) flatMap { writeAheadLog(ReplayMode(updateMode), _, post) }
+						case c @ Remove(entrant) => (super.->(c)) flatMap { writeAheadLog(ReplayMode.Delete, _, Storage.tombstone(entrant)) }
+						case c @ Clear() => (super.->(c)) flatMap { writeAheadLog(ReplayMode.Clear, _, Storage.tombstone()) }
+						case c => (super.->(c)(c.tag))
+					}
 
-					override def post(post: Post, updateMode: UpdateMode) = super.post(post, updateMode) flatMap { writeAheadLog(ReplayMode(updateMode), _, post) }
-					override def remove(entrant: String) = super.remove(entrant) flatMap { writeAheadLog(ReplayMode.Delete, _, Storage.tombstone(entrant)) }
-					override def clear() = super.clear() flatMap { writeAheadLog(ReplayMode.Clear, _, Storage.tombstone()) }
+					def flush() = (super.->(Export())) onSuccess { case snapshot => self ! Flush(snapshot) }
 
 				}
 

@@ -8,22 +8,14 @@ import akka.actor.ActorRefFactory
 import scala.concurrent.Future
 import akka.actor.ActorRef
 import net.itadinanta.rnkr.core.arbiter.ActorGateWrapper
+import scala.reflect.ClassTag
 
 trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
-	override def size = rqueue(_.size)
-	override def isEmpty = rqueue(_.isEmpty)
-	override def get(entrant: String*) = rqueue(_.get(entrant: _*))
-	override def get(score: Long, timestamp: Long) = rqueue(_.get(score, timestamp))
-	override def at(rank: Long) = rqueue(_.at(rank))
-	override def estimatedRank(score: Long) = rqueue(_.estimatedRank(score))
-	override def around(entrant: String, length: Int) = rqueue(_.around(entrant, length))
-	override def around(score: Long, length: Int) = rqueue(_.around(score, length))
-	override def page(start: Long, length: Int) = rqueue(_.page(start, length))
-	override def export() = rqueue(_.export())
-	
-	override def post(post: Post, updateMode: UpdateMode = BestWins) = wqueue(_.post(post, updateMode))
-	override def remove(entrant: String) = wqueue(_.remove(entrant))
-	override def clear() = wqueue(_.clear())
+	import Leaderboard._
+	override def ->[T](cmd: Cmd[T])(implicit tag: ClassTag[T]) = cmd match {
+		case c: ReadCmd[_] => rqueue(c.apply)(c.tag)
+		case c: WriteCmd[_] => wqueue(c.apply)(c.tag)
+	}
 }
 
 object LeaderboardArbiter {

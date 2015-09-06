@@ -27,6 +27,7 @@ import spray.json.DeserializationException
 import akka.actor.Props
 import net.itadinanta.rnkr.engine.manager.Partition
 import net.itadinanta.rnkr.cluster.Cluster
+import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
 	val cassandra: Cassandra
@@ -50,42 +51,43 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 
 	val rnkrRoute = pathPrefix("rnkr" / Segment) { partitionName =>
 		// val partition = partitions(partitionName)
+		import Leaderboard._
 		pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
 			val lb = cluster.find(treeId)
 			pathEnd {
 				(post | put) {
 					formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
-						complete(lb flatMap { _.post(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins) } map { _.newEntry })
+						complete(lb flatMap { _ -> PostScore(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins) } map { _.newEntry })
 					}
 				} ~ delete {
 					parameter('entrant ?) {
 						_ match {
-							case Some(entrant) => complete(lb flatMap { _.remove(entrant) map { _.oldEntry } })
-							case None => complete(lb flatMap { _.clear() map { _.oldEntry } })
+							case Some(entrant) => complete(lb flatMap { _ -> Remove(entrant) map { _.oldEntry } })
+							case None => complete(lb flatMap { _ -> Clear() map { _.oldEntry } })
 						}
 					}
 				}
-			} ~ path("around") {
+			} ~ path("nearby") {
 				parameter('entrant, 'count ? 0) { (entrant, count) =>
-					complete(lb flatMap { _.around(entrant, count) })
+					complete(lb flatMap { _ -> Nearby(entrant, count) })
 				}
 			} ~ path("get") {
 				parameterMultiMap { map =>
-					complete(lb flatMap { _.get(map getOrElse ("entrant", Seq()): _*) })
+					complete(lb flatMap { _ -> Lookup(map getOrElse ("entrant", Seq()): _*) })
 				}
 			} ~ path("rank") {
 				parameter('score) { score =>
-					complete(lb flatMap { _.estimatedRank(score.toLong) map { _.toString } })
+					complete(lb flatMap { _ -> EstimatedRank(score.toLong) map { _.toString } })
 				}
 			} ~ path("size") {
-				complete(lb flatMap { _.size } map { _.toString })
-			} ~ path("range") {
+				complete(lb flatMap { _ -> Size() } map { _.toString })
+			} ~ path("around") {
 				parameters('score, 'length ? 1) { (score, length) =>
-					complete(lb flatMap { _.around(score.toLong, length.toInt) })
+					complete(lb flatMap { _ -> Around(score.toLong, length.toInt) })
 				}
 			} ~ path("page") {
 				parameters('start ? 0, 'length ? 10) { (start, length) =>
-					complete(lb flatMap { _.page(start.toInt, length.toInt) })
+					complete(lb flatMap { _ -> Page(start.toInt, length.toInt) })
 				}
 			}
 		}

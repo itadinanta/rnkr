@@ -2,6 +2,7 @@ package net.itadinanta.rnkr.engine.leaderboard
 
 import scala.concurrent.Future
 import scalaz.ImmutableArray
+import scala.reflect.ClassTag
 
 object UpdateMode extends Enumeration {
 	type UpdateMode = Value
@@ -21,39 +22,44 @@ case class Post(score: Long, entrant: String, attachments: Option[Attachments])
 case class Update(timestamp: Long, hasChanged: Boolean, oldEntry: Option[Entry], newEntry: Option[Entry])
 case class Snapshot(timestamp: Long, entries: Seq[Entry])
 
-trait Leaderboard {
+object Leaderboard {
 	import UpdateMode._
-	def size: Future[Int]
-	def isEmpty: Future[Boolean]
-	def get(entrant: String*): Future[Seq[Entry]]
-	def get(score: Long, timestamp: Long): Future[Option[Entry]]
-	def at(rank: Long): Future[Option[Entry]]
-	def estimatedRank(score: Long): Future[Long]
-	def around(entrant: String, length: Int): Future[Seq[Entry]]
-	def around(score: Long, length: Int): Future[Seq[Entry]]
-	def page(start: Long, length: Int): Future[Seq[Entry]]
-	
-	def export(): Future[Snapshot]
+	sealed trait Cmd[T] {
+		implicit val tag: ClassTag[T] = implicitly
+		def apply(l: LeaderboardBuffer): T
+	}
+	sealed trait ReadCmd[T] extends Cmd[T]
+	sealed trait WriteCmd[T] extends Cmd[T]
 
-	def post(post: Post, updateMode: UpdateMode = BestWins): Future[Update]
-	def remove(entrant: String): Future[Update]
-	def clear(): Future[Update]
+	case class Size() extends ReadCmd[Int] { def apply(l: LeaderboardBuffer) = l.size }
+	case class IsEmpty() extends ReadCmd[Boolean] { def apply(l: LeaderboardBuffer) = l.isEmpty }
+	case class Lookup(entrant: String*) extends ReadCmd[Seq[Entry]] { def apply(l: LeaderboardBuffer) = l.get(entrant: _*) }
+	case class Get(score: Long, timestamp: Long) extends ReadCmd[Option[Entry]] { def apply(l: LeaderboardBuffer) = l.get(score, timestamp) }
+	case class At(rank: Long) extends ReadCmd[Option[Entry]] { def apply(l: LeaderboardBuffer) = l.at(rank) }
+	case class EstimatedRank(score: Long) extends ReadCmd[Long] { def apply(l: LeaderboardBuffer) = l.estimatedRank(score) }
+	case class Nearby(entrant: String, length: Int) extends ReadCmd[Seq[Entry]] { def apply(l: LeaderboardBuffer) = l.around(entrant, length) }
+	case class Around(score: Long, length: Int) extends ReadCmd[Seq[Entry]] { def apply(l: LeaderboardBuffer) = l.around(score, length) }
+	case class Page(start: Long, length: Int) extends ReadCmd[Seq[Entry]] { def apply(l: LeaderboardBuffer) = l.page(start, length) }
+
+	case class Export() extends ReadCmd[Snapshot] { def apply(l: LeaderboardBuffer) = l.export() }
+
+	case class PostScore(post: Post, updateMode: UpdateMode = BestWins) extends WriteCmd[Update] { def apply(l: LeaderboardBuffer) = l.post(post, updateMode) }
+	case class Remove(entrant: String) extends WriteCmd[Update] { def apply(l: LeaderboardBuffer) = l.remove(entrant) }
+	case class Clear() extends WriteCmd[Update] { def apply(l: LeaderboardBuffer) = l.clear() }
+
+	case class CmdEnvelope[T >: Cmd[_]](val id: String, val payload: T)
+}
+
+trait Leaderboard {
+	import Leaderboard._
+	import UpdateMode._
+
+	def ->[T](cmd: Cmd[T])(implicit tag: ClassTag[T]): Future[T]
 }
 
 abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) extends Leaderboard {
 	import UpdateMode._
-	override def size = target.size
-	override def isEmpty = target.isEmpty
-	override def get(entrant: String*) = target.get(entrant: _*)
-	override def get(score: Long, timestamp: Long) = target.get(score, timestamp)
-	override def at(rank: Long) = target.at(rank)
-	override def estimatedRank(score: Long) = target.estimatedRank(score)
-	override def around(entrant: String, length: Int) = target.around(entrant, length)
-	override def around(score: Long, length: Int) = target.around(score, length)
-	override def page(start: Long, length: Int) = target.page(start, length)
-	override def export() = target.export()
+	import Leaderboard._
 
-	override def post(post: Post, updateMode: UpdateMode = BestWins) = target.post(post, updateMode)
-	override def remove(entrant: String) = target.remove(entrant)
-	override def clear() = target.clear()
+	def ->[T](cmd: Cmd[T])(implicit tag: ClassTag[T]): Future[T] = target -> cmd
 }
