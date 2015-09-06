@@ -13,8 +13,8 @@ import scala.reflect.ClassTag
 trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
 	import Leaderboard._
 	override def ->[T](cmd: Cmd[T])(implicit tag: ClassTag[T]) = cmd match {
-		case c: ReadCmd[_] => rqueue(c.apply)(c.tag)
-		case c: WriteCmd[_] => wqueue(c.apply)(c.tag)
+		case c: ReadCmd[_] => rqueue(c.apply)
+		case c: WriteCmd[_] => wqueue(c.apply)
 	}
 }
 
