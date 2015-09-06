@@ -20,7 +20,7 @@ object LeaderboardActor {
 		import Leaderboard._
 		implicit val timeout = Timeout(1 minute)
 
-		override def ->[T](cmd: Cmd[T])(implicit tag: ClassTag[T] = cmd.tag) = (actor ? cmd).mapTo[T]
+		override def ->[T](cmd: Command[T])(implicit tag: ClassTag[T] = cmd.tag) = (actor ? cmd).mapTo[T]
 	}
 
 	def props(target: Leaderboard) = Props(new LeaderboardActor(target))
@@ -32,7 +32,7 @@ class LeaderboardActor(val target: Leaderboard) extends Actor with Logging {
 	implicit val executionContext = context.dispatcher
 	import Leaderboard._
 	override def receive = {
-		case c: Cmd[_] =>
+		case c: Command[_] =>
 			implicit val tag = c.tag
 			target -> c pipeTo sender()
 		case other => println(s"Unknown message ${other}")

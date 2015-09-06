@@ -78,7 +78,7 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 						}
 
 					import Leaderboard._
-					override def ->[T](cmd: Cmd[T])(implicit tag: ClassTag[T]) = cmd match {
+					override def ->[T](cmd: Command[T])(implicit tag: ClassTag[T]) = cmd match {
 						case c @ PostScore(post, updateMode) => (super.->(c)) flatMap { writeAheadLog(ReplayMode(updateMode), _, post) }
 						case c @ Remove(entrant) => (super.->(c)) flatMap { writeAheadLog(ReplayMode.Delete, _, Storage.tombstone(entrant)) }
 						case c @ Clear() => (super.->(c)) flatMap { writeAheadLog(ReplayMode.Clear, _, Storage.tombstone()) }
