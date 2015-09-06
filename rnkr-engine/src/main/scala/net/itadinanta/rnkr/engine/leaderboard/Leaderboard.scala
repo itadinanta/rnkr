@@ -29,7 +29,9 @@ object Leaderboard {
 		def apply(l: LeaderboardBuffer): T
 	}
 	sealed trait Read[T] extends Command[T]
-	sealed trait Write[T] extends Command[T]
+	sealed trait Write extends Command[Update] {
+		override val tag = classTag[Update]
+	}
 
 	case class Size() extends Read[Int] {
 		override val tag = classTag[Int]
@@ -41,7 +43,7 @@ object Leaderboard {
 	}
 	case class Lookup(entrant: String*) extends Read[Seq[Entry]] {
 		override val tag = classTag[Seq[Entry]]
-		def apply(l: LeaderboardBuffer) = l.get(entrant: _*)
+		def apply(l: LeaderboardBuffer) = l.lookup(entrant: _*)
 	}
 	case class Get(score: Long, timestamp: Long) extends Read[Option[Entry]] {
 		override val tag = classTag[Option[Entry]]
@@ -57,7 +59,7 @@ object Leaderboard {
 	}
 	case class Nearby(entrant: String, length: Int) extends Read[Seq[Entry]] {
 		override val tag = classTag[Seq[Entry]]
-		def apply(l: LeaderboardBuffer) = l.around(entrant, length)
+		def apply(l: LeaderboardBuffer) = l.nearby(entrant, length)
 	}
 	case class Around(score: Long, length: Int) extends Read[Seq[Entry]] {
 		override val tag = classTag[Seq[Entry]]
@@ -73,16 +75,13 @@ object Leaderboard {
 		def apply(l: LeaderboardBuffer) = l.export()
 	}
 
-	case class PostScore(post: Post, updateMode: UpdateMode = BestWins) extends Write[Update] {
-		override val tag = classTag[Update]
+	case class PostScore(post: Post, updateMode: UpdateMode = BestWins) extends Write {
 		def apply(l: LeaderboardBuffer) = l.post(post, updateMode)
 	}
-	case class Remove(entrant: String) extends Write[Update] {
-		override val tag = classTag[Update]
+	case class Remove(entrant: String) extends Write {
 		def apply(l: LeaderboardBuffer) = l.remove(entrant)
 	}
-	case class Clear() extends Write[Update] {
-		override val tag = classTag[Update]
+	case class Clear() extends Write {
 		def apply(l: LeaderboardBuffer) = l.clear()
 	}
 
@@ -100,5 +99,5 @@ abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) ext
 	import UpdateMode._
 	import Leaderboard._
 
-	def ->[T](cmd: Command[T])(implicit tag: ClassTag[T]): Future[T] = target -> cmd
+	override def ->[T](cmd: Command[T]): Future[T] = target -> cmd
 }

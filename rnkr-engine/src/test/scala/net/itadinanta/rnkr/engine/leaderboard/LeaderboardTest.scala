@@ -35,8 +35,8 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 			lb.at(0) foreach { _ should be(Entry(e.score, e.timestamp, e.entrant, 0, None)) }
 		}
 
-		lb.get("Me").headOption should be(posted.newEntry)
-		lb.get("You").headOption should be(None)
+		lb.lookup("Me").headOption should be(posted.newEntry)
+		lb.lookup("You").headOption should be(None)
 
 		lb.at(0) should be(posted.newEntry)
 		lb.at(1) should be(None)
@@ -54,7 +54,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 		updated.newEntry should be(lb.at(0))
 		updated.newEntry should not be (None)
 
-		lb.get("Me").headOption should be(updated.newEntry)
+		lb.lookup("Me").headOption should be(updated.newEntry)
 		lb.at(0) should be(updated.newEntry)
 
 		val p1 = lb.post(Post(10, "Me", None))
@@ -78,7 +78,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 		deleted.oldEntry should be(posted.newEntry)
 		deleted.newEntry should be(None)
 
-		lb.get("Me").headOption should be(None)
+		lb.lookup("Me").headOption should be(None)
 		lb.size should be(0)
 		lb.isEmpty should be(true)
 	}
@@ -94,8 +94,8 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 	}
 
 	test("Query: around (entrant)") {
-		lb.around("User10", 2) should be(posted.drop(7).take(5).toList)
-		lb.around("UserNone", 2) should be('empty)
+		lb.nearby("User10", 2) should be(posted.drop(7).take(5).toList)
+		lb.nearby("UserNone", 2) should be('empty)
 	}
 
 	test("Query: around (score)") {

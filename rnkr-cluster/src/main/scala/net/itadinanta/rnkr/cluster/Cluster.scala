@@ -19,12 +19,13 @@ import akka.actor.ActorRef
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardActor.LeaderboardActorWrapper
 
 private object Cluster {
+	case class LookupShard(partitionId: String, leaderboardId: String)
 	class Shard(partition: Partition) extends Actor with Logging {
 		implicit val executionContext = context.dispatcher
 		override def receive = {
-			case id: String => {
+			case LookupShard(partitionId, id) => {
 				println(s"Looking up ${id}")
-				partition.get(id) map { leaderboard =>
+				partition get id map { leaderboard =>
 					context.actorOf(LeaderboardActor.props(leaderboard))
 				} pipeTo sender()
 			}
@@ -33,7 +34,6 @@ private object Cluster {
 
 	def props(partition: Partition) = Props(new Shard(partition))
 	val shardName = "leaderboard"
-	case class LookupShard(leaderboardId: String)
 }
 
 class Cluster(val actorSystem: ActorSystem, val partition: Partition) {
@@ -41,11 +41,11 @@ class Cluster(val actorSystem: ActorSystem, val partition: Partition) {
 	private implicit val timeout = Timeout(1 minute)
 
 	private val extractEntityId: ShardRegion.IdExtractor = {
-		case LookupShard(leaderboardId) => (leaderboardId, leaderboardId)
+		case e @ LookupShard(partitionId, leaderboardId) => (leaderboardId, e)
 	}
 
 	private val extractShardId: ShardRegion.ShardResolver = {
-		case LookupShard(leaderboardId) => leaderboardId
+		case LookupShard(_, leaderboardId) => leaderboardId
 	}
 
 	private val clusterSharding = ClusterSharding(actorSystem).start(
@@ -54,10 +54,10 @@ class Cluster(val actorSystem: ActorSystem, val partition: Partition) {
 		idExtractor = extractEntityId,
 		shardResolver = extractShardId)
 
-	def find(leaderboardId: String): Future[Leaderboard] = {
+	def find(partitionId: String, leaderboardId: String): Future[Leaderboard] = {
 		implicit val executionContext = actorSystem.dispatcher
 		for {
-			a <- (clusterSharding ? LookupShard(leaderboardId)).mapTo[ActorRef]
+			a <- (clusterSharding ? LookupShard(partitionId, leaderboardId)).mapTo[ActorRef]
 		} yield LeaderboardActor.wrap(a)
 	}
 }

@@ -43,17 +43,13 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 			case _ => throw new DeserializationException("Invalid format for Attachments")
 		}
 	}
+
 	implicit val jsonEntry = jsonFormat5(Entry)
 
-	//	val defaultPartition =
-	//
-	//	val partitions = Map("leaderboard" -> defaultPartition, "default" -> defaultPartition)
-
 	val rnkrRoute = pathPrefix("rnkr" / Segment) { partitionName =>
-		// val partition = partitions(partitionName)
 		import Leaderboard._
 		pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
-			val lb = cluster.find(treeId)
+			val lb = cluster.find(partitionName, treeId)
 			pathEnd {
 				(post | put) {
 					formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>

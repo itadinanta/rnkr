@@ -62,31 +62,34 @@ class Lifecycle(name: String, cassandra: Cassandra, constructor: () => Leaderboa
 					import scala.concurrent.duration._
 					implicit val timeout = Timeout(DurationInt(1).minute)
 
-					def writeAheadLog(replayMode: ReplayMode.ReplayMode, update: Update, post: Post) =
-						if (update.hasChanged) {
-							writer ask WriteAheadLog(replayMode, update.timestamp, post) map { _ =>
-								flushCount += 1
-								if (flushCount > metadata.walSizeLimit) {
-									flush()
-									flushCount = 0
+					import Leaderboard._
+
+					def writeAheadLog(cmd: Write, replayMode: ReplayMode.ReplayMode, post: Post) =
+						super.->(cmd) flatMap { update =>
+							if (update.hasChanged) {
+								writer ask WriteAheadLog(replayMode, update.timestamp, post) map { _ =>
+									flushCount += 1
+									if (flushCount > metadata.walSizeLimit) {
+										flush()
+										flushCount = 0
+									}
+									update
 								}
-								update
+							} else {
+								// no changes, don't bother updating
+								Future.successful(update)
 							}
-						} else {
-							// no changes, don't bother updating
-							Future.successful(update)
 						}
 
-					import Leaderboard._
 					override def ->[T](cmd: Command[T]) = cmd match {
-						case c @ PostScore(post, updateMode) => (super.->(c)) flatMap { writeAheadLog(ReplayMode(updateMode), _, post) }
-						case c @ Remove(entrant) => (super.->(c)) flatMap { writeAheadLog(ReplayMode.Delete, _, Storage.tombstone(entrant)) }
-						case c @ Clear() => (super.->(c)) flatMap { writeAheadLog(ReplayMode.Clear, _, Storage.tombstone()) }
-						case c => (super.->(c)(c.tag))
+						case c @ PostScore(post, updateMode) => writeAheadLog(c, ReplayMode(updateMode), post)
+						case c @ Remove(entrant) => writeAheadLog(c, ReplayMode.Delete, Storage.tombstone(entrant))
+						case c @ Clear() => writeAheadLog(c, ReplayMode.Clear, Storage.tombstone())
+
+						case c => super.->(c)
 					}
 
 					def flush() = (super.->(Export())) onSuccess { case snapshot => self ! Flush(snapshot) }
-
 				}
 
 				arbiter.success(leaderboard)

@@ -14,11 +14,11 @@ import net.itadinanta.rnkr.backend.ReplayMode
 trait LeaderboardBuffer {
 	def size: Int
 	def isEmpty: Boolean
-	def get(entrant: String*): Seq[Entry]
+	def lookup(entrant: String*): Seq[Entry]
 	def get(score: Long, timestamp: Long): Option[Entry]
 	def at(rank: Long): Option[Entry]
 	def estimatedRank(score: Long): Long
-	def around(entrant: String, length: Int): Seq[Entry]
+	def nearby(entrant: String, length: Int): Seq[Entry]
 	def around(score: Long, length: Int): Seq[Entry]
 	def page(start: Long, length: Int): Seq[Entry]
 
@@ -32,13 +32,19 @@ trait LeaderboardBuffer {
 	def append(entries: Iterable[Entry]): Iterable[Update]
 }
 
-private[leaderboard] case class TimedScore(val score: Long, val timestamp: Long, val attachments: Option[Attachments] = None) {
+protected case class TimedScore(
+		val score: Long,
+		val timestamp: Long,
+		val attachments: Option[Attachments] = None) {
 	override def hashCode = ((31 * score) + timestamp).intValue
-	override def equals(o: Any) = o match { case t: TimedScore => t.score == score && t.timestamp == timestamp }
+	override def equals(o: Any) = o match {
+		case t: TimedScore => t.score == score && t.timestamp == timestamp
+	}
 }
 
-private[leaderboard] object TimedScoreOrdering extends Ordering[TimedScore] {
-	def lt(a: TimedScore, b: TimedScore): Boolean = a.score < b.score || (a.score == b.score && a.timestamp < b.timestamp)
+protected object TimedScoreOrdering extends Ordering[TimedScore] {
+	override def lt(a: TimedScore, b: TimedScore): Boolean =
+		a.score < b.score || (a.score == b.score && a.timestamp < b.timestamp)
 }
 
 object LeaderboardBuffer {
@@ -60,7 +66,7 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 	override def size = scoreIndex.size
 	override def isEmpty = scoreIndex.isEmpty
 
-	override def get(entrants: String*) =
+	override def lookup(entrants: String*) =
 		for {
 			e <- entrants
 			s <- entrantIndex.get(asByteString(e))
@@ -88,18 +94,28 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 		val (isBetter, oldEntry) = entrantIndex.get(entrantKey) match {
 			case Some(oldScore) =>
 				if (updateMode == LastWins || better(newScore, oldScore))
-					(true, scoreIndex.remove(oldScore) map { o => Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments) })
+					(true, scoreIndex.remove(oldScore) map { o =>
+						Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments)
+					})
 				else
-					(false, scoreIndex.get(oldScore) map { o => Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments) })
+					(false, scoreIndex.get(oldScore) map { o =>
+						Entry(o.key.score, o.key.timestamp, asString(o.value), o.rank, o.key.attachments)
+					})
 			case None => (true, None)
 		}
 
 		if (isBetter) {
 			val newRow = scoreIndex.put(newScore, entrantKey)
 			entrantIndex.put(entrantKey, newScore)
-			Update(newScore.timestamp, true, oldEntry, Some(Entry(newScore.score, newScore.timestamp, entrant, newRow.rank, newScore.attachments)))
+			Update(newScore.timestamp,
+				true,
+				oldEntry,
+				Some(Entry(newScore.score, newScore.timestamp, entrant, newRow.rank, newScore.attachments)))
 		} else {
-			Update(newScore.timestamp, false, oldEntry, oldEntry)
+			Update(newScore.timestamp,
+				false,
+				oldEntry,
+				oldEntry)
 		}
 	}
 
@@ -129,7 +145,7 @@ class LeaderboardTreeImpl extends LeaderboardBuffer {
 			Entry(r.key.score, r.key.timestamp, asString(r.value), r.rank, r.key.attachments)
 		}
 
-	override def around(entrant: String, length: Int): Seq[Entry] =
+	override def nearby(entrant: String, length: Int): Seq[Entry] =
 		entrantIndex.get(asByteString(entrant)) match {
 			case Some(s) => updownrange(s, length)
 			case None => Seq()

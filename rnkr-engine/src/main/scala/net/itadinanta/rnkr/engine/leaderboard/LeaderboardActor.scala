@@ -13,21 +13,17 @@ import scala.concurrent.duration._
 import akka.actor.Props
 
 object LeaderboardActor {
-
-	class LeaderboardActorWrapper(actor: ActorRef)(implicit val executionContext: ExecutionContext)
+	private class LeaderboardActorWrapper(actor: ActorRef)(implicit val executionContext: ExecutionContext)
 			extends Leaderboard {
-		import UpdateMode._
 		import Leaderboard._
 		implicit val timeout = Timeout(1 minute)
-
-		override def ->[T](cmd: Command[T]) = {
-			(actor ? cmd).mapTo(cmd.tag)
-		}
+		override def ->[T](cmd: Command[T]) = (actor ? cmd) mapTo cmd.tag
 	}
 
 	def props(target: Leaderboard) = Props(new LeaderboardActor(target))
 
-	def wrap(actorRef: ActorRef)(implicit executionContext: ExecutionContext) = new LeaderboardActorWrapper(actorRef)
+	def wrap(actorRef: ActorRef)(implicit executionContext: ExecutionContext): Leaderboard =
+		new LeaderboardActorWrapper(actorRef)
 }
 
 class LeaderboardActor(val target: Leaderboard) extends Actor with Logging {
@@ -37,6 +33,6 @@ class LeaderboardActor(val target: Leaderboard) extends Actor with Logging {
 		case c: Command[_] =>
 			implicit val tag = c.tag
 			target -> c pipeTo sender()
-		case other => println(s"Unknown message ${other}")
+		case other => error(s"Unknown message ${other}")
 	}
 }

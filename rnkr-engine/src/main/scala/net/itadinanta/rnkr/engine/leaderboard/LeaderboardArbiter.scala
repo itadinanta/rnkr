@@ -14,7 +14,7 @@ trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
 	import Leaderboard._
 	override def ->[T](cmd: Command[T]) = cmd match {
 		case c: Read[_] => rqueue(c.apply)(c.tag)
-		case c: Write[_] => wqueue(c.apply)(c.tag)
+		case c: Write => wqueue(c.apply)(c.tag)
 	}
 }
 
