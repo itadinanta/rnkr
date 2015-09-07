@@ -11,11 +11,10 @@ import scala.concurrent.Promise
 import scala.collection.JavaConversions._
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import akka.actor.Props
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardArbiter
+import net.itadinanta.rnkr.engine.LeaderboardBuffer
 import net.itadinanta.rnkr.core.arbiter.Arbiter
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard._
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard.UpdateMode._
+import net.itadinanta.rnkr.engine.Leaderboard._
+import net.itadinanta.rnkr.engine.Leaderboard.UpdateMode._
 import com.google.common.io.BaseEncoding
 import java.nio.ByteBuffer
 import java.lang.{ Long => JLong }

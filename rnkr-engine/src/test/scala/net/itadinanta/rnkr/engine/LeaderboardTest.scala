@@ -1,4 +1,4 @@
-package net.itadinanta.rnkr.engine.leaderboard
+package net.itadinanta.rnkr.engine
 
 import org.scalatest.Matchers
 import org.scalatest.FunSuite

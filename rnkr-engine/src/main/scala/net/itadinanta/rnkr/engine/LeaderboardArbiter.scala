@@ -1,14 +1,11 @@
-package net.itadinanta.rnkr.engine.leaderboard
+package net.itadinanta.rnkr.engine
 
-import akka.actor.ActorContext
 import net.itadinanta.rnkr.core.arbiter.Arbiter
+import akka.pattern._
+import akka.actor._
 import net.itadinanta.rnkr.core.arbiter.ActorArbiter
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard.UpdateMode._
-import akka.actor.ActorRefFactory
-import scala.concurrent.Future
-import akka.actor.ActorRef
 import net.itadinanta.rnkr.core.arbiter.ActorGateWrapper
-import scala.reflect.ClassTag
+import Leaderboard._
 
 trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
 	import Leaderboard._

@@ -22,8 +22,8 @@ import net.itadinanta.rnkr.backend.cassandra.Cassandra
 import scala.concurrent.Await
 import net.itadinanta.rnkr.cluster.Cluster
 import grizzled.slf4j.Logging
-import net.itadinanta.rnkr.engine.manager.Partition
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
+import net.itadinanta.rnkr.engine.Partition
+import net.itadinanta.rnkr.engine.LeaderboardBuffer
 import net.itadinanta.rnkr.backend.Datastore
 
 class ApplicationConfiguration extends FunctionalConfiguration {

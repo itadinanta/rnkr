@@ -1,7 +1,7 @@
 package net.itadinanta.rnkr.backend.cassandra
 
 import com.datastax.driver.core.{ ProtocolOptions, Cluster }
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
+import net.itadinanta.rnkr.engine.LeaderboardBuffer
 import akka.actor.Props
 import net.itadinanta.rnkr.backend.Metadata
 import scala.collection.JavaConversions

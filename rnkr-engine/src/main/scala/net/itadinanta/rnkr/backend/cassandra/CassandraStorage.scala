@@ -10,13 +10,13 @@ import scala.concurrent.Promise
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import com.datastax.driver.core.querybuilder.QueryBuilder
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard._
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard.UpdateMode._
+import net.itadinanta.rnkr.engine.Leaderboard._
+import net.itadinanta.rnkr.engine.Leaderboard.UpdateMode._
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext
 import net.itadinanta.rnkr.backend._
 import java.lang.{ Long => JLong }
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
+import net.itadinanta.rnkr.engine.LeaderboardBuffer
 
 trait CassandraStorage extends Storage {
 	val cassandra: Cassandra

@@ -1,20 +1,13 @@
-package net.itadinanta.rnkr.engine.manager
+package net.itadinanta.rnkr.engine
 
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import akka.actor.Actor
-import akka.actor.ActorContext
 import akka.actor.ActorRefFactory
 import akka.actor.Props
-import akka.pattern.ask
-import akka.pattern.pipe
 import akka.util.Timeout
-import net.itadinanta.rnkr.backend.cassandra.Cassandra
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardArbiter
-import scala.concurrent.Promise
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
+import akka.pattern._
 import net.itadinanta.rnkr.backend.Datastore
 
 class Partition(datastore: Datastore)(implicit actorRefFactory: ActorRefFactory) {

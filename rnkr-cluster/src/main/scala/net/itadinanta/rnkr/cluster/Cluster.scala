@@ -12,11 +12,11 @@ import akka.pattern.pipe
 import scala.concurrent.duration._
 import akka.util.Timeout
 import grizzled.slf4j.Logging
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardActor
+import net.itadinanta.rnkr.engine.Leaderboard
+import net.itadinanta.rnkr.engine.LeaderboardActor
 import akka.actor.ActorRef
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardActor.LeaderboardActorWrapper
-import net.itadinanta.rnkr.engine.manager.Partition
+import net.itadinanta.rnkr.engine.LeaderboardActor.LeaderboardActorWrapper
+import net.itadinanta.rnkr.engine.Partition
 
 private object Cluster {
 	case class LookupShard(partitionId: String, leaderboardId: String)

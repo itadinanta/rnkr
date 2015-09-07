@@ -1,4 +1,4 @@
-package net.itadinanta.rnkr.engine.leaderboard
+package net.itadinanta.rnkr.engine
 
 import scala.collection.mutable.Map
 import akka.util.ByteString

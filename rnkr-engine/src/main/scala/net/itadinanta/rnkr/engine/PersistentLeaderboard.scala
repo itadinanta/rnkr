@@ -1,40 +1,15 @@
-package net.itadinanta.rnkr.engine.manager
+package net.itadinanta.rnkr.engine
 
-import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import akka.actor.Actor
-import akka.actor.ActorContext
-import akka.actor.ActorRefFactory
-import akka.actor.Props
-import akka.pattern.ask
-import akka.pattern.pipe
 import akka.util.Timeout
-import net.itadinanta.rnkr.backend.cassandra.Cassandra
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardArbiter
 import scala.concurrent.Promise
-import net.itadinanta.rnkr.core.arbiter.Gate
-import net.itadinanta.rnkr.core.tree.Row
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
-import net.itadinanta.rnkr.backend.Load
-import akka.actor.PoisonPill
-import akka.actor.ActorRef
-import net.itadinanta.rnkr.backend.Load
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard._
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardDecorator
-import net.itadinanta.rnkr.backend.WriteAheadLog
+import akka.actor._
+import akka.pattern._
 import scala.concurrent.duration._
-import akka.pattern.ask
-import akka.pattern.pipe
-import net.itadinanta.rnkr.backend.ReplayMode
-import net.itadinanta.rnkr.backend.Storage
-import net.itadinanta.rnkr.backend.Flush
-import net.itadinanta.rnkr.backend.Save
-import net.itadinanta.rnkr.backend.Metadata
-import scala.reflect.ClassTag
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer.Factory
-import net.itadinanta.rnkr.backend.Datastore
+import net.itadinanta.rnkr.backend._
+import Leaderboard._
+import net.itadinanta.rnkr.core.arbiter.Gate
 
 class PersistentLeaderboard(name: String, datastore: Datastore, actorRefFactory: ActorRefFactory)
 		extends LeaderboardBuffer.Factory {
@@ -66,7 +41,7 @@ class PersistentLeaderboard(name: String, datastore: Datastore, actorRefFactory:
 					def writeAheadLog(cmd: Write, replayMode: ReplayMode.ReplayMode, post: Post) =
 						super.->(cmd) flatMap { update =>
 							if (update.hasChanged) {
-								writer ask WriteAheadLog(replayMode, update.timestamp, post) map { _ =>
+								(writer ? WriteAheadLog(replayMode, update.timestamp, post)) map { _ =>
 									flushCount += 1
 									if (flushCount > metadata.walSizeLimit) {
 										flush()

@@ -1,16 +1,13 @@
-package net.itadinanta.rnkr.engine.leaderboard
+package net.itadinanta.rnkr.engine
 
-import akka.pattern.ask
-import akka.pattern.pipe
-import akka.actor.Actor
 import grizzled.slf4j.Logging
-import scala.concurrent.Future
-import scala.reflect.ClassTag
-import akka.actor.ActorRef
 import scala.concurrent.ExecutionContext
 import akka.util.Timeout
 import scala.concurrent.duration._
-import akka.actor.Props
+import akka.actor._
+import akka.pattern._
+
+import Leaderboard.Command
 
 object LeaderboardActor {
 	private class LeaderboardActorWrapper(actor: ActorRef)(implicit val executionContext: ExecutionContext)

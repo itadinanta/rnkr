@@ -12,18 +12,18 @@ import spray.httpx.marshalling.MetaMarshallers
 import scala.concurrent.Future
 import net.itadinanta.rnkr.core.tree.Row
 import net.itadinanta.rnkr.core.tree.RankedTreeMap
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard.UpdateMode._
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard._
+import net.itadinanta.rnkr.engine.LeaderboardBuffer
+import net.itadinanta.rnkr.engine.Leaderboard.UpdateMode._
+import net.itadinanta.rnkr.engine.Leaderboard._
 import spray.json.JsonFormat
 import spray.json.JsString
 import spray.json.JsValue
 import scalaz.ImmutableArray
 import spray.json.DeserializationException
 import akka.actor.Props
-import net.itadinanta.rnkr.engine.manager.Partition
+import net.itadinanta.rnkr.engine.Partition
 import net.itadinanta.rnkr.cluster.Cluster
-import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
+import net.itadinanta.rnkr.engine.Leaderboard
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
 	val cluster: Cluster
