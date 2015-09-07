@@ -1,10 +1,8 @@
 package net.itadinanta.rnkr.engine.manager
 
-import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationConversions._
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import akka.actor.Actor
 import akka.actor.ActorContext
 import akka.actor.ActorRefFactory
@@ -20,8 +18,7 @@ import net.itadinanta.rnkr.engine.leaderboard.Leaderboard
 import net.itadinanta.rnkr.backend.Datastore
 
 class Partition(datastore: Datastore)(implicit actorRefFactory: ActorRefFactory) {
-	val duration = FiniteDuration(30, TimeUnit.SECONDS)
-	implicit val timeout: Timeout = new Timeout(duration)
+	implicit val timeout: Timeout = new Timeout(30 seconds)
 	sealed trait ManagerCommand
 	case class Find(val name: String) extends ManagerCommand
 
@@ -29,9 +26,8 @@ class Partition(datastore: Datastore)(implicit actorRefFactory: ActorRefFactory)
 
 	implicit val executionContext = actorRefFactory.dispatcher
 
-	def get(name: String): Future[Leaderboard] = {
+	def get(name: String): Future[Leaderboard] =
 		(partitionManager ? Find(name)).mapTo[Leaderboard]
-	}
 
 	object PartitionActor {
 		def props = Props(new PartitionActor)
