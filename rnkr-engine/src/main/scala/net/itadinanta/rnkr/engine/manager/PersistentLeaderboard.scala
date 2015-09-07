@@ -10,7 +10,7 @@ import akka.actor.Props
 import akka.pattern.ask
 import akka.pattern.pipe
 import akka.util.Timeout
-import net.itadinanta.rnkr.backend.Cassandra
+import net.itadinanta.rnkr.backend.cassandra.Cassandra
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardArbiter
 import scala.concurrent.Promise

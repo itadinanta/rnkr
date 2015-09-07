@@ -12,7 +12,7 @@ import spray.can.Http
 import akka.actor.PoisonPill
 import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.frontend.ServiceActor
-import net.itadinanta.rnkr.backend.Cassandra
+import net.itadinanta.rnkr.backend.cassandra.Cassandra
 import net.itadinanta.rnkr.cluster.Cluster
 
 class Frontend(val system: ActorSystem, val cluster: Cluster, val host: String, val port: Int) extends Logging {

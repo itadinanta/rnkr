@@ -18,13 +18,12 @@ import org.springframework.scala.context.function.FunctionalConfigApplicationCon
 import org.springframework.scala.context.function.FunctionalConfiguration
 import org.springframework.context.ApplicationContext
 import net.itadinanta.common.GlobalConfig
-import net.itadinanta.rnkr.backend.Cassandra
+import net.itadinanta.rnkr.backend.cassandra.Cassandra
 import scala.concurrent.Await
 import net.itadinanta.rnkr.cluster.Cluster
 import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.engine.manager.Partition
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
-import net.itadinanta.rnkr.backend.Cassandra
 import net.itadinanta.rnkr.backend.Datastore
 
 class ApplicationConfiguration extends FunctionalConfiguration {

@@ -1,7 +1,5 @@
-package net.itadinanta.rnkr.backend
+package net.itadinanta.rnkr.backend.cassandra
 
-import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.{ Row => CassandraRow }
 import com.datastax.driver.core.ConsistencyLevel
 import com.datastax.driver.core.BatchStatement
 import com.datastax.driver.core.ResultSet
@@ -15,10 +13,10 @@ import com.datastax.driver.core.querybuilder.QueryBuilder
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
 import net.itadinanta.rnkr.engine.leaderboard.Entry
 import net.itadinanta.rnkr.engine.leaderboard.Post
-import java.lang.{ Long => JLong }
 import scala.collection.JavaConversions._
-import net.itadinanta.rnkr.engine.leaderboard.Snapshot
 import scala.concurrent.ExecutionContext
+import net.itadinanta.rnkr.backend._
+import java.lang.{ Long => JLong }
 
 trait CassandraStorage extends Storage {
 	val cassandra: Cassandra

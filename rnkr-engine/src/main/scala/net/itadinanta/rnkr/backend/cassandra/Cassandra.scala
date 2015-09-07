@@ -1,10 +1,10 @@
-package net.itadinanta.rnkr.backend
+package net.itadinanta.rnkr.backend.cassandra
 
 import com.datastax.driver.core.{ ProtocolOptions, Cluster }
-import akka.actor.ActorSystem
-import net.itadinanta.common.GlobalConfig
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
 import akka.actor.Props
+import net.itadinanta.rnkr.backend.Metadata
+import scala.collection.JavaConversions
 
 class Cassandra(val hosts: Seq[String] = Seq("localhost"), val port: Int = 9042) {
 	import scala.collection.JavaConversions._
