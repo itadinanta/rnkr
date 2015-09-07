@@ -2,7 +2,8 @@ package net.itadinanta.rnkr.engine.leaderboard
 
 import org.scalatest.Matchers
 import org.scalatest.FunSuite
-import UpdateMode._
+import Leaderboard._
+import Leaderboard.UpdateMode._
 import scala.util.Random
 import scala.collection.mutable._
 import grizzled.slf4j.Logging

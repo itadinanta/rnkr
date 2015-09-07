@@ -1,15 +1,14 @@
 package net.itadinanta.rnkr.engine.leaderboard
 
 import scala.collection.mutable.Map
-import UpdateMode.BestWins
-import UpdateMode.LastWins
-import UpdateMode.UpdateMode
 import akka.util.ByteString
 import net.itadinanta.rnkr.backend.Replay
 import net.itadinanta.rnkr.core.tree.Ordering
 import net.itadinanta.rnkr.core.tree.RankedTreeMap
 import net.itadinanta.rnkr.core.tree.Row
 import net.itadinanta.rnkr.backend.ReplayMode
+import Leaderboard._
+import Leaderboard.UpdateMode._
 
 trait LeaderboardBuffer {
 	def size: Int

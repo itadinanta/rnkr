@@ -21,14 +21,12 @@ import net.itadinanta.rnkr.backend.Load
 import akka.actor.PoisonPill
 import akka.actor.ActorRef
 import net.itadinanta.rnkr.backend.Load
-import net.itadinanta.rnkr.engine.leaderboard.UpdateMode
-import net.itadinanta.rnkr.engine.leaderboard.Post
+import net.itadinanta.rnkr.engine.leaderboard.Leaderboard._
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardDecorator
 import net.itadinanta.rnkr.backend.WriteAheadLog
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.pattern.pipe
-import net.itadinanta.rnkr.engine.leaderboard.Update
 import net.itadinanta.rnkr.backend.ReplayMode
 import net.itadinanta.rnkr.backend.Storage
 import net.itadinanta.rnkr.backend.Flush

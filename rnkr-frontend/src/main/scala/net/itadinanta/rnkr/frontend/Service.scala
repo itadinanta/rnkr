@@ -13,11 +13,8 @@ import scala.concurrent.Future
 import net.itadinanta.rnkr.core.tree.Row
 import net.itadinanta.rnkr.core.tree.RankedTreeMap
 import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer
-import net.itadinanta.rnkr.engine.leaderboard.UpdateMode._
-import net.itadinanta.rnkr.engine.leaderboard.Post
-import net.itadinanta.rnkr.engine.leaderboard.Update
-import net.itadinanta.rnkr.engine.leaderboard.Entry
-import net.itadinanta.rnkr.engine.leaderboard.Attachments
+import net.itadinanta.rnkr.engine.leaderboard.Leaderboard.UpdateMode._
+import net.itadinanta.rnkr.engine.leaderboard.Leaderboard._
 import spray.json.JsonFormat
 import spray.json.JsString
 import spray.json.JsValue

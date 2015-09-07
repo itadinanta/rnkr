@@ -3,7 +3,7 @@ package net.itadinanta.rnkr.engine.leaderboard
 import akka.actor.ActorContext
 import net.itadinanta.rnkr.core.arbiter.Arbiter
 import net.itadinanta.rnkr.core.arbiter.ActorArbiter
-import net.itadinanta.rnkr.engine.leaderboard.UpdateMode._
+import net.itadinanta.rnkr.engine.leaderboard.Leaderboard.UpdateMode._
 import akka.actor.ActorRefFactory
 import scala.concurrent.Future
 import akka.actor.ActorRef

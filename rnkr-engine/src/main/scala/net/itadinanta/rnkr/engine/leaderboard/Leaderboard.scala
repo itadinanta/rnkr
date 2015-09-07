@@ -4,26 +4,25 @@ import scala.concurrent.Future
 import scalaz.ImmutableArray
 import scala.reflect._
 
-object UpdateMode extends Enumeration {
-	type UpdateMode = Value
-	val BestWins, LastWins = Value
-}
-
-class Attachments(val data: ImmutableArray[Byte]) extends AnyVal;
-
-object Attachments {
-	def apply(data: Array[Byte]) = new Attachments(ImmutableArray.fromArray(data))
-	def apply(s: String): Attachments = new Attachments(ImmutableArray.fromArray(s.getBytes("UTF8")))
-	def apply(s: Option[String]): Option[Attachments] = s map { Attachments(_) }
-}
-
-case class Entry(score: Long, timestamp: Long, entrant: String, rank: Long, attachments: Option[Attachments])
-case class Post(score: Long, entrant: String, attachments: Option[Attachments])
-case class Update(timestamp: Long, hasChanged: Boolean, oldEntry: Option[Entry], newEntry: Option[Entry])
-case class Snapshot(timestamp: Long, entries: Seq[Entry])
-
 object Leaderboard {
-	import UpdateMode._
+	object UpdateMode extends Enumeration {
+		type UpdateMode = Value
+		val BestWins, LastWins = Value
+	}
+
+	class Attachments(val data: ImmutableArray[Byte]) extends AnyVal;
+
+	object Attachments {
+		def apply(data: Array[Byte]) = new Attachments(ImmutableArray.fromArray(data))
+		def apply(s: String): Attachments = new Attachments(ImmutableArray.fromArray(s.getBytes("UTF8")))
+		def apply(s: Option[String]): Option[Attachments] = s map { Attachments(_) }
+	}
+
+	case class Entry(score: Long, timestamp: Long, entrant: String, rank: Long, attachments: Option[Attachments])
+	case class Post(score: Long, entrant: String, attachments: Option[Attachments])
+	case class Update(timestamp: Long, hasChanged: Boolean, oldEntry: Option[Entry], newEntry: Option[Entry])
+	case class Snapshot(timestamp: Long, entries: Seq[Entry])
+
 	sealed trait Command[T] {
 		implicit val tag: ClassTag[T]
 		def apply(l: LeaderboardBuffer): T
@@ -75,6 +74,7 @@ object Leaderboard {
 		def apply(l: LeaderboardBuffer) = l.export()
 	}
 
+	import UpdateMode._
 	case class PostScore(post: Post, updateMode: UpdateMode = BestWins) extends Write {
 		def apply(l: LeaderboardBuffer) = l.post(post, updateMode)
 	}
@@ -89,15 +89,9 @@ object Leaderboard {
 }
 
 trait Leaderboard {
-	import Leaderboard._
-	import UpdateMode._
-
-	def ->[T](cmd: Command[T]): Future[T]
+	def ->[T](cmd: Leaderboard.Command[T]): Future[T]
 }
 
 abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) extends Leaderboard {
-	import UpdateMode._
-	import Leaderboard._
-
-	override def ->[T](cmd: Command[T]): Future[T] = target -> cmd
+	override def ->[T](cmd: Leaderboard.Command[T]): Future[T] = target -> cmd
 }
