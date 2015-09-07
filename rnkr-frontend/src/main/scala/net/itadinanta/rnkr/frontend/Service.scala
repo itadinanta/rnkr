@@ -24,8 +24,16 @@ import akka.actor.Props
 import net.itadinanta.rnkr.engine.Partition
 import net.itadinanta.rnkr.cluster.Cluster
 import net.itadinanta.rnkr.engine.Leaderboard
+import spray.routing.directives.AuthMagnet
+import spray.routing.authentication.BasicAuth
+import spray.routing.authentication.UserPass
 
-trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol {
+protected trait Authenticator {
+	case class Role(name: String)
+	def authenticator(implicit ec: ExecutionContext): AuthMagnet[Role]
+}
+
+trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol with Authenticator {
 	val cluster: Cluster
 
 	implicit val executionContext: ExecutionContext
@@ -43,42 +51,44 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 
 	val rnkrRoute = pathPrefix("rnkr" / Segment) { partitionName =>
 		import Leaderboard._
-		pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
-			val lb = cluster.find(partitionName, treeId)
-			pathEnd {
-				(post | put) {
-					formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
-						complete(lb flatMap { _ -> PostScore(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins) } map { _.newEntry })
-					}
-				} ~ delete {
-					parameter('entrant ?) {
-						_ match {
-							case Some(entrant) => complete(lb flatMap { _ -> Remove(entrant) map { _.oldEntry } })
-							case None => complete(lb flatMap { _ -> Clear() map { _.oldEntry } })
+		authenticate(authenticator) { role =>
+			pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
+				val lb = cluster.find(partitionName, treeId)
+				pathEnd {
+					(post | put) {
+						formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
+							complete(lb flatMap { _ -> PostScore(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins) } map { _.newEntry })
+						}
+					} ~ delete {
+						parameter('entrant ?) {
+							_ match {
+								case Some(entrant) => complete(lb flatMap { _ -> Remove(entrant) map { _.oldEntry } })
+								case None => complete(lb flatMap { _ -> Clear() map { _.oldEntry } })
+							}
 						}
 					}
-				}
-			} ~ path("nearby") {
-				parameter('entrant, 'count ? 0) { (entrant, count) =>
-					complete(lb flatMap { _ -> Nearby(entrant, count) })
-				}
-			} ~ path("get") {
-				parameterMultiMap { map =>
-					complete(lb flatMap { _ -> Lookup(map getOrElse ("entrant", Seq()): _*) })
-				}
-			} ~ path("rank") {
-				parameter('score) { score =>
-					complete(lb flatMap { _ -> EstimatedRank(score.toLong) map { _.toString } })
-				}
-			} ~ path("size") {
-				complete(lb flatMap { _ -> Size() } map { _.toString })
-			} ~ path("around") {
-				parameters('score, 'length ? 1) { (score, length) =>
-					complete(lb flatMap { _ -> Around(score.toLong, length.toInt) })
-				}
-			} ~ path("page") {
-				parameters('start ? 0, 'length ? 10) { (start, length) =>
-					complete(lb flatMap { _ -> Page(start.toInt, length.toInt) })
+				} ~ path("nearby") {
+					parameter('entrant, 'count ? 0) { (entrant, count) =>
+						complete(lb flatMap { _ -> Nearby(entrant, count) })
+					}
+				} ~ path("get") {
+					parameterMultiMap { map =>
+						complete(lb flatMap { _ -> Lookup(map getOrElse ("entrant", Seq()): _*) })
+					}
+				} ~ path("rank") {
+					parameter('score) { score =>
+						complete(lb flatMap { _ -> EstimatedRank(score.toLong) map { _.toString } })
+					}
+				} ~ path("size") {
+					complete(lb flatMap { _ -> Size() } map { _.toString })
+				} ~ path("around") {
+					parameters('score, 'length ? 1) { (score, length) =>
+						complete(lb flatMap { _ -> Around(score.toLong, length.toInt) })
+					}
+				} ~ path("page") {
+					parameters('start ? 0, 'length ? 10) { (start, length) =>
+						complete(lb flatMap { _ -> Page(start.toInt, length.toInt) })
+					}
 				}
 			}
 		}
@@ -90,6 +100,14 @@ object ServiceActor {
 }
 
 class ServiceActor(override val cluster: Cluster) extends Actor with Service {
+
+	import AuthMagnet._
+	override def authenticator(implicit ec: ExecutionContext): AuthMagnet[Role] = {
+		def authenticator(userPass: Option[UserPass]): Future[Option[Role]] =
+			Future.successful(userPass map { u => Role(u.user) })
+		BasicAuth(authenticator _, realm = "rnkr")
+	}
+
 	def actorRefFactory = context
 	val executionContext = context.dispatcher
 	def receive = runRoute(rnkrRoute)
