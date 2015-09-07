@@ -50,18 +50,18 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		_.shutdown()
 	}
 
-	val datastore = bean[Datastore]("datastore") {
-		new Cassandra.Datastore(cassandra())
+	val defaultDatastore = bean[Datastore]("defaultDatastore") {
+		val defaultKeyspace = cfg.string("cassandra.default.keyspace")
+		new Cassandra.Datastore(cassandra(), defaultKeyspace)
 	}
 
-	val partition = bean("partition") {
-		new Partition(datastore())(actorSystem())
+	val defaultPartition = bean("defaultPartition") {
+		new Partition(defaultDatastore())(actorSystem())
 	}
 
 	// "default" partition must exist
 	val partitionMap = bean("partitionMap") {
-		Map("default" -> partition(),
-			"leaderboard" -> partition())
+		Map("default" -> defaultPartition())
 	}
 
 	val cluster = bean("cluster") {

@@ -22,7 +22,8 @@ import scala.concurrent.ExecutionContext
 
 trait CassandraStorage extends Storage {
 	val cassandra: Cassandra
-	val session = cassandra.cluster.connect("akkacassandra")
+	val keyspace: String
+	val session = cassandra.cluster.connect(keyspace)
 	implicit val executionContext: ExecutionContext
 
 	implicit def akkaFuture(arg: ResultSetFuture): Future[ResultSet] = {
@@ -78,6 +79,7 @@ object CassandraStorage {
 
 	class CassandraReader(
 		override val cassandra: Cassandra,
+		override val keyspace: String,
 		override val datastore: Datastore,
 		override val id: String,
 		override val leaderboard: LeaderboardBuffer)
@@ -213,6 +215,7 @@ object CassandraStorage {
 
 	class CassandraWriter(
 		override val cassandra: Cassandra,
+		override val keyspace: String,
 		override val datastore: Datastore,
 		override val id: String,
 		override val initialWatermark: Long,
