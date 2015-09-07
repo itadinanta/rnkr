@@ -101,14 +101,13 @@ object ServiceActor {
 
 class ServiceActor(override val cluster: Cluster) extends Actor with Service {
 
-	import AuthMagnet._
 	override def authenticator(implicit ec: ExecutionContext): AuthMagnet[Role] = {
 		def authenticator(userPass: Option[UserPass]): Future[Option[Role]] =
 			Future.successful(userPass map { u => Role(u.user) })
 		BasicAuth(authenticator _, realm = "rnkr")
 	}
 
-	def actorRefFactory = context
-	val executionContext = context.dispatcher
-	def receive = runRoute(rnkrRoute)
+	override def actorRefFactory = context
+	override val executionContext = context.dispatcher
+	override def receive = runRoute(rnkrRoute)
 }
