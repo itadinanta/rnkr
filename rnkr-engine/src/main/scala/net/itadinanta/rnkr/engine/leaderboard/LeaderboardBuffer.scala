@@ -31,8 +31,12 @@ trait LeaderboardBuffer {
 	def append(entries: Iterable[Entry]): Iterable[Update]
 }
 
-trait LeaderboardBufferFactory {
-	def build() = new LeaderboardTreeImpl
+object LeaderboardBuffer {
+	val TIMESTAMP_SCALE = 1000000L
+
+	trait Factory {
+		def build(): LeaderboardBuffer = new LeaderboardTreeImpl()
+	}
 }
 
 protected case class TimedScore(
@@ -50,12 +54,7 @@ protected object TimedScoreOrdering extends Ordering[TimedScore] {
 		a.score < b.score || (a.score == b.score && a.timestamp < b.timestamp)
 }
 
-object LeaderboardBuffer {
-	val TIMESTAMP_SCALE = 1000000L
-	def apply(): LeaderboardBuffer = new LeaderboardTreeImpl()
-}
-
-class LeaderboardTreeImpl extends LeaderboardBuffer {
+private class LeaderboardTreeImpl extends LeaderboardBuffer {
 	val ordering = TimedScoreOrdering
 	val scoreIndex = RankedTreeMap[TimedScore, ByteString](ordering)
 	val entrantIndex = Map[ByteString, TimedScore]()

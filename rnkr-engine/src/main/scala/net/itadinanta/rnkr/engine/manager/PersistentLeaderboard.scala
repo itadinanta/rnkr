@@ -33,11 +33,11 @@ import net.itadinanta.rnkr.backend.Flush
 import net.itadinanta.rnkr.backend.Save
 import net.itadinanta.rnkr.backend.Metadata
 import scala.reflect.ClassTag
-import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBufferFactory
+import net.itadinanta.rnkr.engine.leaderboard.LeaderboardBuffer.Factory
 import net.itadinanta.rnkr.backend.Datastore
 
 class PersistentLeaderboard(name: String, datastore: Datastore, actorRefFactory: ActorRefFactory)
-		extends LeaderboardBufferFactory {
+		extends LeaderboardBuffer.Factory {
 	implicit val executionContext = actorRefFactory.dispatcher
 	val arbiter = Promise[Leaderboard]
 	def leaderboard: Future[Leaderboard] = arbiter.future

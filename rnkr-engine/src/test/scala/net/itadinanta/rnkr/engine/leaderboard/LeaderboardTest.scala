@@ -8,10 +8,10 @@ import scala.util.Random
 import scala.collection.mutable._
 import grizzled.slf4j.Logging
 
-class LeaderboardTest extends FunSuite with Matchers with Logging {
+class LeaderboardTest extends FunSuite with Matchers with Logging with LeaderboardBuffer.Factory {
 
 	test("empty leaderboard") {
-		LeaderboardBuffer().size shouldBe 0
+		build().size shouldBe 0
 	}
 
 	test("TimedScore as key") {
@@ -23,7 +23,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 	}
 
 	test("Simple insert and retrieval") {
-		val lb = LeaderboardBuffer()
+		val lb = build()
 
 		val posted = lb.post(Post(0, "Me", None))
 		lb.size should be(1)
@@ -44,7 +44,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 	}
 
 	test("Simple insert and update") {
-		val lb = LeaderboardBuffer()
+		val lb = build()
 
 		val posted = lb.post(Post(10, "Me", None))
 		val updated = lb.post(Post(9, "Me", None))
@@ -66,7 +66,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 	}
 
 	test("Simple insert and delete") {
-		val lb = LeaderboardBuffer()
+		val lb = build()
 
 		val posted = lb.post(Post(0, "Me", None))
 		lb.size should be(1)
@@ -84,7 +84,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 		lb.isEmpty should be(true)
 	}
 
-	val lb = LeaderboardBuffer()
+	val lb = build()
 	val posted = (for {
 		i <- 1 to 100
 		post <- lb.post(Post(i, s"User${i}", None)).newEntry
@@ -120,7 +120,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 	}
 
 	test("After 1000000 sequential appends should contain 1000000 entries in order") {
-		val large = LeaderboardBuffer()
+		val large = build()
 
 		large.append(for (i <- 1 to 1000000) yield Entry(i, i, "Item" + i, i, None))
 
@@ -128,7 +128,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 	}
 
 	test("After 1000000 sequential insertions should contain 1000000 entries in order") {
-		val large = LeaderboardBuffer()
+		val large = build()
 		for (i <- 1 to 1000000) {
 			large.post(Post(i, "Item" + i, None))
 		}
@@ -136,7 +136,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 	}
 
 	test("After 1000000 random insertions should contain 1000000 entries in order") {
-		val large = LeaderboardBuffer()
+		val large = build()
 		val ordered = new TreeSet[Int]
 		Random.setSeed(1234L)
 		Random.shuffle(1 to 1000000 map { i => i }) foreach { i =>
@@ -148,7 +148,7 @@ class LeaderboardTest extends FunSuite with Matchers with Logging {
 	}
 
 	test("After 1000000 insertions of the same value it should contain 1000000 entries in order") {
-		val large = LeaderboardBuffer()
+		val large = build()
 		val ordered = new TreeSet[Int]
 		Random.setSeed(1234L)
 		Random.shuffle(1 to 1000000 map { i => i }) foreach { i =>
