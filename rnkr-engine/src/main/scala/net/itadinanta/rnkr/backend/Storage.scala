@@ -68,7 +68,7 @@ object Storage {
 			debug(s"Loading of ${pageCount} pages started at watermark ${watermark} for ${id}")
 			val job = append(for { i <- (0 to pageCount - 1).toList } yield loadPage(watermark, i), pageCount)
 			job onSuccess {
-				case _ => debug(s"Loading completed of ${pageCount} pages for up to ${leaderboard.size} entries for ${id}")
+				case _ => debug(s"Loading completed of ${pageCount} pages for up to ${leaderboard -> Size()} entries for ${id}")
 			}
 			job
 		}

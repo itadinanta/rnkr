@@ -39,7 +39,7 @@ class PersistentLeaderboard(name: String, datastore: Datastore, actorRefFactory:
 					import Leaderboard._
 
 					def writeAheadLog(cmd: Write, replayMode: ReplayMode.ReplayMode, post: Post) =
-						super.->(cmd) flatMap { update =>
+						target -> cmd flatMap { update =>
 							if (update.hasChanged) {
 								(writer ? WriteAheadLog(replayMode, update.timestamp, post)) map { _ =>
 									flushCount += 1
@@ -55,15 +55,13 @@ class PersistentLeaderboard(name: String, datastore: Datastore, actorRefFactory:
 							}
 						}
 
-					override def ->[T](cmd: Command[T]) = cmd match {
+					override def decorate[T] = {
 						case c @ PostScore(post, updateMode) => writeAheadLog(c, ReplayMode(updateMode), post)
 						case c @ Remove(entrant) => writeAheadLog(c, ReplayMode.Delete, Storage.tombstone(entrant))
 						case c @ Clear() => writeAheadLog(c, ReplayMode.Clear, Storage.tombstone())
-
-						case c => super.->(c)
 					}
 
-					def flush() = (super.->(Export())) onSuccess { case snapshot => self ! Flush(snapshot) }
+					def flush() = (target -> Export()) onSuccess { case snapshot => self ! Flush(snapshot) }
 				}
 
 				arbiter.success(leaderboard)
