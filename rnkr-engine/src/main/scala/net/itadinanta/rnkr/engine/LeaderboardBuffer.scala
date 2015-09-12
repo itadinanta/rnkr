@@ -11,24 +11,42 @@ import Leaderboard._
 import Leaderboard.UpdateMode._
 
 trait LeaderboardBuffer {
-	def size: Int
-	def isEmpty: Boolean
-	def lookup(entrant: String*): Seq[Entry]
-	def get(score: Long, timestamp: Long): Option[Entry]
-	def at(rank: Long): Option[Entry]
-	def estimatedRank(score: Long): Long
-	def nearby(entrant: String, length: Int): Seq[Entry]
-	def around(score: Long, length: Int): Seq[Entry]
-	def page(start: Long, length: Int): Seq[Entry]
+	protected def size: Int
+	protected def isEmpty: Boolean
+	protected def lookup(entrant: String*): Seq[Entry]
+	protected def get(score: Long, timestamp: Long): Option[Entry]
+	protected def at(rank: Long): Option[Entry]
+	protected def estimatedRank(score: Long): Long
+	protected def nearby(entrant: String, length: Int): Seq[Entry]
+	protected def around(score: Long, length: Int): Seq[Entry]
+	protected def page(start: Long, length: Int): Seq[Entry]
 
-	def export(): Snapshot
+	protected def export(): Snapshot
 
-	def remove(entrant: String): Update
-	def post(post: Post, updateMode: UpdateMode = BestWins): Update
-	def clear(): Update
+	protected def remove(entrant: String): Update
+	protected def post(post: Post, updateMode: UpdateMode = BestWins): Update
+	protected def clear(): Update
 
 	def replay(entries: Iterable[Replay]): Iterable[Update]
 	def append(entries: Iterable[Entry]): Iterable[Update]
+
+	final def ->[T](cmd: Leaderboard.Command[T]): T = cmd match {
+		case Size() => size
+		case IsEmpty() => isEmpty
+		case Lookup(entrant @ _*) => lookup(entrant: _*)
+		case Get(score, timestamp) => get(score, timestamp)
+		case At(rank) => at(rank)
+		case EstimatedRank(score) => estimatedRank(score)
+		case Nearby(entrant, length) => nearby(entrant, length)
+		case Around(score, length) => around(score, length)
+		case Page(start, length) => page(start, length)
+		
+		case Export() => export()
+		
+		case Remove(entrant) => remove(entrant)
+		case PostScore(p, updateMode) => post(p, updateMode)
+		case Clear() => clear()
+	}
 }
 
 object LeaderboardBuffer {

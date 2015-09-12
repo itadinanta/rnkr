@@ -10,8 +10,8 @@ import Leaderboard._
 trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
 	import Leaderboard._
 	override def ->[T](cmd: Command[T]) = cmd match {
-		case c: Read[_] => rqueue(c.apply)(c.tag)
-		case c: Write => wqueue(c.apply)(c.tag)
+		case c: Read[_] => rqueue(_ -> c)(c.tag)
+		case c: Write => wqueue(_ -> c)(c.tag)
 	}
 }
 
