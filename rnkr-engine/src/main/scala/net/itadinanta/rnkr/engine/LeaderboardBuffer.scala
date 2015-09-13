@@ -11,6 +11,13 @@ import Leaderboard._
 import Leaderboard.UpdateMode._
 
 trait LeaderboardBuffer {
+	def replay(entries: Iterable[Replay]): Iterable[Update]
+	def append(entries: Iterable[Entry]): Iterable[Update]
+
+	def ->[T](cmd: Leaderboard.Command[T]): T
+}
+
+trait LeaderboardBufferSupport extends LeaderboardBuffer {
 	protected def size: Int
 	protected def isEmpty: Boolean
 	protected def lookup(entrant: String*): Seq[Entry]
@@ -27,10 +34,7 @@ trait LeaderboardBuffer {
 	protected def post(post: Post, updateMode: UpdateMode = BestWins): Update
 	protected def clear(): Update
 
-	def replay(entries: Iterable[Replay]): Iterable[Update]
-	def append(entries: Iterable[Entry]): Iterable[Update]
-
-	final def ->[T](cmd: Leaderboard.Command[T]): T = cmd match {
+	override final def ->[T](cmd: Leaderboard.Command[T]): T = cmd match {
 		case Size() => size
 		case IsEmpty() => isEmpty
 		case Lookup(entrant @ _*) => lookup(entrant: _*)
@@ -40,13 +44,14 @@ trait LeaderboardBuffer {
 		case Nearby(entrant, length) => nearby(entrant, length)
 		case Around(score, length) => around(score, length)
 		case Page(start, length) => page(start, length)
-		
+
 		case Export() => export()
-		
+
 		case Remove(entrant) => remove(entrant)
 		case PostScore(p, updateMode) => post(p, updateMode)
 		case Clear() => clear()
 	}
+
 }
 
 object LeaderboardBuffer {
@@ -72,7 +77,7 @@ protected object TimedScoreOrdering extends Ordering[TimedScore] {
 		a.score < b.score || (a.score == b.score && a.timestamp < b.timestamp)
 }
 
-private class LeaderboardTreeImpl extends LeaderboardBuffer {
+private class LeaderboardTreeImpl extends LeaderboardBufferSupport {
 	val ordering = TimedScoreOrdering
 	val scoreIndex = RankedTreeMap[TimedScore, ByteString](ordering)
 	val entrantIndex = Map[ByteString, TimedScore]()

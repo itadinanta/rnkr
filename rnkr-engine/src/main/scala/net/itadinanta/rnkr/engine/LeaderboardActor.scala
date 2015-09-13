@@ -25,11 +25,8 @@ object LeaderboardActor {
 
 class LeaderboardActor(val target: Leaderboard) extends Actor with Logging {
 	implicit val executionContext = context.dispatcher
-	import Leaderboard._
 	override def receive = {
-		case c: Command[_] =>
-			implicit val tag = c.tag
-			target -> c pipeTo sender()
+		case c: Leaderboard.Command[_] => target -> c pipeTo sender()
 		case other => error(s"Unknown message ${other}")
 	}
 }

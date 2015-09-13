@@ -3,6 +3,7 @@ package net.itadinanta.rnkr.engine
 import scala.concurrent.Future
 import scalaz.ImmutableArray
 import scala.reflect._
+import net.itadinanta.rnkr.backend.Replay
 
 object Leaderboard {
 	object UpdateMode extends Enumeration {
@@ -27,7 +28,7 @@ object Leaderboard {
 	sealed trait Command[T] { implicit val tag: ClassTag[T] = classTag[T] }
 	sealed trait Read[T] extends Command[T]
 	sealed trait Write extends Command[Update]
-	
+
 	case class Size() extends Read[Int]
 	case class IsEmpty() extends Read[Boolean]
 	case class Lookup(entrant: String*) extends Read[Seq[Entry]]
@@ -37,7 +38,7 @@ object Leaderboard {
 	case class Nearby(entrant: String, length: Int) extends Read[Seq[Entry]]
 	case class Around(score: Long, length: Int) extends Read[Seq[Entry]]
 	case class Page(start: Long, length: Int) extends Read[Seq[Entry]]
-	
+
 	case class Export() extends Read[Snapshot]
 
 	case class PostScore(post: Post, updateMode: UpdateMode = BestWins) extends Write
@@ -49,12 +50,4 @@ object Leaderboard {
 
 trait Leaderboard {
 	def ->[T](cmd: Leaderboard.Command[T]): Future[T]
-}
-
-abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) extends Leaderboard {
-	def decorate[T]: PartialFunction[Leaderboard.Command[T], Future[T]]
-	override final def ->[T](cmd: Leaderboard.Command[T]): Future[T] = {
-		val d = decorate[T]
-		if (d.isDefinedAt(cmd)) d.apply(cmd) else target -> cmd
-	}
 }
