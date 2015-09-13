@@ -51,45 +51,47 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 
 	val rnkrRoute = pathPrefix("rnkr" / Segment) { partitionName =>
 		import Leaderboard._
-		authenticate(authenticator) { role =>
-			pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
-				val lb = cluster.find(partitionName, treeId)
-				pathEnd {
-					(post | put) {
-						formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
-							complete(lb flatMap { _ -> PostScore(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins) } map { _.newEntry })
-						}
-					} ~ delete {
-						parameter('entrant ?) {
-							_ match {
-								case Some(entrant) => complete(lb flatMap { _ -> Remove(entrant) map { _.oldEntry } })
-								case None => complete(lb flatMap { _ -> Clear() map { _.oldEntry } })
-							}
-						}
-					}
-				} ~ path("nearby") {
-					parameter('entrant, 'count ? 0) { (entrant, count) =>
-						complete(lb flatMap { _ -> Nearby(entrant, count) })
-					}
-				} ~ path("get") {
-					parameterMultiMap { map =>
-						complete(lb flatMap { _ -> Lookup(map getOrElse ("entrant", Seq()): _*) })
-					}
-				} ~ path("rank") {
-					parameter('score) { score =>
-						complete(lb flatMap { _ -> EstimatedRank(score.toLong) map { _.toString } })
-					}
-				} ~ path("size") {
-					complete(lb flatMap { _ -> Size() } map { _.toString })
-				} ~ path("around") {
-					parameters('score, 'length ? 1) { (score, length) =>
-						complete(lb flatMap { _ -> Around(score.toLong, length.toInt) })
-					}
-				} ~ path("page") {
-					parameters('start ? 0, 'length ? 10) { (start, length) =>
-						complete(lb flatMap { _ -> Page(start.toInt, length.toInt) })
+
+		def routeForLeaderboard(lb: Future[Leaderboard]) = pathEnd {
+			(post | put) {
+				formFields('score, 'entrant, 'attachments ?, 'force ? false) { (score, entrant, attachments, force) =>
+					complete(lb flatMap { _ -> PostScore(Post(score.toLong, entrant, Attachments(attachments)), if (force) LastWins else BestWins) } map { _.newEntry })
+				}
+			} ~ delete {
+				parameter('entrant ?) {
+					_ match {
+						case Some(entrant) => complete(lb flatMap { _ -> Remove(entrant) map { _.oldEntry } })
+						case None => complete(lb flatMap { _ -> Clear() map { _.oldEntry } })
 					}
 				}
+			}
+		} ~ path("nearby") {
+			parameter('entrant, 'count ? 0) { (entrant, count) =>
+				complete(lb flatMap { _ -> Nearby(entrant, count) })
+			}
+		} ~ path("get") {
+			parameterMultiMap { map =>
+				complete(lb flatMap { _ -> Lookup(map getOrElse ("entrant", Seq()): _*) })
+			}
+		} ~ path("rank") {
+			parameter('score) { score =>
+				complete(lb flatMap { _ -> EstimatedRank(score.toLong) map { _.toString } })
+			}
+		} ~ path("size") {
+			complete(lb flatMap { _ -> Size() } map { _.toString })
+		} ~ path("around") {
+			parameters('score, 'length ? 1) { (score, length) =>
+				complete(lb flatMap { _ -> Around(score.toLong, length.toInt) })
+			}
+		} ~ path("page") {
+			parameters('start ? 0, 'length ? 10) { (start, length) =>
+				complete(lb flatMap { _ -> Page(start.toInt, length.toInt) })
+			}
+		}
+
+		authenticate(authenticator) { role =>
+			pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
+				routeForLeaderboard(cluster.find(partitionName, treeId))
 			}
 		}
 	}
