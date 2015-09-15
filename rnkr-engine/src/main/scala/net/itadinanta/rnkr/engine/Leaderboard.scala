@@ -4,7 +4,6 @@ import scala.concurrent.Future
 import scalaz.ImmutableArray
 import scala.reflect._
 import net.itadinanta.rnkr.backend.Replay
-import scala.reflect.runtime.universe._
 
 object Leaderboard {
 	object UpdateMode extends Enumeration {
