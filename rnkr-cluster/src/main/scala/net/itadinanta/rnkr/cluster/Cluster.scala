@@ -15,7 +15,6 @@ import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.engine.Leaderboard
 import net.itadinanta.rnkr.engine.LeaderboardActor
 import akka.actor.ActorRef
-import net.itadinanta.rnkr.engine.LeaderboardActor.LeaderboardActorWrapper
 import net.itadinanta.rnkr.engine.Partition
 
 private object Cluster {
