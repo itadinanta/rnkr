@@ -16,7 +16,7 @@ import akka.actor.ActorRefFactory
 import grizzled.slf4j.Logging
 
 object Arbiter {
-	def create[T](t: T, context: ActorRefFactory) = new ActorArbiter(t, context)
+	def apply[T](t: T, name: String)(implicit context: ActorRefFactory) = new ActorArbiter(t, name)
 }
 
 trait Arbiter[T] {
@@ -79,5 +79,6 @@ trait GateWrapper[T] extends Arbiter[T] {
 
 class ActorGateWrapper[T](override val gate: ActorRef) extends GateWrapper[T]
 
-class ActorArbiter[T](val target: T, factory: ActorRefFactory) extends ActorGateWrapper[T](factory.actorOf(Gate.props(target)))
+class ActorArbiter[T](val target: T, name: String)(implicit factory: ActorRefFactory)
+	extends ActorGateWrapper[T](factory.actorOf(Gate.props(target), name))
 

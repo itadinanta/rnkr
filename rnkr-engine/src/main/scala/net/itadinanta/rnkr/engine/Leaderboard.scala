@@ -4,15 +4,15 @@ import scala.concurrent.Future
 import scalaz.ImmutableArray
 import scala.reflect._
 import net.itadinanta.rnkr.backend.Replay
+import scala.reflect.runtime.universe._
 
 object Leaderboard {
 	object UpdateMode extends Enumeration {
-		type UpdateMode = Value
 		val BestWins, LastWins = Value
 	}
 	import UpdateMode._
 
-	class Attachments(val data: ImmutableArray[Byte]) extends AnyVal;
+	class Attachments(val data: ImmutableArray[Byte]) extends AnyVal
 
 	object Attachments {
 		def apply(data: Array[Byte]) = new Attachments(ImmutableArray.fromArray(data))
@@ -25,27 +25,53 @@ object Leaderboard {
 	case class Update(timestamp: Long, hasChanged: Boolean, oldEntry: Option[Entry], newEntry: Option[Entry])
 	case class Snapshot(timestamp: Long, entries: Seq[Entry])
 
-	sealed trait Command[T] { implicit val tag: ClassTag[T] = classTag[T] }
+	private val ctInt = classTag[Int]
+	private val ctLong = classTag[Long]
+	private val ctBoolean = classTag[Boolean]
+	private val ctUpdate = classTag[Update]
+	private val ctSeqEntry = classTag[Seq[Entry]]
+	private val ctOptionEntry = classTag[Option[Entry]]
+	private val ctSnapshot = classTag[Snapshot]
+
+	sealed trait Command[T] { def tag: ClassTag[T] }
+
 	sealed trait Read[T] extends Command[T]
-	sealed trait Write extends Command[Update]
+	sealed trait ReadInt extends Read[Int] { def tag = ctInt }
+	sealed trait ReadLong extends Read[Long] { def tag = ctLong }
+	sealed trait ReadBoolean extends Read[Boolean] { def tag = ctBoolean }
+	sealed trait ReadSeqEntry extends Read[Seq[Entry]] { def tag = ctSeqEntry }
+	sealed trait ReadOptionEntry extends Read[Option[Entry]] { def tag = ctOptionEntry }
+	sealed trait ReadSnapshot extends Read[Snapshot] { def tag = ctSnapshot }
 
-	case class Size() extends Read[Int]
-	case class IsEmpty() extends Read[Boolean]
-	case class Lookup(entrant: String*) extends Read[Seq[Entry]]
-	case class Get(score: Long, timestamp: Long) extends Read[Option[Entry]]
-	case class At(rank: Long) extends Read[Option[Entry]]
-	case class EstimatedRank(score: Long) extends Read[Long]
-	case class Nearby(entrant: String, length: Int) extends Read[Seq[Entry]]
-	case class Around(score: Long, length: Int) extends Read[Seq[Entry]]
-	case class Page(start: Long, length: Int) extends Read[Seq[Entry]]
+	sealed trait Write extends Command[Update] { def tag = ctUpdate }
 
-	case class Export() extends Read[Snapshot]
+	case class Size() extends ReadInt
+	case class IsEmpty() extends ReadBoolean
+	case class Lookup(entrant: String*) extends ReadSeqEntry
+	case class Get(score: Long, timestamp: Long) extends ReadOptionEntry
+	case class At(rank: Long) extends ReadOptionEntry
+	case class EstimatedRank(score: Long) extends ReadLong
+	case class Nearby(entrant: String, length: Int) extends ReadSeqEntry
+	case class Around(score: Long, length: Int) extends ReadSeqEntry
+	case class Page(start: Long, length: Int) extends ReadSeqEntry
 
-	case class PostScore(post: Post, updateMode: UpdateMode = BestWins) extends Write
+	case class Export() extends ReadSnapshot
+
+	case class PostScore(post: Post, updateMode: UpdateMode.Value = BestWins) extends Write
 	case class Remove(entrant: String) extends Write
 	case class Clear() extends Write
 
 	case class Envelope[T >: Command[_]](val id: String, val payload: T)
+
+	abstract trait Decorator extends Leaderboard {
+		protected[this] val target: Leaderboard
+		def decorate[T]: PartialFunction[Leaderboard.Command[T], Future[T]]
+		override final def ->[T](cmd: Leaderboard.Command[T]): Future[T] = {
+			val d = decorate[T]
+			if (d.isDefinedAt(cmd)) d.apply(cmd) else target -> cmd
+		}
+	}
+
 }
 
 trait Leaderboard {

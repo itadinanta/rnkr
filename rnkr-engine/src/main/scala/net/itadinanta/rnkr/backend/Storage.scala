@@ -24,20 +24,19 @@ import akka.actor.PoisonPill
 import scala.concurrent.ExecutionContext
 
 object ReplayMode extends Enumeration {
-	type ReplayMode = Value
 	val BestWins, LastWins, Delete, Clear = Value
-	def apply(updateMode: UpdateMode) = updateMode match {
+	def apply(updateMode: UpdateMode.Value) = updateMode match {
 		case UpdateMode.BestWins => ReplayMode.BestWins
 		case UpdateMode.LastWins => ReplayMode.LastWins
 	}
 }
 case class Watermark(watermark: Long, pages: Int)
 case class Metadata(val comment: String = "", val pageSize: Int = 2500, val walSizeLimit: Int = 10000, val walTimeLimit: Long = 1800000L)
-case class Replay(replayMode: ReplayMode.ReplayMode, score: Long, timestamp: Long, entrant: String, attachments: Option[Attachments])
+case class Replay(replayMode: ReplayMode.Value, score: Long, timestamp: Long, entrant: String, attachments: Option[Attachments])
 
 case class Load(watermark: Long, walLength: Int, metadata: Metadata)
 case class Save(snapshot: Snapshot)
-case class WriteAheadLog(mode: ReplayMode.ReplayMode, seq: Long, w: Post)
+case class WriteAheadLog(mode: ReplayMode.Value, seq: Long, w: Post)
 case class Flush(snapshot: Snapshot)
 
 trait Storage extends Actor {
@@ -106,7 +105,7 @@ object Storage {
 		var watermark = initialWatermark
 		implicit val executionContext: ExecutionContext
 
-		def storeWal(mode: ReplayMode.ReplayMode, timestamp: Long, watermark: Long, w: Post): Future[Post]
+		def storeWal(mode: ReplayMode.Value, timestamp: Long, watermark: Long, w: Post): Future[Post]
 		def storeRows(page: Int, rows: Seq[Entry]): Future[Int]
 		def storeWatermark(watermark: Long, pages: Int): Future[Watermark]
 		def compact(watermark: Watermark): Unit

@@ -6,6 +6,7 @@ import akka.actor._
 import net.itadinanta.rnkr.core.arbiter.ActorArbiter
 import net.itadinanta.rnkr.core.arbiter.ActorGateWrapper
 import Leaderboard._
+import net.itadinanta.rnkr.core.arbiter.Gate
 
 trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
 	import Leaderboard._
@@ -16,7 +17,7 @@ trait LeaderboardArbiter extends Leaderboard with Arbiter[LeaderboardBuffer] {
 }
 
 object LeaderboardArbiter {
-	def create(t: LeaderboardBuffer, context: ActorRefFactory): Leaderboard = new ActorArbiter(t, context) with LeaderboardArbiter
-	def wrap(gate: ActorRef): LeaderboardArbiter = new ActorGateWrapper[LeaderboardBuffer](gate) with LeaderboardArbiter
+	def apply(buffer: LeaderboardBuffer, name: String)(implicit context: ActorRefFactory) =
+		new ActorArbiter(buffer, name) with LeaderboardArbiter
 }
 

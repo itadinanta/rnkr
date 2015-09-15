@@ -10,79 +10,77 @@ import net.itadinanta.rnkr.backend._
 import Leaderboard._
 import net.itadinanta.rnkr.core.arbiter.Gate
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
+import net.itadinanta.rnkr.util.SetOnce
 
 object PersistentLeaderboard {
 	case class Get()
 
-	sealed abstract class LeaderboardDecorator(protected[this] val target: Leaderboard) extends Leaderboard {
-		def decorate[T]: PartialFunction[Leaderboard.Command[T], Future[T]]
-		override final def ->[T](cmd: Leaderboard.Command[T]): Future[T] = {
-			val d = decorate[T]
-			if (d.isDefinedAt(cmd)) d.apply(cmd) else target -> cmd
+	private class PersistentLeaderboardDecorator(
+			override val target: Leaderboard,
+			walLength: Int,
+			metadata: Metadata,
+			writer: ActorRef,
+			parent: ActorRef,
+			implicit val executionContext: ExecutionContext) extends Leaderboard.Decorator {
+		var flushCount: Int = walLength
+		import scala.concurrent.duration._
+		implicit val timeout = Timeout(DurationInt(1).minute)
+
+		private def writeAheadLog(cmd: Write, replayMode: ReplayMode.Value, post: Post) =
+			target -> cmd flatMap { update =>
+				if (update.hasChanged) {
+					(writer ? WriteAheadLog(replayMode, update.timestamp, post)) map { _ =>
+						flushCount += 1
+						if (flushCount > metadata.walSizeLimit) {
+							flush()
+							flushCount = 0
+						}
+						update
+					}
+				} else {
+					// no changes, don't bother updating
+					Future.successful(update)
+				}
+			}
+		def flush() = (target -> Export()) onSuccess { case snapshot => parent ! Flush(snapshot) }
+
+		override def decorate[T] = {
+			case c @ PostScore(post, updateMode) => writeAheadLog(c, ReplayMode(updateMode), post)
+			case c @ Remove(entrant) => writeAheadLog(c, ReplayMode.Delete, Storage.tombstone(entrant))
+			case c @ Clear() => writeAheadLog(c, ReplayMode.Clear, Storage.tombstone())
 		}
+
 	}
 
-	class PersistentLeaderboardActor(
-		name: String,
-		datastore: Datastore) extends Actor
+	class PersistentLeaderboardActor(name: String, datastore: Datastore) extends Actor
 			with LeaderboardBuffer.Factory {
-		implicit val executionContext = context.dispatcher
-		val target = build()
-		var writer: Option[ActorRef] = None
-		var receivers: Set[ActorRef] = Set()
 
-		val reader = context.actorOf(datastore.readerProps(name, target), "reader_" + name)
-		reader ! Load
+		val buffer = build()
+		val writer = SetOnce[ActorRef]
+		val leaderboard = SetOnce[Leaderboard]
+		var receivers = Seq[ActorRef]()
+
+		context.actorOf(datastore.readerProps(name, buffer), "reader_" + name) ! Load
 
 		def receive = {
 			case Load(watermark, walLength, metadata) =>
-				import UpdateMode._
-				this.writer = Some(context.actorOf(datastore.writerProps(name, watermark, metadata), "writer_" + name))
-
-				val concurrentBuffer = LeaderboardArbiter.wrap(context.actorOf(Gate.props(target), "gate_" + name))
-
-				val leaderboard = new LeaderboardDecorator(concurrentBuffer) {
-					var flushCount: Int = walLength
-					import scala.concurrent.duration._
-					implicit val timeout = Timeout(DurationInt(1).minute)
-
-					import Leaderboard._
-
-					def writeAheadLog(cmd: Write, replayMode: ReplayMode.ReplayMode, post: Post) =
-						target -> cmd flatMap { update =>
-							if (update.hasChanged) {
-								(writer.get ? WriteAheadLog(replayMode, update.timestamp, post)) map { _ =>
-									flushCount += 1
-									if (flushCount > metadata.walSizeLimit) {
-										flush()
-										flushCount = 0
-									}
-									update
-								}
-							} else {
-								// no changes, don't bother updating
-								Future.successful(update)
-							}
-						}
-					def flush() = (target -> Export()) onSuccess { case snapshot => self ! Flush(snapshot) }
-
-					override def decorate[T] = {
-						case c @ PostScore(post, updateMode) => writeAheadLog(c, ReplayMode(updateMode), post)
-						case c @ Remove(entrant) => writeAheadLog(c, ReplayMode.Delete, Storage.tombstone(entrant))
-						case c @ Clear() => writeAheadLog(c, ReplayMode.Clear, Storage.tombstone())
-					}
-
-				}
-				receivers foreach (_ ! leaderboard)
+				writer := context.actorOf(datastore.writerProps(name, watermark, metadata), "writer_" + name)
+				leaderboard := new PersistentLeaderboardDecorator(
+					LeaderboardArbiter(buffer, "gate_" + name),
+					walLength,
+					metadata,
+					writer.get,
+					self,
+					context.dispatcher)
+				receivers foreach (_ ! leaderboard.get)
 
 			case Flush(snapshot) =>
-				writer foreach (_ ! Save(snapshot))
+				if (writer.isSet) writer.get ! Save(snapshot)
 
-			case Get() => if (writer.isDefined)
-				writer foreach { sender() ! _ }
-			else
-				receivers += sender()
-
+			case Get() =>
+				if (leaderboard.isSet) sender() ! leaderboard.get
+				else receivers = sender() +: receivers
 		}
 	}
 
@@ -93,7 +91,7 @@ class PersistentLeaderboard(name: String, datastore: Datastore, actorRefFactory:
 		extends LeaderboardBuffer.Factory {
 	implicit val timeout = Timeout(DurationInt(1).minute)
 	implicit val executionContext = actorRefFactory.dispatcher
-	val lifecycle = actorRefFactory.actorOf(PersistentLeaderboard.props(name, datastore), "persistent_" + name)
-	val leaderboard: Future[Leaderboard] = (lifecycle ? PersistentLeaderboard.Get()).mapTo[Leaderboard]
+	val persistentLeaderboard = actorRefFactory.actorOf(PersistentLeaderboard.props(name, datastore), "persistent_" + name)
+	val leaderboard: Future[Leaderboard] = (persistentLeaderboard ? PersistentLeaderboard.Get()).mapTo[Leaderboard]
 
 }

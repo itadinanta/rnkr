@@ -224,7 +224,7 @@ object CassandraStorage {
 		override implicit lazy val executionContext = context.dispatcher
 
 		// TODO: attachments need printf escaping
-		def storeWal(mode: ReplayMode.ReplayMode, timestamp: Long, watermark: Long, w: Post) = {
+		def storeWal(mode: ReplayMode.Value, timestamp: Long, watermark: Long, w: Post) = {
 			val seq = JLong.valueOf(timestamp)
 			val wm = JLong.valueOf(watermark)
 			val scoredata = Seq(mode.id, encode(w.score), w.entrant, encode(w.attachments)) mkString Storage.CSV_SEPARATOR

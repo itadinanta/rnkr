@@ -31,7 +31,7 @@ trait LeaderboardBufferSupport extends LeaderboardBuffer {
 	protected def export(): Snapshot
 
 	protected def remove(entrant: String): Update
-	protected def post(post: Post, updateMode: UpdateMode = BestWins): Update
+	protected def post(post: Post, updateMode: UpdateMode.Value = BestWins): Update
 	protected def clear(): Update
 
 	override final def ->[T](cmd: Leaderboard.Command[T]): T = cmd match {
@@ -110,10 +110,10 @@ private class LeaderboardTreeImpl extends LeaderboardBufferSupport {
 	protected def better(newScore: TimedScore, oldScore: TimedScore) =
 		ordering.lt(newScore, oldScore)
 
-	override def post(p: Post, updateMode: UpdateMode = BestWins): Update =
+	override def post(p: Post, updateMode: UpdateMode.Value = BestWins): Update =
 		post(TimedScore(p.score, timestamp, p.attachments), p.entrant, updateMode)
 
-	private[this] def post(newScore: TimedScore, entrant: String, updateMode: UpdateMode): Update = {
+	private[this] def post(newScore: TimedScore, entrant: String, updateMode: UpdateMode.Value): Update = {
 		import UpdateMode._
 		val entrantKey = asByteString(entrant)
 		val (isBetter, oldEntry) = entrantIndex.get(entrantKey) match {
