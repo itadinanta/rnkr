@@ -12,9 +12,11 @@ import akka.pattern.pipe
 import scala.concurrent.duration._
 import akka.util.Timeout
 import grizzled.slf4j.Logging
-import net.itadinanta.rnkr.engine.Leaderboard
-import net.itadinanta.rnkr.engine.LeaderboardActor
 import akka.actor.ActorRef
+
+import net.itadinanta.rnkr.engine.Leaderboard
+import net.itadinanta.rnkr.engine.LeaderboardRemote
+import net.itadinanta.rnkr.engine.LeaderboardRemote._
 import net.itadinanta.rnkr.engine.Partition
 
 private object Cluster {
@@ -22,12 +24,10 @@ private object Cluster {
 	class Shard(val partitions: Map[String, Partition]) extends Actor with Logging {
 		implicit val executionContext = context.dispatcher
 		override def receive = {
-			case LookupShard(pid, lid) => {
-				info(s"Looking up ${lid}")
-				val partition = partitions get pid getOrElse { partitions.get("default").get }
-				partition get lid map { leaderboard =>
-					context.actorOf(LeaderboardActor.props(leaderboard))
-				} pipeTo sender()
+			case LookupShard(partitionId, leaderboardId) => {
+				info(s"Looking up ${leaderboardId}")
+				val partition = partitions get partitionId getOrElse { partitions.get("default").get }
+				partition get leaderboardId map actorFor pipeTo sender
 			}
 		}
 	}
@@ -58,6 +58,6 @@ class Cluster(val actorSystem: ActorSystem, val partitions: Map[String, Partitio
 		implicit val executionContext = actorSystem.dispatcher
 		for {
 			a <- (clusterSharding ? LookupShard(partitionId, leaderboardId)).mapTo[ActorRef]
-		} yield LeaderboardActor.wrap(a)
+		} yield LeaderboardRemote(a)
 	}
 }

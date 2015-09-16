@@ -67,7 +67,7 @@ object PersistentLeaderboard {
 			case Load(watermark, walLength, metadata) =>
 				writer := context.actorOf(datastore.writerProps(name, watermark, metadata), "writer_" + name)
 				leaderboard := new PersistentLeaderboardDecorator(
-					LeaderboardArbiter(buffer, "gate_" + name),
+					ConcurrentLeaderboard(buffer, "gate_" + name),
 					walLength,
 					metadata,
 					writer.get,
