@@ -64,11 +64,9 @@ object Leaderboard {
 
 	abstract trait Decorator extends Leaderboard {
 		protected[this] val target: Leaderboard
-		def decorate[T]: PartialFunction[Leaderboard.Command[T], Future[T]]
-		override final def ->[T](cmd: Leaderboard.Command[T]): Future[T] = {
-			val d = decorate[T]
-			if (d.isDefinedAt(cmd)) d.apply(cmd) else target -> cmd
-		}
+		def decorate[T]: PartialFunction[Command[T], Future[T]]
+		override final def ->[T](cmd: Command[T]): Future[T] =
+			decorate[T].applyOrElse(cmd, (c: Command[T]) => target -> c)
 	}
 
 }
