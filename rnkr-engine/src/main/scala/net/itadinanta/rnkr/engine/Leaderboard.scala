@@ -46,7 +46,7 @@ object Leaderboard {
 	 *    e.g. a player id or name. Entrants are unique per leaderboard. Multiple [Post posts]
 	 *    from the same entrant are condensed into a single Entry
 	 *
-	 *  @param rank the absolute rank (or position, or index) of the row in the leaderboard, 0-based
+	 *  @param rank the absolute rank (or position, or index) of the row in the leaderboard, 1-based
 	 *
 	 *  @param attachments optional user data
 	 */
