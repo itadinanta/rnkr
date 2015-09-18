@@ -1,20 +1,20 @@
 package net.itadinanta.rnkr.engine
 
 import scala.concurrent.Future
-import akka.util.Timeout
 import scala.concurrent.Promise
 import akka.actor._
 import akka.pattern._
-import scala.concurrent.duration._
 import net.itadinanta.rnkr.backend._
 import Leaderboard._
 import net.itadinanta.rnkr.core.arbiter.Gate
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import net.itadinanta.rnkr.util.SetOnce
+import akka.util.Timeout
+import scala.concurrent.duration.DurationInt
 
 object PersistentLeaderboard {
 	case class Get()
+	implicit val timeout = Timeout(1 minute)
 
 	private class PersistentLeaderboardDecorator(
 			override val target: Leaderboard,
@@ -24,9 +24,6 @@ object PersistentLeaderboard {
 			parent: ActorRef,
 			implicit val executionContext: ExecutionContext) extends Leaderboard.Decorator {
 		var flushCount: Int = walLength
-		import scala.concurrent.duration._
-		implicit val timeout = Timeout(DurationInt(1).minute)
-
 		private def writeAheadLog(cmd: Write, replayMode: ReplayMode.Value, post: Post) =
 			target -> cmd flatMap { update =>
 				if (update.hasChanged) {
@@ -53,7 +50,7 @@ object PersistentLeaderboard {
 
 	}
 
-	class PersistentLeaderboardActor(name: String, datastore: Datastore) extends Actor
+	private class PersistentLeaderboardActor(name: String, datastore: Datastore) extends Actor
 			with LeaderboardBuffer.Factory {
 
 		val buffer = build()
@@ -79,19 +76,16 @@ object PersistentLeaderboard {
 				if (writer.isSet) writer.get ! Save(snapshot)
 
 			case Get() =>
-				if (leaderboard.isSet) sender() ! leaderboard.get
-				else receivers = sender() +: receivers
+				if (leaderboard.isSet) sender ! leaderboard.get
+				else receivers = sender +: receivers
 		}
 	}
 
-	def props(name: String, datastore: Datastore) = Props(new PersistentLeaderboardActor(name: String, datastore: Datastore))
+	private def props(name: String, datastore: Datastore) = Props(new PersistentLeaderboardActor(name: String, datastore: Datastore))
+
+	def apply(name: String, datastore: Datastore, actorRefFactory: ActorRefFactory): Future[Leaderboard] = {
+		implicit val executionContext = actorRefFactory.dispatcher
+		(actorRefFactory.actorOf(props(name, datastore), "persistent_" + name) ? Get()).mapTo[Leaderboard]
+	}
 }
 
-class PersistentLeaderboard(name: String, datastore: Datastore, actorRefFactory: ActorRefFactory)
-		extends LeaderboardBuffer.Factory {
-	implicit val timeout = Timeout(DurationInt(1).minute)
-	implicit val executionContext = actorRefFactory.dispatcher
-	val persistentLeaderboard = actorRefFactory.actorOf(PersistentLeaderboard.props(name, datastore), "persistent_" + name)
-	val leaderboard: Future[Leaderboard] = (persistentLeaderboard ? PersistentLeaderboard.Get()).mapTo[Leaderboard]
-
-}
