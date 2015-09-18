@@ -21,4 +21,51 @@ class SetOnceTest extends FunSuite with Matchers with Logging {
 		v.get shouldBe 1
 		intercept[IllegalStateException] { v := 2 }
 	}
+
+	test("setOnce toString") {
+		val v = SetOnce[Int]
+		v.toString shouldBe "_"
+		v := 1
+		v.toString shouldBe "1"
+	}
+
+	test("setOnce unset map") {
+		val v = SetOnce[Int]
+		val vmapped = v map (_ * 2)
+		vmapped.isSet shouldBe false
+	}
+
+	test("setOnce set map") {
+		val v = SetOnce[Int]
+		v := 1
+		val vmapped = v map (_ * 2)
+		vmapped.isSet shouldBe true
+		vmapped.get shouldBe 2
+	}
+
+	test("setOnce unset flatmap") {
+		val v = SetOnce[Int]
+		val vmapped = v flatMap (SetOnce[Int] := _ * 2)
+		vmapped.isSet shouldBe false
+	}
+
+	test("setOnce set flatmap") {
+		val v = SetOnce[Int]
+		v := 1
+		val vmapped = v flatMap (SetOnce[Int] := _ * 2)
+		vmapped.isSet shouldBe true
+		vmapped.get shouldBe 2
+	}
+
+	test("setOnce set for") {
+		val v = SetOnce[Int]
+		val vunmapped = for { value <- v } yield value * 2
+		vunmapped.isSet shouldBe false
+		
+		v := 1
+		val vmapped = for { value <- v } yield value * 2
+		vmapped.isSet shouldBe true
+		vmapped.get shouldBe 2
+	}
+
 }
