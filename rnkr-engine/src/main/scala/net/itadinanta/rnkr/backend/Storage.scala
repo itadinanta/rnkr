@@ -34,7 +34,8 @@ case class Watermark(watermark: Long, pages: Int)
 case class Metadata(val comment: String = "", val pageSize: Int = 2500, val walSizeLimit: Int = 10000, val walTimeLimit: Long = 1800000L)
 case class Replay(replayMode: ReplayMode.Value, score: Long, timestamp: Long, entrant: String, attachments: Option[Attachments])
 
-case class Load(watermark: Long, walLength: Int, metadata: Metadata)
+case object Load
+case class Loaded(buffer: LeaderboardBuffer, watermark: Long, walLength: Int, metadata: Metadata)
 case class Save(snapshot: Snapshot)
 case class WriteAheadLog(mode: ReplayMode.Value, seq: Long, w: Post)
 case class Flush(snapshot: Snapshot)
@@ -49,9 +50,10 @@ object Storage {
 	def tombstone(entrant: String) = Post(TOMBSTONE, entrant, None)
 	def tombstone() = Post(TOMBSTONE, "", None)
 
-	trait Reader extends Storage with Logging {
+	trait Reader extends Storage with Logging with LeaderboardBuffer.Factory {
+		val leaderboard: LeaderboardBuffer = build()
+
 		val id: String
-		val leaderboard: LeaderboardBuffer
 		implicit val executionContext: ExecutionContext
 
 		case class Page(page: Int, entries: Iterable[Entry])
@@ -92,7 +94,7 @@ object Storage {
 					metadata <- loadMetadata()
 				} yield {
 					debug(s"Load complete for ${id}")
-					src ! Load(w.watermark, walLength, metadata)
+					src ! Loaded(leaderboard, w.watermark, walLength, metadata)
 					self ! PoisonPill
 				}
 		}

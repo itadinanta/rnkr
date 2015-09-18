@@ -79,8 +79,7 @@ object CassandraStorage {
 		override val cassandra: Cassandra,
 		override val keyspace: String,
 		override val datastore: Datastore,
-		override val id: String,
-		override val leaderboard: LeaderboardBuffer)
+		override val id: String)
 			extends Reader
 			with CassandraStorage
 			with ReaderStatements {

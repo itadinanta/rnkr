@@ -27,11 +27,12 @@ class Partition(val datastore: Datastore)(implicit actorRefFactory: ActorRefFact
 	}
 
 	class PartitionActor extends Actor {
+		implicit val actorRefFactory = context
 		implicit val executionContext = context.dispatcher
 		val registry = mutable.Map[String, Future[Leaderboard]]()
 
 		def find(name: String) =
-			registry.getOrElseUpdate(name, PersistentLeaderboard(name, datastore, context))
+			registry.getOrElseUpdate(name, PersistentLeaderboard(name, datastore))
 
 		def receive = {
 			case Find(name) => find(name) pipeTo sender()
