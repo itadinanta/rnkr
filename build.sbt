@@ -4,23 +4,28 @@ net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 name := "rnkr"
 
-
 val commonSettings = Seq(
 	organization := "net.itadinanta",
-	version := "0.2.1-SNAPSHOT",
 	startYear := Some(2015),
 	crossPaths := true,
 	licenses += ("GPL-2.0", url("http://opensource.org/licenses/GPL-2.0")),
 	sbtVersion := "0.13.9",
 	scalaVersion := "2.11.7",
 	scalacOptions += "-target:jvm-1.8",
+	fork := true,
+	
+	releaseVersionBump := sbtrelease.Version.Bump.Minor,
+	
 	resolvers ++= Seq(
 		Resolver.jcenterRepo,
 		"Springsource" at "http://repo.springsource.org/libs",
 		"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
 	),
 
+	// bintray
 	bintrayOrganization := Some("itadinanta"),
+	bintrayReleaseOnPublish in ThisBuild := false,
+	bintrayPackageLabels := Seq("scala", "rnkr", "leaderboard", "games", "akka", "sharding", "scala-2.11"),
 
 	EclipseKeys.classpathTransformerFactories := Seq(ClasspathentryTransformer),
 	EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource,
@@ -30,7 +35,8 @@ val commonSettings = Seq(
 	unmanagedSourceDirectories in Test := (scalaSource in Test).value :: Nil,
 	
 	retrieveManaged := false,
-
+	
+	
 	libraryDependencies ++= Seq(
 		// logging
 		"org.slf4j" 				% "slf4j-api"		% "1.7.7",
@@ -40,7 +46,26 @@ val commonSettings = Seq(
 	
 		// test
 		"org.scalatest"				%% "scalatest"		% "2.2.5" % "test"
+	),
+	
+	// for Maven Central
+	homepage := Some(url("http://itadinanta.net")),
+	pomExtra := (
+		<scm>
+			<url>git@github.com:itadinanta/{name.value}.git</url>
+			<developerConnection>scm:git:git@github.com:itadinanta/{name.value}.git</developerConnection>
+			<connection>scm:git:git@github.com:itadinanta/{name.value}.git</connection>
+		</scm>
+		<developers>
+			<developer>
+				<name>Nico Orru (norru)</name>
+				<email>nigu.orru@gmail.com</email>
+				<organization>Itadinanta</organization>
+				<organizationUrl>http:// itadinanta.github.io</organizationUrl>
+			</developer>
+		</developers>
 	)
+	
 )
 
 lazy val rnkr = project.in( file(".") ).settings(commonSettings: _*)
@@ -112,4 +137,3 @@ dockerfile in docker := {
     entryPoint("java", "-cp", classpathString, mainclass)
   }
 }
-
