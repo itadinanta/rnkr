@@ -27,7 +27,6 @@ class RankTest extends TreeBaseTest with Matchers {
 
 	test("A tree with more entries should have higher ranks") {
 		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (4, "Item4"), (5, "Item5"), (6, "Item6"))
-		debug(tree)
 		tree.size should be(6)
 
 		tree.rank(-1) should be(0)
@@ -73,17 +72,16 @@ class RankTest extends TreeBaseTest with Matchers {
 		tree.rank(9) should be(6)
 	}
 
-	test("After 100 insertions with String keys should contain 100 ranks") {
+	test(s"After ${smallCount} insertions with String keys should contain ${smallCount} ranks") {
 		val tree = RankedTreeMap[String, String](StringAscending, 4)
-		for (i <- 1 to 100) tree.append("Key%03d".format(i), "Item" + i)
-		debug(s"Tree with Strings: ${tree}")
-		tree.size should be(100)
+		for (i <- 1 to smallCount) tree.append("Key%03d".format(i), "Item" + i)
+		tree.size should be(smallCount)
 		tree.factory.fanout should be(4)
 		tree.level should be(4)
 		tree.consistent should be(true)
 		tree.get("Key007") should be(Some(Row("Key007", "Item7", 6)))
-		for (i <- 1 to 100) { tree.get("Key%03d".format(i)) should be(Some(Row("Key%03d".format(i), "Item" + i, i - 1))) }
-		for (i <- 1 to 100) { tree.rank("Key%03d".format(i)) should be(i - 1) }
+		for (i <- 1 to smallCount) { tree.get("Key%03d".format(i)) should be(Some(Row("Key%03d".format(i), "Item" + i, i - 1))) }
+		for (i <- 1 to smallCount) { tree.rank("Key%03d".format(i)) should be(i - 1) }
 	}
 
 }

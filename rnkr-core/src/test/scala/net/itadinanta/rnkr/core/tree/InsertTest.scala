@@ -29,7 +29,7 @@ class InsertTest extends TreeBaseTest {
 
 	test("After 7 insertions should contain 7 entries") {
 		val tree = createTestTree()
-		1 to 7 foreach { i => tree.put(i, "Item" + i); debug(s"Added ${i} to ${tree}") }
+		for (i <- 1 to 7) tree.put(i, "Item" + i)
 		tree.size should be(7)
 		tree.factory.fanout should be(4)
 		tree.level should be(2)
@@ -42,7 +42,6 @@ class InsertTest extends TreeBaseTest {
 		val tree = createTestTree()
 		for (i <- 17 to 1 by -1) {
 			tree.put(i, "Item" + i)
-			debug(s"Added ${i} to ${tree}")
 			tree.consistent should be(true)
 		}
 		tree.size should be(17)
@@ -51,21 +50,20 @@ class InsertTest extends TreeBaseTest {
 		tree.root.keys.size should be(1)
 	}
 
-	test("After 100 insertions with String keys should contain 100 entries") {
+	test(s"After ${smallCount} insertions with String keys should contain ${smallCount} entries") {
 		val tree = new SeqTree[String, String](new SeqNodeFactory[String, String](StringAscending, 4))
-		for (i <- 1 to 100) {
+		for (i <- 1 to smallCount) {
 			tree.put("Key" + i, "Item" + i)
-			debug(s"After adding ${i} to tree: {tree}")
 			tree.consistent should be(true)
 		}
-		tree.size should be(100)
+		tree.size should be(smallCount)
 		tree.factory.fanout should be(4)
 		tree.level should be(4)
 	}
 
 	test("After 7 insertions in reverse should contain 7 entries") {
 		val tree = createTestTree()
-		7 to 1 by -1 foreach { i => tree.put(i, "Item" + i); debug(s"Added ${i} to ${tree}") }
+		for (i <- 7 to 1 by -1) tree.put(i, "Item" + i)
 		tree.size should be(7)
 		tree.factory.fanout should be(4)
 		tree.level should be(2)
@@ -73,71 +71,69 @@ class InsertTest extends TreeBaseTest {
 		tree.head.keys.size should be(4)
 	}
 
-	test("After 100 insertion should contain 100 entries in order") {
+	test(s"After ${smallCount} insertion should contain ${smallCount} entries in order") {
 		val tree = createTestTree()
-		for (i <- 1 to 100) {
+		for (i <- 1 to smallCount) {
 			tree.put(i, "Item" + i);
 			tree.keys() should be((1 to i))
-			debug(tree)
 			tree.consistent should be(true)
 		}
-		tree.size should be(100)
+		tree.size should be(smallCount)
 		tree.factory.fanout should be(4)
 		tree.level should be(4)
 	}
 
-	test("After 100 insertions in reverse should contain 100 entries in order") {
+	test(s"After ${smallCount} insertions in reverse should contain ${smallCount} entries in order") {
 		val tree = createTestTree()
-		100 to 1 by -1 foreach { i => tree.put(i, "Item" + i) }
-		debug(tree)
-		tree.keys() should be((1 to 100))
-		tree.keysReverse() should be((100 to 1 by -1))
-		tree.size should be(100)
+		for (i <- smallCount to 1 by -1) tree.put(i, "Item" + i)
+		tree.keys() should be((1 to smallCount))
+		tree.keysReverse() should be((smallCount to 1 by -1))
+		tree.size should be(smallCount)
 	}
 
-	test("After 1000 random insertions should contain 1000 entries in order") {
+	val count = 1000
+	test(s"After ${count} random insertions should contain ${count} entries in order") {
 		val tree = createTestTree()
 		val ordered = new mutable.TreeSet[Int]
-		Random.setSeed(1234L)
-		Random.shuffle(1 to 1000 map { i => i }) foreach { i =>
+		val rnd = new Random
+		rnd.setSeed(1234L)
+		rnd.shuffle(1 to count map { i => i }) foreach { i =>
 			tree.put(i, "Item" + i)
 			ordered += i
 			tree.keys() should be(ordered.toList)
 		}
-		debug(tree)
 		tree.consistent should be(true)
-		tree.keysReverse() should be((1000 to 1 by -1))
-		tree.size should be(1000)
+		tree.keysReverse() should be((count to 1 by -1))
+		tree.size should be(count)
 	}
 
-	test("After 100 insertions in reverse should contain 100 entries in reverse") {
+	test(s"After ${smallCount} insertions in reverse should contain ${smallCount} entries in reverse") {
 		val tree = RankedTreeMap.withIntKeys[String](IntDescending, 9)
-		1 to 100 foreach { i => tree.put(i, "Item" + i) }
-		debug(tree)
-		tree.keysReverse() should be((1 to 100))
-		tree.keys() should be((100 to 1 by -1))
-		tree.size should be(100)
+		for (i <- 1 to smallCount) tree.put(i, "Item" + i)
+		tree.keysReverse() should be((1 to smallCount))
+		tree.keys() should be((smallCount to 1 by -1))
+		tree.size should be(smallCount)
 	}
 
 	test("An ordered range should count N keys forward from a given pivot") {
+		val doubleRange = 2 * smallCount
 		val tree = createTestTree()
-		1 to 100 foreach { i => tree.put(2 * i, "Item" + i) }
-		debug(tree)
+		for (i <- 1 to smallCount) tree.put(2 * i, "Item" + i)
 		tree.get(20) map (_.value) should be(Some("Item10"))
-		tree.range(2, 100) map (_.key) should be((2 to 200 by 2))
-		tree.range(0, 200) map (_.key) should be((2 to 200 by 2))
+		tree.range(2, smallCount) map (_.key) should be((2 to doubleRange by 2))
+		tree.range(0, doubleRange) map (_.key) should be((2 to doubleRange by 2))
 		tree.range(20, 10) map (_.key) should be((20 to 38 by 2))
 		tree.range(19, 10) map (_.key) should be((20 to 38 by 2))
 		tree.range(21, 10) map (_.key) should be((22 to 40 by 2))
-		tree.range(200, 0) map (_.key) should be(Seq())
-		tree.range(200, 1) map (_.key) should be(Seq(200))
-		tree.range(200, 100) map (_.key) should be(Seq(200))
-		tree.range(201, 100) map (_.key) should be(Seq())
+		tree.range(doubleRange, 0) map (_.key) should be(Seq())
+		tree.range(doubleRange, 1) map (_.key) should be(Seq(doubleRange))
+		tree.range(doubleRange, smallCount) map (_.key) should be(Seq(doubleRange))
+		tree.range(doubleRange + 1, smallCount) map (_.key) should be(Seq())
 	}
 
 	test("An ordered range should count N keys backwards from a given pivot") {
 		val tree = createTestTree()
-		1 to 100 foreach { i => tree.put(2 * i, "Item" + i) }
+		for (i <- 1 to 100) tree.put(2 * i, "Item" + i)
 
 		tree.range(1, -1) map (_.key) should be(Seq())
 		tree.range(2, -1) map (_.key) should be(Seq(2))

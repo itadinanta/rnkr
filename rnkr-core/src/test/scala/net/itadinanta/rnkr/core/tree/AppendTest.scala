@@ -15,7 +15,7 @@ class AppendTest extends TreeBaseTest {
 
 	test("A tree with less than fanout entries should have one leaf and no index") {
 		val tree = createTestTree()
-		1 to 3 foreach { i => tree.append(i, "Item" + i) }
+		for (i <- 1 to 3) tree.append(i, "Item" + i)
 		tree.size should be(3)
 		tree.root.keys.size should be(3)
 		tree.head.keys.size should be(3)
@@ -26,7 +26,9 @@ class AppendTest extends TreeBaseTest {
 
 	test("After 7 insertions should contain 7 entries") {
 		val tree = createTestTree()
-		for (i <- 1 to 7) { tree.append(i, "Item" + i); debug(s"Added ${i} to ${tree}") }
+		for (i <- 1 to 7) {
+			tree.append(i, "Item" + i)
+		}
 		tree.size should be(7)
 		tree.factory.fanout should be(4)
 		tree.level should be(2)
@@ -35,11 +37,10 @@ class AppendTest extends TreeBaseTest {
 		tree.consistent should be(true)
 	}
 
-	test("After 100 insertions with String keys should contain 100 entries") {
+	test(s"After ${smallCount} insertions with String keys should contain ${smallCount} entries") {
 		val tree = RankedTreeMap[String, String](StringAscending, 4)
-		for (i <- 1 to 100) tree.append("Key%03d".format(i), "Item" + i)
-		debug(s"RankedTreeMap with Strings: ${tree}")
-		tree.size should be(100)
+		for (i <- 1 to smallCount) tree.append("Key%03d".format(i), "Item" + i)
+		tree.size should be(smallCount)
 		tree.factory.fanout should be(4)
 		tree.level should be(4)
 		tree.consistent should be(true)
@@ -48,58 +49,56 @@ class AppendTest extends TreeBaseTest {
 	test("After 7 insertions in reverse should fail with exception") {
 		val tree = createTestTree()
 		intercept[IllegalArgumentException] {
-			7 to 1 by -1 foreach { i => tree.append(i, "Item" + i); debug(s"Added ${i} to ${tree}") }
+			for (i <- 7 to 1 by -1) tree.append(i, "Item" + i)
 		}
 	}
 
-	test("After 100 insertion should contain 100 entries in order") {
+	test(s"After ${smallCount} insertion should contain ${smallCount} entries in order") {
 		val tree = createTestTree()
-		1 to 100 foreach {
-			i =>
-				tree.append(i, "Item" + i);
-				tree.keys() should be((1 to i))
-				debug(tree)
-				tree.consistent should be(true)
+		for (i <- 1 to smallCount) {
+			tree.append(i, "Item" + i);
+			tree.keys() should be((1 to i))
+			tree.consistent should be(true)
 		}
-		tree.size should be(100)
+		tree.size should be(smallCount)
 		tree.factory.fanout should be(4)
 		tree.level should be(4)
 	}
 
-	test("After 1000000 appends should contain 1000000 entries in order") {
-		val tree = this.createTreeWithFanout(100)
-		1 to 1000000 foreach { i => tree.append(i, "Item" + i); }
-		tree.size should be(1000000)
+	test(s"After ${largeCount} appends should contain ${largeCount} entries in order") {
+		val tree = this.createTreeWithFanout(smallCount)
+		for (i <- 1 to largeCount) tree.append(i, "Item" + i)
+		tree.size should be(largeCount)
 		tree.factory.fanout should be(100)
 		tree.level should be(4)
 	}
 
-	test("After 100 insertions in reverse should fail with exception") {
+	test(s"After ${smallCount} insertions in reverse should fail with exception") {
 		val tree = createTestTree()
 		intercept[IllegalArgumentException] {
-			100 to 1 by -1 foreach { i => tree.append(i, "Item" + i) }
+			for (i <- smallCount to 1 by -1) tree.append(i, "Item" + i)
 		}
 	}
 
 	test("An ordered range should count N keys forward from a given pivot") {
+		val doubleRange = 2 * smallCount
 		val tree = createTestTree()
-		1 to 100 foreach { i => tree.append(2 * i, "Item" + i) }
-		debug(tree)
+		for (i <- 1 to smallCount) tree.append(2 * i, "Item" + i)
 		tree.get(20) map (_.value) should be(Some("Item10"))
-		tree.range(2, 100) map (_.key) should be((2 to 200 by 2))
-		tree.range(0, 200) map (_.key) should be((2 to 200 by 2))
+		tree.range(2, smallCount) map (_.key) should be((2 to doubleRange by 2))
+		tree.range(0, doubleRange) map (_.key) should be((2 to doubleRange by 2))
 		tree.range(20, 10) map (_.key) should be((20 to 38 by 2))
 		tree.range(19, 10) map (_.key) should be((20 to 38 by 2))
 		tree.range(21, 10) map (_.key) should be((22 to 40 by 2))
-		tree.range(200, 0) map (_.key) should be((Seq()))
-		tree.range(200, 1) map (_.key) should be((Seq(200)))
-		tree.range(200, 100) map (_.key) should be((Seq(200)))
-		tree.range(201, 100) map (_.key) should be((Seq()))
+		tree.range(doubleRange, 0) map (_.key) should be((Seq()))
+		tree.range(doubleRange, 1) map (_.key) should be((Seq(doubleRange)))
+		tree.range(doubleRange, smallCount) map (_.key) should be((Seq(doubleRange)))
+		tree.range(doubleRange + 1, smallCount) map (_.key) should be((Seq()))
 	}
 
 	test("An ordered range should count N keys backwards from a given pivot") {
 		val tree = createTestTree()
-		1 to 100 foreach { i => tree.append(2 * i, "Item" + i) }
+		for (i <- 1 to smallCount) tree.append(2 * i, "Item" + i)
 
 		tree.range(1, -1) map (_.key) should be(Seq())
 		tree.range(2, -1) map (_.key) should be(Seq(2))
