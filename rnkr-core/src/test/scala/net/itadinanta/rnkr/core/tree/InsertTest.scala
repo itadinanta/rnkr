@@ -91,7 +91,6 @@ class InsertTest extends TreeBaseTest {
 		tree.size should be(smallCount)
 	}
 
-	val count = 1000
 	test(s"After ${count} random insertions should contain ${count} entries in order") {
 		val tree = createTestTree()
 		val ordered = new mutable.TreeSet[Int]

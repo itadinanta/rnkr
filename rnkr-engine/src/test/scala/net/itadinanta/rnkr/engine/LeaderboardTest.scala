@@ -24,7 +24,7 @@ class LeaderboardTest extends FunSuite
 	val actorSystem = ActorSystem("rnkr")
 	implicit val executionContext = actorSystem.dispatcher
 	implicit val actorRefFactory: ActorRefFactory = actorSystem
-	implicit val config: PatienceConfig = PatienceConfig(scaled(Span(10000, Millis)), scaled(Span(50, Millis)))
+	implicit val config = PatienceConfig(scaled(Span(10000, Millis)), scaled(Span(50, Millis)))
 	def build(name: String): Leaderboard = ConcurrentLeaderboard(build(), name)
 
 	test("empty leaderboard") {
@@ -122,11 +122,11 @@ class LeaderboardTest extends FunSuite
 	}
 
 	val lb = build("hundred")
-	val posted = Future.sequence(for (i <- 1 to 100) yield lb -> PostScore(Post(i, s"User${i}", None)) map { _.newEntry.get })
+	val posted = Future.sequence(for (i <- 1 to smallCount) yield lb -> PostScore(Post(i, s"User${i}", None)) map { _.newEntry.get })
 
 	test("Query: size") {
 		whenReady(posted) { posted =>
-			whenReady(lb -> Size()) { _ should be(100) }
+			whenReady(lb -> Size()) { _ should be(smallCount) }
 		}
 	}
 

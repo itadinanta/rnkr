@@ -8,11 +8,11 @@ import scala.util.Random
 import scala.collection.mutable._
 import grizzled.slf4j.Logging
 
-class LeaderboardBufferTest extends FunSuite 
-	with LeaderboardTestConstants
-	with Matchers 
-	with Logging 
-	with LeaderboardBuffer.Factory {
+class LeaderboardBufferTest extends FunSuite
+		with LeaderboardTestConstants
+		with Matchers
+		with Logging
+		with LeaderboardBuffer.Factory {
 
 	test("empty leaderboard") {
 		build() -> Size() shouldBe 0
@@ -90,12 +90,12 @@ class LeaderboardBufferTest extends FunSuite
 
 	val lb = build()
 	val posted = (for {
-		i <- 1 to 100
+		i <- 1 to smallCount
 		post <- (lb -> PostScore(Post(i, s"User${i}", None))).newEntry
 	} yield post).toList
 
 	test("Query: size") {
-		lb -> Size() should be(100)
+		lb -> Size() should be(smallCount)
 	}
 
 	test("Query: around (entrant)") {

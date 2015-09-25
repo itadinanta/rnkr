@@ -6,9 +6,10 @@ import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.core.tree._
 import org.scalatest.Matchers
 
-abstract class TreeBaseTest extends FunSuite with Matchers with Logging {
+trait TreeBaseTest extends FunSuite with Matchers with Logging {
 	val smallCount = 100
-	val largeCount = 1000000
+	val largeCount = 1000
+	val count = 500
 
 	def createTreeWithFanout(fanout: Int) = RankedTreeMap.withStringValues(IntAscending, fanout)
 	def createTestTree() = createTreeWithFanout(4)
