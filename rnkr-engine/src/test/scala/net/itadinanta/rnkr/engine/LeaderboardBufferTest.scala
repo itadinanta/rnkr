@@ -136,7 +136,7 @@ class LeaderboardBufferTest extends FunSuite with Matchers with Logging with Lea
 		large -> Size() should be(largeCount)
 	}
 
-	test("After ${largeCount} random insertions should contain ${largeCount} entries in order") {
+	test(s"After ${largeCount} random insertions should contain ${largeCount} entries in order") {
 		val large = build()
 		val ordered = new TreeSet[Int]
 		Random.setSeed(1234L)
@@ -144,11 +144,10 @@ class LeaderboardBufferTest extends FunSuite with Matchers with Logging with Lea
 			ordered += i
 			large -> PostScore(Post(i, "Item" + i, None))
 		}
-		debug(large)
 		large -> Size() should be(largeCount)
 	}
 
-	test("After ${largeCount} insertions of the same value it should contain ${largeCount} entries in order") {
+	test(s"After ${largeCount} insertions of the same value it should contain ${largeCount} entries in order") {
 		val large = build()
 		val ordered = new TreeSet[Int]
 		Random.setSeed(1234L)
@@ -156,7 +155,6 @@ class LeaderboardBufferTest extends FunSuite with Matchers with Logging with Lea
 			ordered += i
 			large -> PostScore(Post(1, "Item" + i, None))
 		}
-		debug(large)
 		large -> Size() should be(largeCount)
 	}
 

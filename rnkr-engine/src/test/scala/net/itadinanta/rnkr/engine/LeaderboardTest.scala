@@ -179,7 +179,6 @@ class LeaderboardTest extends FunSuite with Matchers with ScalaFutures with Logg
 			large -> PostScore(Post(i, "Item" + i, None))
 		}
 		whenReady(Future.sequence(posts)) { posts =>
-			debug(large)
 			whenReady(large -> Size()) { _ should be(largeCount) }
 		}
 	}
@@ -193,7 +192,6 @@ class LeaderboardTest extends FunSuite with Matchers with ScalaFutures with Logg
 			large -> PostScore(Post(1, "Item" + i, None))
 		}
 		whenReady(Future.sequence(posts)) { posts =>
-			debug(large)
 			whenReady(large -> Size()) { _ should be(largeCount) }
 		}
 	}
