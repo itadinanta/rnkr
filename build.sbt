@@ -50,7 +50,7 @@ val commonSettings = Seq(
 	
 	// for Maven Central
 	homepage := Some(url("http://itadinanta.net")),
-	pomExtra := (
+	pomExtra :=
 		<scm>
 			<url>git@github.com:itadinanta/{name.value}.git</url>
 			<developerConnection>scm:git:git@github.com:itadinanta/{name.value}.git</developerConnection>
@@ -61,11 +61,9 @@ val commonSettings = Seq(
 				<name>Nico Orru (norru)</name>
 				<email>nigu.orru@gmail.com</email>
 				<organization>Itadinanta</organization>
-				<organizationUrl>http:// itadinanta.github.io</organizationUrl>
+				<organizationUrl>http://itadinanta.net</organizationUrl>
 			</developer>
 		</developers>
-	)
-	
 )
 
 lazy val rnkr = project.in( file(".") ).settings(commonSettings: _*)
