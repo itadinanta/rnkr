@@ -11,10 +11,10 @@ trait TreeBaseTest extends FunSuite with Matchers with Logging {
 	val largeCount = 1000
 	val count = 500
 
-	def createTreeWithFanout(fanout: Int) = RankedTreeMap.withStringValues(IntAscending, fanout)
-	def createTestTree() = createTreeWithFanout(4)
-	def createTestTree(items: Tuple2[Int, String]*) = {
-		val m = createTreeWithFanout(4)
+	def treeWithFanout(fanout: Int) = RankedTreeMap.withStringValues(IntAscending, fanout)
+	def testTree() = treeWithFanout(4)
+	def testTree(items: Tuple2[Int, String]*) = {
+		val m = treeWithFanout(4)
 		for (i <- items) { m.append(i._1, i._2) }
 		m
 	}

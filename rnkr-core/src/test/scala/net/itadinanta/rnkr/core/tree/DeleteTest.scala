@@ -7,19 +7,19 @@ import scala.collection.mutable
 class DeleteTest extends TreeBaseTest {
 
 	test("After 3 insertions and 1 deletions should contain 2 entries in the root") {
-		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
+		Some(testTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
 			t.remove(1)
 			t.size should be(2)
 			t.keys should be(Seq(2, 3))
 		}
 
-		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
+		Some(testTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
 			t.remove(2)
 			t.size should be(2)
 			t.keys should be(Seq(1, 3))
 		}
 
-		Some(createTestTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
+		Some(testTree((1, "Item"), (2, "Item"), (3, "Item"))) foreach { t =>
 			t.remove(3)
 			t.size should be(2)
 			t.keys should be(Seq(1, 2))
@@ -27,7 +27,7 @@ class DeleteTest extends TreeBaseTest {
 	}
 
 	test("After 5 insertions and 1 deletion should contain 1 entry") {
-		val tree = createTestTree(
+		val tree = testTree(
 			(1, "Item"),
 			(2, "Item"),
 			(3, "Item"),
@@ -58,7 +58,7 @@ class DeleteTest extends TreeBaseTest {
 	}
 
 	test(s"After ${smallCount} insertions and ${smallCount} deletions should be empty") {
-		val tree = createTestTree()
+		val tree = testTree()
 		val n = smallCount
 		for (i <- 1 to n) {
 			tree.put(i, "Item" + i)
@@ -76,7 +76,7 @@ class DeleteTest extends TreeBaseTest {
 	}
 
 	test(s"After ${smallCount} insertions and ${smallCount} deletions in reverse should be empty") {
-		val tree = createTestTree()
+		val tree = testTree()
 		val n = smallCount
 		for (i <- 1 to n) {
 			tree.put(i, "Item" + i)
@@ -92,7 +92,7 @@ class DeleteTest extends TreeBaseTest {
 	}
 
 	test(s"After ${smallCount} random insertions and ${smallCount} random deletions should be empty") {
-		val tree = createTestTree()
+		val tree = testTree()
 		val ordered = new mutable.TreeSet[Int]
 		val n = smallCount
 		val rnd = new Random
@@ -114,7 +114,7 @@ class DeleteTest extends TreeBaseTest {
 	}
 
 	test("Deleting an item from the leaf should propagate to the root if necessary") {
-		val tree = createTestTree()
+		val tree = testTree()
 		val ordered = new mutable.TreeSet[Int]
 		val n = 13
 		for (i <- 1 to n) {
@@ -137,7 +137,7 @@ class DeleteTest extends TreeBaseTest {
 
 	val someCount = 1000
 	test(s"After ${someCount} random insertions and ${someCount} random deletions should be empty") {
-		val tree = createTreeWithFanout(32)
+		val tree = treeWithFanout(32)
 		val ordered = new mutable.TreeSet[Int]
 		val n = someCount
 		val rnd = new Random

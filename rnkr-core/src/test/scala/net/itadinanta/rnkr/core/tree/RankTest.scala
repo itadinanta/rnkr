@@ -5,14 +5,14 @@ import org.scalatest.Matchers
 
 class RankTest extends TreeBaseTest with Matchers {
 	test("A tree with one entry should have one rank 0") {
-		val tree = createTestTree()
+		val tree = testTree()
 		tree.append(1, "Item")
 		tree.size should be(1)
 		tree.rank(1) should be(0)
 	}
 
 	test("A tree with few entries should have low ranks") {
-		val tree = createTestTree()
+		val tree = testTree()
 		tree.append(1, "Item1")
 		tree.append(2, "Item2")
 		tree.append(3, "Item3")
@@ -26,7 +26,7 @@ class RankTest extends TreeBaseTest with Matchers {
 	}
 
 	test("A tree with more entries should have higher ranks") {
-		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (4, "Item4"), (5, "Item5"), (6, "Item6"))
+		val tree = testTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (4, "Item4"), (5, "Item5"), (6, "Item6"))
 		tree.size should be(6)
 
 		tree.rank(-1) should be(0)
@@ -52,7 +52,7 @@ class RankTest extends TreeBaseTest with Matchers {
 	}
 
 	test("Tree with ranges") {
-		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (5, "Item5"), (6, "Item6"), (7, "Item7"))
+		val tree = testTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (5, "Item5"), (6, "Item6"), (7, "Item7"))
 
 		tree.range(5, 2) shouldBe Seq(Row(5, "Item5", 3), Row(6, "Item6", 4))
 		tree.range(3, 2) shouldBe Seq(Row(3, "Item3", 2), Row(5, "Item5", 3))
@@ -62,7 +62,13 @@ class RankTest extends TreeBaseTest with Matchers {
 	}
 
 	test("Tree with ranks") {
-		val tree = createTestTree((1, "Item1"), (2, "Item2"), (3, "Item3"), (5, "Item5"), (6, "Item6"), (7, "Item7"))
+		val tree = testTree(
+			(1, "Item1"),
+			(2, "Item2"),
+			(3, "Item3"),
+			(5, "Item5"),
+			(6, "Item6"),
+			(7, "Item7"))
 
 		tree.rank(0) should be(0)
 		tree.rank(1) should be(0)
