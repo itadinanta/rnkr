@@ -6,8 +6,10 @@ import Leaderboard._
 import grizzled.slf4j.Logging
 import scala.reflect._
 import scala.collection.Seq
-class LeaderboardCommandTest extends FunSuite with Matchers with Logging {
-
+class LeaderboardCommandTest extends FunSuite
+		with LeaderboardTestConstants
+		with Matchers
+		with Logging {
 	test("Verify lb message type tags") {
 		Size().tag shouldBe classTag[Int]
 		IsEmpty().tag shouldBe classTag[Boolean]

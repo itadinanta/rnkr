@@ -14,7 +14,12 @@ import scala.concurrent.Future
 import org.scalatest.time.Span
 import org.scalatest.time.Millis
 
-class LeaderboardTest extends FunSuite with Matchers with ScalaFutures with Logging with LeaderboardBuffer.Factory {
+class LeaderboardTest extends FunSuite
+		with LeaderboardTestConstants
+		with Matchers
+		with ScalaFutures
+		with Logging
+		with LeaderboardBuffer.Factory {
 
 	val actorSystem = ActorSystem("rnkr")
 	implicit val executionContext = actorSystem.dispatcher
@@ -160,8 +165,6 @@ class LeaderboardTest extends FunSuite with Matchers with ScalaFutures with Logg
 		}
 	}
 
-	val largeCount = 10000
-
 	test(s"After ${largeCount} sequential insertions should contain ${largeCount} entries in order") {
 		val large = build("largeInsert")
 		val posts = for (i <- 1 to largeCount) yield { large -> PostScore(Post(i, "Item" + i, None)) }
@@ -173,8 +176,9 @@ class LeaderboardTest extends FunSuite with Matchers with ScalaFutures with Logg
 	test(s"After ${largeCount} random insertions should contain ${largeCount} entries in order") {
 		val large = build("largeRandomInsert")
 		val ordered = new TreeSet[Int]
-		Random.setSeed(1234L)
-		val posts = Random.shuffle(1 to largeCount map { i => i }) map { i =>
+		val rnd = new Random
+		rnd.setSeed(1234L)
+		val posts = rnd.shuffle(1 to largeCount map { i => i }) map { i =>
 			ordered += i
 			large -> PostScore(Post(i, "Item" + i, None))
 		}
@@ -186,8 +190,9 @@ class LeaderboardTest extends FunSuite with Matchers with ScalaFutures with Logg
 	test(s"After ${largeCount} insertions of the same value it should contain ${largeCount} entries in order") {
 		val large = build("largeSameInsert")
 		val ordered = new TreeSet[Int]
-		Random.setSeed(1234L)
-		val posts = Random.shuffle(1 to largeCount map { i => i }) map { i =>
+		val rnd = new Random
+		rnd.setSeed(1234L)
+		val posts = rnd.shuffle(1 to largeCount map { i => i }) map { i =>
 			ordered += i
 			large -> PostScore(Post(1, "Item" + i, None))
 		}

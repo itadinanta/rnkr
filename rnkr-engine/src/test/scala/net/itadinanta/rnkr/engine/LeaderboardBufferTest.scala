@@ -8,7 +8,11 @@ import scala.util.Random
 import scala.collection.mutable._
 import grizzled.slf4j.Logging
 
-class LeaderboardBufferTest extends FunSuite with Matchers with Logging with LeaderboardBuffer.Factory {
+class LeaderboardBufferTest extends FunSuite 
+	with LeaderboardTestConstants
+	with Matchers 
+	with Logging 
+	with LeaderboardBuffer.Factory {
 
 	test("empty leaderboard") {
 		build() -> Size() shouldBe 0
@@ -119,7 +123,6 @@ class LeaderboardBufferTest extends FunSuite with Matchers with Logging with Lea
 		lb -> EstimatedRank(110) should be(100)
 	}
 
-	val largeCount = 10000
 	test(s"After ${largeCount} sequential appends should contain ${largeCount} entries in order") {
 		val large = build()
 
