@@ -12,7 +12,7 @@ val commonSettings = Seq(
 	sbtVersion := "0.13.9",
 	scalaVersion := "2.11.7",
 	scalacOptions += "-target:jvm-1.8",
-	fork := false,
+	fork := true,
 	javaOptions in test += "-Xmx8G",
 
 	releaseVersionBump := sbtrelease.Version.Bump.Minor,
