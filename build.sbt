@@ -18,6 +18,7 @@ val commonSettings = Seq(
 	releaseVersionBump := sbtrelease.Version.Bump.Minor,
 	
 	resolvers ++= Seq(
+		Resolver.jcenterRepo,
 		"jdgoldie at bintray" at "http://dl.bintray.com/jdgoldie/maven",
 		"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
 	),
