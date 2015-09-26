@@ -18,8 +18,7 @@ val commonSettings = Seq(
 	releaseVersionBump := sbtrelease.Version.Bump.Minor,
 	
 	resolvers ++= Seq(
-		Resolver.jcenterRepo,
-		"Springsource" at "http://repo.springsource.org/libs",
+		"jdgoldie at bintray" at "http://dl.bintray.com/jdgoldie/maven",
 		"Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
 	),
 
@@ -62,7 +61,7 @@ val commonSettings = Seq(
 				<name>Nico Orru (norru)</name>
 				<email>nigu.orru@gmail.com</email>
 				<organization>Itadinanta</organization>
-				<organizationUrl>http://itadinanta.net</organizationUrl>
+				<organizationUrl>http:// itadinanta.net</organizationUrl>
 			</developer>
 		</developers>
 )
@@ -86,8 +85,6 @@ lazy val `rnkr-app` = project.in( file("rnkr-app") ).settings(commonSettings: _*
 		`rnkr-cluster`,
 		`rnkr-frontend`
 	)
-	.enablePlugins(JavaServerAppPackaging)
-
 
 lazy val `rnkr-frontend` = project.in( file("rnkr-frontend") ).settings(commonSettings: _*)
 	.dependsOn(

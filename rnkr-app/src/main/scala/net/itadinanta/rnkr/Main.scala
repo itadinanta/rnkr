@@ -25,6 +25,7 @@ import grizzled.slf4j.Logging
 import net.itadinanta.rnkr.engine.Partition
 import net.itadinanta.rnkr.engine.LeaderboardBuffer
 import net.itadinanta.rnkr.backend.Datastore
+import net.itadinanta.rnkr.backend.blackhole.BlackHole
 
 class ApplicationConfiguration extends FunctionalConfiguration {
 	implicit val ctx = beanFactory.asInstanceOf[ApplicationContext]
@@ -41,7 +42,7 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 			s.awaitTermination()
 	}
 
-	val cassandra = bean("cassandra") {
+	val cassandra = bean(name = "cassandra", lazyInit = true) {
 		val hosts = cfg.strings("cassandra.hosts")
 		val port = cfg.int("cassandra.port")
 		new Cassandra(hosts, port)
@@ -50,8 +51,13 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 	}
 
 	val defaultDatastore = bean[Datastore]("defaultDatastore") {
-		val defaultKeyspace = cfg.string("cassandra.default.keyspace")
-		new Cassandra.Datastore(cassandra(), defaultKeyspace)
+		cfg.string("persistence.type") match {
+			case "cassandra" =>
+				val defaultKeyspace = cfg.string("cassandra.default.keyspace")
+				new Cassandra.Datastore(cassandra(), defaultKeyspace)
+			case "blackhole" =>
+				new BlackHole.Datastore()
+		}
 	}
 
 	val defaultPartition = bean("defaultPartition") {
