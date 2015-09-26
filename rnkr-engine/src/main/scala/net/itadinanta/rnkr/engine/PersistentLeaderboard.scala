@@ -11,6 +11,8 @@ import scala.concurrent.ExecutionContext
 import net.itadinanta.rnkr.util.SetOnce
 import akka.util.Timeout
 import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
+import scala.language.implicitConversions
 
 object PersistentLeaderboard {
 	case class Get()

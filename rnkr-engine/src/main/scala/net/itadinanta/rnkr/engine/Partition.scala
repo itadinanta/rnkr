@@ -9,6 +9,7 @@ import akka.actor.Props
 import akka.util.Timeout
 import akka.pattern._
 import net.itadinanta.rnkr.backend.Datastore
+import scala.language.postfixOps
 
 class Partition(val datastore: Datastore)(implicit actorRefFactory: ActorRefFactory) {
 	implicit val executionContext = actorRefFactory.dispatcher

@@ -13,6 +13,7 @@ import scala.concurrent.duration._
 import akka.util.Timeout
 import grizzled.slf4j.Logging
 import akka.actor.ActorRef
+import scala.language.postfixOps
 
 import net.itadinanta.rnkr.engine.Leaderboard
 import net.itadinanta.rnkr.engine.LeaderboardRemote

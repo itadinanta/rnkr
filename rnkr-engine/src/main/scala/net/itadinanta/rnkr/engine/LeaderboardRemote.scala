@@ -6,6 +6,7 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import akka.actor._
 import akka.pattern._
+import scala.language.postfixOps
 
 import Leaderboard.Command
 

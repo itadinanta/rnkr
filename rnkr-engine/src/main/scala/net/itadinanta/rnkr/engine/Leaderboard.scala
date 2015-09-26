@@ -128,9 +128,10 @@ object Leaderboard {
 	 */
 	case class Get(score: Long, timestamp: Long) extends ReadOptionEntry
 	/**
-	 * Command to retrieve an entry at the given rank
+	 * Command to retrieve an entry at the given rank or None if the rank
+	 * is out of range
 	 *
-	 *  @param
+	 *  @param rank the rank to retrieve (1 = first)
 	 */
 	case class At(rank: Long) extends ReadOptionEntry
 	/**
@@ -214,7 +215,7 @@ trait Leaderboard {
 	 * Command processing endpoint. Commands are executed asynchronously and in parallel
 	 * whenever possible. Sequential consistency is guaranteed
 	 *
-	 * @param cmd
+	 * @param cmd the command to send
 	 */
 	def ->[T](cmd: Leaderboard.Command[T]): Future[T]
 }

@@ -27,6 +27,7 @@ import net.itadinanta.rnkr.engine.Leaderboard
 import spray.routing.directives.AuthMagnet
 import spray.routing.authentication.BasicAuth
 import spray.routing.authentication.UserPass
+import scala.language.postfixOps
 
 protected trait Authenticator {
 	case class Role(name: String)

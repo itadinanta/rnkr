@@ -14,6 +14,7 @@ import scala.reflect.ClassTag
 import akka.actor.ActorContext
 import akka.actor.ActorRefFactory
 import grizzled.slf4j.Logging
+import scala.language.postfixOps
 
 object Arbiter {
 	def apply[T](t: T, name: String)(implicit context: ActorRefFactory) = new ActorArbiter(t, name)

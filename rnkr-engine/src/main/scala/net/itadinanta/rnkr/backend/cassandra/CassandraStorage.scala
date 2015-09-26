@@ -16,6 +16,7 @@ import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext
 import net.itadinanta.rnkr.backend._
 import java.lang.{ Long => JLong }
+import scala.language.implicitConversions
 import net.itadinanta.rnkr.engine.LeaderboardBuffer
 
 trait CassandraStorage extends Storage {

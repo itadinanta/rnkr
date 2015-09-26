@@ -11,7 +11,7 @@ val commonSettings = Seq(
 	licenses += ("GPL-2.0", url("http://opensource.org/licenses/GPL-2.0")),
 	sbtVersion := "0.13.9",
 	scalaVersion := "2.11.7",
-	scalacOptions += "-target:jvm-1.8",
+	scalacOptions ++= Seq("-target:jvm-1.8", "-feature", "-deprecation"),
 	fork := true,
 	javaOptions in test += "-Xmx8G",
 
