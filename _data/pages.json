@@ -1,3 +1,4 @@
 [
-	{"name": "index", "label": "Rnkr"}
+    {"name": "index", "label": "Rnkr"},
+    {"name": "quickstart", "label": "Getting started"}
 ]
