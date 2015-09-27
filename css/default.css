@@ -9,7 +9,7 @@ body {
 #shadow {
 	padding: 0pt;
 	margin: 0pt;
-	box-shadow: 0px 10px 20px 0px rgba(0,0,0,0.5);
+	box-shadow: 0px 10px 20px 0px rgba(0, 0, 0, 0.5);
 }
 
 #page {
@@ -40,8 +40,8 @@ body {
 }
 
 #content p img {
-    float: right;
-    margin: 1em;
+	float: right;
+	margin: 1em;
 }
 
 #content ul {
@@ -58,6 +58,13 @@ body {
 }
 
 #pagecontent {
+	padding: 0;
+	margin: 0;
+}
+
+#pagedate {
+	text-align: right;
+	font-decoration: italic;
 	padding: 0;
 	margin: 0;
 }
@@ -89,4 +96,3 @@ pre {
 	border-width: 1px;
 	font-family: "Ubuntu Mono", monospace;
 }
-
