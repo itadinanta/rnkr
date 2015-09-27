@@ -5,7 +5,7 @@ title: Getting started
 ### Download from Bintray 
 
 	wget https://bintray.com/artifact/download/itadinanta/maven/\
-		net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz
+	net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz
 	tar xvf rnkr-app_2.11-0.4.0-package.tar.gz
 
 Or manually download and unpack from [Bintray](https://bintray.com/artifact/download/itadinanta/maven/net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz)
