@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">	
+<link rel="stylesheet" href="/css/default.css" type="text/css" media="screen" charset="utf-8" />
+<link rel="shortcut icon" href="/img/favicon.ico" sizes="16x16 32x32 64x64 128x128" type="image/vnd.microsoft.icon"/>
+<title>Itadinanta - {{ page.title }}</title>
+</head>
+<body>
+	<div id="page">
+		<div id="shadow">
+			<div id="header">
+				<h1>{{ page.title }}</h1>
+			</div>
+			<div id="content">
+				<div id="pageindex">
+				{% for p in site.data.pages %}<span class="links"><a href="/{{ p.name }}">{{ p.label }}</a></span>{% endfor %}
+				</div>
+				<div id="pagecontent">
+				{{ content }}
+				</div>
+			</div>
+			<div id="footer">
+				&copy; 2015 Nico Orru <span>nigu</span><span>&period;</span><span>orru</span><span>&commat;</span><span>gmail</span><span></span>&period;</span><span>com</span>
+				All content is the author's personal and does do not represent the
+				author's employer's views.
+			</div>
+		</div>
+	</div>
+</body>
+</html>

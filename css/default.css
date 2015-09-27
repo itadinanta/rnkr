@@ -1,0 +1,77 @@
+body {
+	font-family: "Ubuntu", "Verdana", "Arial", sans-serif;
+	color: black;
+	background: #E3ECEB;
+	padding: 0pt;
+	margin: 0pt;
+}
+
+#shadow {
+	padding: 0pt;
+	margin: 0pt;
+	box-shadow: 0px 10px 20px 0px rgba(0,0,0,0.5);
+}
+
+#page {
+	padding-left: 2%;
+	padding-right: 2%;
+	padding-bottom: 2em;
+	border-style: none;
+}
+
+#header {
+	background: #8EB6B2 url("/img/bg_sharkfin.jpg") left repeat-x;
+	background-size: cover;
+	padding: 0.5em 1em 0.5em 1em;
+	margin: 0pt;
+	border-color: #0E655A;
+	border-width: 1px;
+	border-style: none solid none solid;
+}
+
+#content p {
+	text-indent: 2em;
+}
+
+#content p img {
+    float: right;
+    margin: 1em;
+}
+
+#content ul {
+	margin-left: 2em;
+}
+
+#content {
+	background: #F8F4ED;
+	margin: 0pt;
+	padding: 0 2em 2em 2em;
+	border-width: 1px;
+	border-color: #A38B5C;
+	border-style: dotted solid none solid;
+}
+
+#pagecontent {
+	padding: 0;
+	margin: 0;
+}
+
+#pageindex {
+	margin: 0;
+	padding: 0.5em 0 0.5em 0;
+	font-size: 75%;
+	text-align: right;
+}
+
+#pageindex .links {
+	margin: 0;
+	padding-left: 1em;
+}
+
+#footer {
+	padding: 1em 1em 1em 1em;
+	border-style: dotted solid solid solid;
+	border-color: #A38B5C #A38B5C #A38B5C #A38B5C;
+	background: #F5EACB;
+	border-width: 1px 1px 1px 1px;
+}
