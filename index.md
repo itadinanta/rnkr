@@ -28,15 +28,15 @@ via [GitHub Issues](https://github.com/itadinanta/rnkr/issues) or start a privat
 I believe that the best way of learning something new is to dive in head first. 
 This is an open-source project which I've started mainly to learn the Scala language and ecosystem. 
 
-I see programming languages as sophisticated tools to solve problems, I have chosen to solve this one
+I see programming languages as sophisticated tools to solve problems, I have chosen this one
 because
 
 - **It is familiar to me**. Since writing server code for console games day in, day out, I've learnt that 
 players love being ranked against each other.
-- **I believe the problem is not fully solved**. I am never fully satisfied with any of the solutions I've
+- **I believe the problem is not fully solved**. I am not fully satisfied with any of the solutions I've
 adopted in the past. Project budgets tends to be tight on R&D.
-- It is general enough to **build a community** around it it
-- ...but **small enough for one person** to work on it
+- It is general enough to **build a community** around it
+- ...but **small enough for a single person** to work on it
 
 I started with a data structure which implements an ordered list of N rows of the form
 
@@ -45,19 +45,19 @@ I started with a data structure which implements an ordered list of N rows of th
 Where:
 
 - `rank` are unique and sequentially ordered numbers 1 to N
-- list is kept sorted by `score` according to a given `Ordering` (ascending/descending)
-- `(score, timestamp)` are also a sorted key
-- `value` is an unique key
+- list is kept sorted by non-unique `score` according to a given `Ordering` (ascending/descending)
+- `(score, timestamp)` are also a unique sorted key
+- `value` is an unique, required key
 - `attachment` is an arbitrary, optional value
 - seeking by either `rank`, `score`, `(score, timestamp)` or `value` is `O(logN)` or `O(1)`
-- traversal of the structure with `prev()` and `next() which are `O(1)`
+- traversal of the structure with `prev()` and `next()` which are `O(1)`
 - insertion, update and deletion are `O(logN)` or `O(1)`
 	
 With the following implementation goals:
 
-- efficient in-memory storage
-- efficient persistence
-- "reasonable" scalability (support large leaderboards and a large number of leaderboards)
+- efficient in-memory storage for live objects
+- efficient offloading of idle objects to persistent storage
+- "reasonable" scalability to support both large leaderboards and a large number of leaderboards
 - "reasonable" availability
 - loss of nodes with no loss of data
 - pluggable backends
