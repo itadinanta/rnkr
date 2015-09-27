@@ -76,7 +76,7 @@ body {
 	border-width: 1px 1px 1px 1px;
 }
 
-pre code {
+pre {
 	margin-left: 4em;
 	padding-left: 2em;
 	border-style: dotted;
