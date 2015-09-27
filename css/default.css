@@ -19,6 +19,12 @@ body {
 	border-style: none;
 }
 
+#headerlogo {
+	float: right;
+	height: 5em;
+	width: 5em;
+}
+
 #header {
 	background: #8EB6B2 url("/img/bg_sharkfin.jpg") left repeat-x;
 	background-size: cover;
