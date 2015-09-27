@@ -75,3 +75,11 @@ body {
 	background: #F5EACB;
 	border-width: 1px 1px 1px 1px;
 }
+
+pre code {
+	margin-left: 4em;
+	padding-left: 2em;
+	border-style: dotted;
+	border-width: 1px;		
+}
+
