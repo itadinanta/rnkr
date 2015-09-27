@@ -26,22 +26,24 @@ via [GitHub Issues](https://github.com/itadinanta/rnkr/issues) or start a privat
 ### Rationale and goals
 
 I believe that the best way of learning something new is to dive in head first. 
-This is an open-source project which I've started mainly to learn the Scala language and toolbox. 
+This is an open-source project which I've started mainly to learn the Scala language and ecosystem. 
 
-I see programming languages as sophisticated tools to solve problems, I have choosen to solve this one
+I see programming languages as sophisticated tools to solve problems, I have chosen to solve this one
 because
 
-- I am familiar with the problem: I write server code for console games day in, day out
-and players love being ranked against each other.
-- I believe the problem is not fully solved: I have adopted multiple solutions in the past but I am never
-fully satisfied with the solution, but project budgets tends to be tight for more R&D.
-- There is potential to build a community for it
+- **It is familiar to me**. Since writing server code for console games day in, day out, I've learnt that 
+players love being ranked against each other.
+- **I believe the problem is not fully solved**. I am never fully satisfied with any of the solutions I've
+adopted in the past. Project budgets tends to be tight on R&D.
+- It is general enough to **build a community** around it it
+- ...but **small enough for one person** to work on it
 
 I started with a data structure which implements an ordered list of N rows of the form
 
 	(rank, (score, timestamp), value, [attachment])
 
 Where:
+
 - `rank` are unique and sequentially ordered numbers 1 to N
 - list is kept sorted by `score` according to a given `Ordering` (ascending/descending)
 - `(score, timestamp)` are also a sorted key
@@ -52,6 +54,7 @@ Where:
 - insertion, update and deletion are `O(logN)` or `O(1)`
 	
 With the following implementation goals:
+
 - efficient in-memory storage
 - efficient persistence
 - "reasonable" scalability (support large leaderboards and a large number of leaderboards)
@@ -68,12 +71,20 @@ leaderboards, with a pareto-like distribution.
 
 Given the design goals and constraints, I decided to 
 
-- implement the structure as a *mutable, counted B+tree* in Scala.
-- use *Akka actors* and *queues* to arbitrate read/write operations to the data structure
-- adopt an *event log/snapshot* system for persistence, treating each leaderboard as a distinct entity
-so load can easily be distributed across nodes
-- design with *row oriented partitioned storage* in mind, starting with a Cassandra implementation
-- design with *shared-nothing* principles in mind
+- implement the structure as a 
+[mutable, counted B+tree](https://github.com/itadinanta/rnkr/tree/master/rnkr-core/src/main/scala/net/itadinanta/rnkr/core/tree)
+in Scala.
+- use [*Akka actors* and *queues*](https://github.com/itadinanta/rnkr/tree/master/rnkr-support/src/main/scala/net/itadinanta/rnkr/core/arbiter) 
+to arbitrate read/write operations to the data structure
+- adopt an 
+[*event log/snapshot*](https://github.com/itadinanta/rnkr/tree/master/rnkr-engine/src/main/scala/net/itadinanta/rnkr/engine)
+system for persistence, treating each leaderboard as a distinct entity so load can easily be distributed across nodes
+- design with
+[*row oriented partitioned storage*](https://github.com/itadinanta/rnkr/tree/master/rnkr-engine/src/main/scala/net/itadinanta/rnkr/backend)
+in mind, starting with a Cassandra implementation
+- design with
+[*shared-nothing*](https://github.com/itadinanta/rnkr/tree/master/rnkr-cluster/src/main/scala/net/itadinanta/rnkr/cluster)
+principles in mind
 - explore the concept of *hot/cold* leaderboards. "Cold" leaderboards are similar to "frozen" audio tracks
 in a DAW: they allow faster and more time/space efficient sequential reads at the cost of transitioning
 both ways (hot <-> cold).
@@ -86,6 +97,6 @@ You are welcome to submit feature requests, user stories or questions in the for
 At the time of writing, the project is subject to the
 [GPL 2.0 licence](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html). As I am bound by
 certain contract obligations with my employer, I reserve the rights to change the licensing terms for
-future releases. Please contact me in private .
+future releases. Please contact me in private for queries about licensing.
 
 Design and documentation are subject to [CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)
