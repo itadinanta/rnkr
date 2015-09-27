@@ -9,10 +9,15 @@ title: Getting started
 
 Or manually download and unpack from [Bintray](https://bintray.com/artifact/download/itadinanta/maven/net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz)
 
+### Requirements
+
+- Java 8 JRE or JDK
+- a Cassandra cluster of one or more nodes to enable persistence
+
 ### Run the server
 
 	cd rnkr-app-0.4.0
-	bin/rnkr-app
+	bin/rnkr-app # bin\rnkr-app on Windows (untested)
 
 ### Use the REST API
 
