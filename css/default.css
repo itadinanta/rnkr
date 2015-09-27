@@ -77,9 +77,10 @@ body {
 }
 
 pre {
-	margin-left: 4em;
-	padding-left: 2em;
+	margin-left: 3em;
+	padding: 1em;
 	border-style: dotted;
-	border-width: 1px;		
+	border-width: 1px;
+	font-family: "Ubuntu Mono", monospace;
 }
 
