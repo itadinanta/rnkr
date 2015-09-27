@@ -16,13 +16,13 @@
 			</div>
 			<div id="content">
 				<div id="pageindex">
-				{% for p in site.data.pages %}<span class="links"><a href="/{{ p.name }}">{{ p.label }}</a></span>{% endfor %}
+					{% for p in site.data.pages %}<span class="links"><a href="/{{ p.name }}">{{ p.label }}</a></span>{% endfor %}
 				</div>
 				<div id="pagecontent">
-				{{ content }}
+					{{ content }}
 				</div>
 				<div id="pagedate">
-				{{ page.date | date: '%B %d, %Y' }}
+					{{ page.date | date: 'Published %B %d, %Y' }}
 				</div>
 			</div>
 			<div id="footer">
