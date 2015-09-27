@@ -8,7 +8,8 @@ title: Getting started
 wget https://bintray.com/artifact/download/itadinanta/maven/net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz
 tar xvf rnkr-app_2.11-0.4.0-package.tar.gz
 ```
-Or manually download and unpack from [Bintray|https://bintray.com/artifact/download/itadinanta/maven/net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz]
+
+Or manually download and unpack from [Bintray](https://bintray.com/artifact/download/itadinanta/maven/net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz)
 
 ### Run the server
 
@@ -16,6 +17,7 @@ Or manually download and unpack from [Bintray|https://bintray.com/artifact/downl
 cd rnkr-app-0.4.0
 bin/rnkr-app
 ```
+
 ### Use the REST API
 
 The service listens on 127.0.0.1:8080 by default. See settings below. HTTP auth user and password are required.
