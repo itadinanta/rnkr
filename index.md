@@ -4,17 +4,17 @@ title: rnkr
 
 ## Rnkr
 
+### Overview
+
+Rnkr is a *general purpose leaderboard microservice* to be integrated as a back-end component behind
+a custom server aggregator (ie your Node.js API)
+
 ### TL;DR gimme the good stuff, NOW!
 
 If you're dying to see for yourself what this is about, follow these links
 
 - [Getting started](quickstart)
 - [Project on GitHub](https://github.com/itadinanta/rnkr)
-
-### Synopsis
-
-Rnkr is a *general purpose leaderboard microservice* to be integrated as a back-end component behind
-a custom server aggregator (ie your Node.js API)
 
 ### Project status
 
