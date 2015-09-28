@@ -6,5 +6,5 @@ Good to implement large sorted maps where keeping track of ranks is necessary. G
 
 See documentation at http://rnkr.itadinanta.net
 
-First runnable release is 0.4.0
+First runnable release is _sneak peek_ 0.4.0
 
