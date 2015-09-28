@@ -89,6 +89,7 @@ object PersistentLeaderboard {
 
 		context.actorOf(datastore.readerProps(name), "reader_" + name) ! Load
 
+		// TODO timeout if read doesn't complete
 		def receive = {
 			case Loaded(buffer, watermark, walLength, metadata) =>
 				writer := context.actorOf(datastore.writerProps(name, watermark, metadata), "writer_" + name)
