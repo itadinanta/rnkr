@@ -1,24 +1,34 @@
 ---
 title: Getting started
 ---
+### Release notes
+
+Latest release is **0.5.0**
+
+- 0.5.0: embedded Cassandra, Akka 2.4.0, ddata clustering
+- 0.4.0: Initial release
+
 
 ### Download from Bintray 
 
 	wget https://bintray.com/artifact/download/itadinanta/maven/\
-	net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz
-	tar xvf rnkr-app_2.11-0.4.0-package.tar.gz
+	net/itadinanta/rnkr-app_2.11/0.5.0/rnkr-app_2.11-0.5.0-package.tar.gz
+	tar xvf rnkr-app_2.11-0.5.0-package.tar.gz
 
-Or manually download and unpack from [Bintray](https://bintray.com/artifact/download/itadinanta/maven/net/itadinanta/rnkr-app_2.11/0.4.0/rnkr-app_2.11-0.4.0-package.tar.gz)
+Or manually [download](https://bintray.com/artifact/download/itadinanta/maven/net/itadinanta/rnkr-app_2.11/0.5.0/rnkr-app_2.11-0.5.0-package.tar.gz) and unpack
+
+### Persistence
+
+**New!** Default installation now comes with embedded Cassandra, so you get persistence out of the box (not production ready).
 
 ### Requirements
 
 - Java 8 JRE or JDK
-- a Cassandra cluster of one or more nodes to enable persistence
 
 ### Run the server
 
-	cd rnkr-app-0.4.0
-	bin/rnkr-app # bin\rnkr-app on Windows (untested)
+	cd rnkr-app-0.5.0
+	bin/rnkr-app
 
 ### Use the REST API
 
@@ -74,8 +84,5 @@ A number of options is available. For instance, to change binding host/port, edi
 		}
 	}
 
-### Persistence
-
-Out of the box the service doesn't persist the data. Cassandra persistence is provided but requires setup. Watch this space.
 
 
