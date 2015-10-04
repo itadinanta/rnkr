@@ -1,5 +1,3 @@
-import Versions._
-
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 name := "rnkr"
@@ -40,17 +38,22 @@ val commonSettings = Seq(
 	
 	libraryDependencies ++= Seq(
 		// logging
-		"org.slf4j" 				% "slf4j-api"		% "1.7.7",
-		"org.slf4j" 				% "jcl-over-slf4j"	% "1.7.7",
-		"org.clapper"				%% "grizzled-slf4j"	% "1.0.2",
-		"ch.qos.logback" 			% "logback-classic" % "1.1.2" % "test",
+		"org.slf4j" % "slf4j-api" % V.slf4j,
+		"org.slf4j" % "jcl-over-slf4j" % V.slf4j,
+		"org.clapper" %% "grizzled-slf4j" % V.grizzled,
+		"ch.qos.logback" % "logback-classic" % V.logback % "test",
 	
 		// test
-		"org.scalatest"				%% "scalatest"		% "2.2.5" % "test"
+		"org.scalatest" %% "scalatest" % V.scalatest % "test"
+	),
+	
+	dependencyOverrides ++= Set(
+		"com.google.guava" % "guava" % V.guava,
+		"io.dropwizard.metrics" % "metrics-core" % "3.1.2"
 	),
 	
 	// for Maven Central
-	homepage := Some(url("http://itadinanta.net")),
+	homepage := Some(url("http://rnkr.itadinanta.net")),
 	pomExtra :=
 		<scm>
 			<url>git@github.com:itadinanta/{name.value}.git</url>
@@ -72,6 +75,7 @@ lazy val rnkr = project.in( file(".") ).settings(commonSettings: _*)
 		EclipseKeys.createSrc := EclipseCreateSrc.Unmanaged + EclipseCreateSrc.Resource
 	)
 	.aggregate(
+		`rnkr-support`,
 		`rnkr-core`,
 		`rnkr-engine`,
 		`rnkr-cluster`,

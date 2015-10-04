@@ -17,7 +17,6 @@ import net.itadinanta.rnkr.main.Frontend
 import org.springframework.scala.context.function.FunctionalConfigApplicationContext
 import org.springframework.scala.context.function.FunctionalConfiguration
 import org.springframework.context.ApplicationContext
-import net.itadinanta.common.GlobalConfig
 import net.itadinanta.rnkr.backend.cassandra.Cassandra
 import scala.concurrent.Await
 import net.itadinanta.rnkr.cluster.Cluster
@@ -26,34 +25,51 @@ import net.itadinanta.rnkr.engine.Partition
 import net.itadinanta.rnkr.engine.LeaderboardBuffer
 import net.itadinanta.rnkr.backend.Datastore
 import net.itadinanta.rnkr.backend.blackhole.BlackHole
+import org.apache.cassandra.service.CassandraDaemon
+import java.io.File
+import com.google.common.collect.Sets
+import net.itadinanta.common.Constants
+import com.typesafe.config.ConfigFactory
+import scala.collection.JavaConversions._
 
 class ApplicationConfiguration extends FunctionalConfiguration {
 	implicit val ctx = beanFactory.asInstanceOf[ApplicationContext]
-	val cfg = GlobalConfig
+	val cfg = ConfigFactory.load().getConfig(Constants.NAMESPACE)
 
 	val actorSystem = bean("system") {
-		val name = cfg.string("system.name")
+		val name = cfg.getString("system.name")
 		ActorSystem(name)
 	} destroy {
-		//	Akka 2.4, not ready as of today
-		//	s => Await.ready(s.terminate(), 1 minute)
-		s =>
-			s.shutdown()
-			s.awaitTermination()
+		s => Await.ready(s.terminate(), 1.minute)
+	}
+
+	val embeddedCassandra = bean(name = "cassandraServer", lazyInit = true) {
+		val cassandraCfg = new File(cfg.getString("cassandra.config"))
+		System.setProperty("cassandra.config", "file://" + cassandraCfg.getAbsolutePath())
+		System.setProperty("cassandra-foreground", "true")
+		System.setProperty("cassandra.storagedir", "target/cassandra")
+		val cassandraDaemon = new CassandraDaemon()
+		cassandraDaemon.activate()
+		cassandraDaemon
+	} destroy {
+		_.destroy()
 	}
 
 	val cassandra = bean(name = "cassandra", lazyInit = true) {
-		val hosts = cfg.strings("cassandra.hosts")
-		val port = cfg.int("cassandra.port")
+		if (cfg.getBoolean("cassandra.embedded")) {
+			embeddedCassandra()
+		}
+		val hosts = cfg.getStringList("cassandra.hosts").toList
+		val port = cfg.getInt("cassandra.port")
 		new Cassandra(hosts, port)
 	} destroy {
 		_.shutdown()
 	}
 
 	val defaultDatastore = bean[Datastore]("defaultDatastore") {
-		cfg.string("persistence.type") match {
+		cfg.getString("persistence.type") match {
 			case "cassandra" =>
-				val defaultKeyspace = cfg.string("cassandra.default.keyspace")
+				val defaultKeyspace = cfg.getString("cassandra.default.keyspace")
 				new Cassandra.Datastore(cassandra(), defaultKeyspace)
 			case "blackhole" =>
 				new BlackHole.Datastore()
@@ -74,8 +90,8 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 	}
 
 	val frontend = bean("frontend") {
-		val host = cfg.string("listen.host")
-		val port = cfg.int("listen.port")
+		val host = cfg.getString("listen.host")
+		val port = cfg.getInt("listen.port")
 		new Frontend(actorSystem(), cluster(), host, port)
 	} destroy {
 		_.shutdown()

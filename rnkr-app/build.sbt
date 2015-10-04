@@ -1,11 +1,15 @@
+net.virtualvoid.sbt.graph.Plugin.graphSettings
+
 import com.typesafe.sbt.packager.SettingsHelper._
 
 enablePlugins(JavaServerAppPackaging)
 
 libraryDependencies ++= Seq(
-	"ch.qos.logback" 			% "logback-classic" % "1.1.2",
+	"ch.qos.logback" % "logback-classic" % V.logback,
+
+	"org.apache.cassandra" % "cassandra-all" % V.Cassandra.server,
 	
-	"net.itadinanta" 			%%  "spring-scala"	% "1.0.0"
+	"net.itadinanta" %% "spring-scala" % V.Spring.scala
 )
 
 makeDeploymentSettings(Universal, packageBin in Universal, "tgz")

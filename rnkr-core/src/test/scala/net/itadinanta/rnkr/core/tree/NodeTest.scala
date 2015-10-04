@@ -2,6 +2,7 @@ package net.itadinanta.rnkr.core.tree
 
 import org.scalatest.FlatSpec
 import org.scalatest.ShouldMatchers
+import scala.language.reflectiveCalls
 
 class NodeTest extends FlatSpec with ShouldMatchers {
 	val builder = new SeqNodeFactory[Int, String]
