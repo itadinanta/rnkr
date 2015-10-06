@@ -4,19 +4,19 @@ title: API usage and reference
 
 ### HTTP service API
 
-Leaderbord functionality is accessible from the HTTP service by default. Functionality
+Leaderbord functionality is accessible from the HTTP service by default.
 
 All HTTP entry points follow the basic schema:
 
-URL: http://HOST:PORT/VERSION/PARTITION/ID[/ACTION]
-Method: GET | PUT | POST
-Authentication: HTTP Basic, required
+- URL: http://HOST:PORT/VERSION/PARTITION/ID[/ACTION]
+- Method: GET | PUT | POST
+- Authentication: HTTP Basic, required
 
 #### HOST:PORT
 
 Tcp coordinates of the frontend server. These can be configured in application.conf. Each node can listen to one HOST and PORT.
 
-### VERSION
+#### VERSION
 
 HTTP Protocol version. This is currently set to the reserved word ```rnkr``` TODO: set it to ```v0```. It will be set to v1 on release 1.0 and then updated if and when breaking changes are introduced.
 A node can refuse a request if the protocol major version is not available (for instance, requiring version v2 when a node can only respond to version v1).
