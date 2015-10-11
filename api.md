@@ -9,8 +9,10 @@ Leaderbord functionality is accessible from the HTTP service by default.
 All HTTP entry points follow the basic schema:
 
 - URL: http://HOST:PORT/VERSION/PARTITION/ID[/ACTION]
-- Method: GET | PUT | POST
+- Method: GET \| PUT \| POST
 - Authentication: HTTP Basic, required
+
+### URL format
 
 #### HOST:PORT
 
@@ -27,16 +29,16 @@ Each leaderboard ID is unique per partitions. Partitions can be thought as logic
 Parititioning can be used to isolate development stages (dev, staging, production) behind the same front end, or even different clients, for instance if cutting costs by sharing environments across multiple games.
 Partitions can be set up to share: 
 
-- nothing: each partition has its own separate backend. 
+- **nothing**: each partition has its own separate backend. 
 Example: partition A could be backed by Cassandra cluster A, partition B is backed by Cassandra cluster B, 
 partition C is transient (blackhole backend).
-- database: partitions use the same backend but separate schemas.
+- **database**: partitions use the same backend but separate schemas.
 Example: partition A is backed by Cassandra cluster A, keyspace A1, 
 partition B is backed by Cassandra cluster A, keyspace A2
-- schema: partitions use the same backend and schema but separate tables.
+- **schema**: partitions use the same backend and schema but separate tables.
 Example: partition A andd B share the keyspace A1 on cluster A,
 but all table names in partition are prefixed by "A_", all tables in partition "B_" have prefix B_
-- all: partitions share all tables, internally all leaderboard keys are remapped by f name prefix.
+- **all**: partitions share all tables, internally all leaderboard keys are remapped by f name prefix.
 Example: partition A and B share everything, all leaderboard keys in partition 
 A are transparently prefixed by "A:", all leaderboard keys in partition B are transparently prefixed by "B:"
 
@@ -50,35 +52,41 @@ Query, function, command or method to apply to the specify leaderboard.
 
 ### Actions
 
-#### PUT http://HOST:PORT/rnkr/PARTITION/ID
-#### POST http://HOST:PORT/rnkr/PARTITION/ID
+#### ScorePost
+
+	PUT http://HOST:PORT/VERSION/PARTITION/ID
+	POST http://HOST:PORT/VERSION/PARTITION/ID
 
 Posts a signed long SCORE as the ENTRANT in the leaderboard ID, with optional ATTACHMENTS. If ENTRANT has not a score in the board, or the FORCE flat is true, or the posted score is better than the existing one, the new score and attachment replace the existing ones.
 
 ###### Request:
-Content-Type: x-http-form-urlencoded)
-Parameters:
-	score=SCORE
-	entrant=ENTRANT
-	(optional) attachments=ATTACHMENTS
-	(optional) force=FORCE
+	Content-Type: x-http-form-urlencoded
+	Parameters:
+		score=SCORE
+		entrant=ENTRANT
+		(optional) attachments=ATTACHMENTS
+		(optional) force=FORCE
 
 ###### Response:
-Content-Type: application/json
-	{}
+	Content-Type: application/json
+		{}
 
-#### DELETE http://HOST:PORT/rnkr/PARTITION/ID
+#### Delete
 
-Deletes all entrants or one single entrant from the leaderboard identified by ID. If ENTRANT exists, it is removed. If ENTRANT does not exist, it is ignored. If ENTRANT is not specified, all ENTRANTS are removed.
+	DELETE http://HOST:PORT/VERSION/PARTITION/ID
+
+Deletes one single entrant **or all** of them from the leaderboard identified by ID. If ENTRANT exists, it is deleted. If ENTRANT does not exist, it is ignored.
+
+**If ENTRANT is not specified, all ENTRANTS are deleted and the leaderboard is wiped clean.**
 
 ###### Request:
-Content-Type: x-http-form-urlencoded)
-Parameters:
-	(optional) entrant=ENTRANT
+	Content-Type: x-http-form-urlencoded
+	Parameters:
+		(optional) entrant=ENTRANT
 
 ###### Response:
-Content-Type: application/json
-	{}
+	Content-Type: application/json
+		{}
 
 
 
