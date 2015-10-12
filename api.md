@@ -50,7 +50,9 @@ The unique ID of a leaderboard. In general, an identifier is valid as a leaderbo
 
 Query, function, command or method to apply to the specify leaderboard.
 
-### Actions
+### Update Actions
+
+Update actions change the state of the leaderboard. These actions are `ScorePost` and `Delete`. Update operations are guaranteed to be **serialized**. 
 
 #### ScorePost
 
@@ -59,13 +61,15 @@ Query, function, command or method to apply to the specify leaderboard.
 
 Posts a signed long SCORE as the ENTRANT in the leaderboard ID, with optional ATTACHMENTS. If ENTRANT has not a score in the board, or the FORCE flat is true, or the posted score is better than the existing one, the new score and attachment replace the existing ones.
 
+A leaderboard is automagically created with its first ScorePost.
+
 ###### Request:
 	Content-Type: x-http-form-urlencoded
 	Parameters:
 		score=SCORE
 		entrant=ENTRANT
 		(optional) attachments=ATTACHMENTS
-		(optional) force=FORCE
+		(optional) force=FORCE (default false)
 
 ###### Response:
 	Content-Type: application/json
@@ -88,6 +92,91 @@ Deletes one single entrant **or all** of them from the leaderboard identified by
 	Content-Type: application/json
 		{}
 
+### Query Actions
 
+Query actions can be sent to the service to retrieve segments off the current state. Query actions are served **concurrently**. Query actions requested while an update action is being fulfilled are queued.
 
+#### Nearby
+	
+	GET http://HOST:PORT/VERSION/PARTITION/ID/nearby?count=COUNT&entrant=ENTRANT
 
+Retrieves the segment of the leaderboard centered on the entrant's key, with COUNT items above and COUNT items below.
+If the entrant does not exist, it returns an empty sequence.
+If COUNT is not specify, it returns only the ENTRANT row.
+
+###### Request:
+	Parameters:
+		(optional) count=COUNT (default 0)
+		entrant=ENTRANT
+
+###### Response:
+	Content-Type: application/json
+		{}
+
+#### Lookup
+
+	GET http://HOST:PORT/VERSION/PARTITION/ID/lookup?entrant=ENTRANT&entrant=ENTRANT...
+
+Retrieves multiple entrants in the same order as they're requested, ignoring the ones which aren't present.
+
+###### Request:
+	Parameters:
+		entrant=ENTRANT
+
+###### Response:
+	Content-Type: application/json
+		{}
+
+#### Rank (Estimated)
+
+	GET http://HOST:PORT/VERSION/PARTITION/ID/rank?score=SCORE
+
+Return an the estimated rank for a given score without posting it to the leaderboard. Entrant is unspecified.
+
+###### Request:
+	Parameters:
+		score=SCORE
+
+###### Response:
+	Content-Type: application/json
+		{}
+
+#### Size
+
+	GET http://HOST:PORT/VERSION/PARTITION/ID/size
+
+Returns the size of the leaderboard.
+
+###### Response:
+	Content-Type: application/json
+		{}
+
+#### Around
+
+	GET http://HOST:PORT/VERSION/PARTITION/ID/around?score=SCORE&count=COUNT
+
+Retrieves a segment of the leaderboard centered around the SCORE, with COUNT items above and COUNT items below.
+
+###### Request:
+	Parameters:
+		score=SCORE
+		(optional) count=COUNT (default 0)
+
+###### Response:
+	Content-Type: application/json
+		{}
+
+#### Page
+
+	GET http://HOST:PORT/VERSION/PARTITION/ID/page?start=START&length=LENGTH
+
+Retrieves a segment of length LENGTH of the leaderboard starting from RANK (inclusive)
+
+###### Request:
+	Parameters:
+		(optional) start=START (default 1)
+		(optional) length=LENGTH (default 10)
+
+###### Response:
+	Content-Type: application/json
+		{}
