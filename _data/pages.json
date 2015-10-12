@@ -1,4 +1,5 @@
 [
-    {"name": "index", "label": "Rnkr"},
-    {"name": "quickstart", "label": "Getting started"}
+	{"name": "index", "label": "Rnkr"},
+	{"name": "quickstart", "label": "Getting started"},
+	{"name": "api", "label": "API reference"}
 ]
