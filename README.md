@@ -1,10 +1,14 @@
-## rnkr
+## Overview
 
-Scala/Akka implementation of a counted B+tree index service.
-
-Good to implement large sorted maps where keeping track of ranks is necessary. Good for game leaderboards.
+Rnkr is a *general purpose leaderboard microservice* to be integrated as a back-end component behind a custom server aggregator (ie your Node.js API)
 
 See documentation at http://rnkr.itadinanta.net
 
-First runnable release is _sneak peek_ 0.4.0
+## Getting started
+
+In a rush? Try [this](http://rnkr.itadinanta.net/quickstart)
+
+### Releases
+
+Latest released version is **0.5.0**
 
