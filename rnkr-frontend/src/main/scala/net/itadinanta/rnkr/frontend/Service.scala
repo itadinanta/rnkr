@@ -70,7 +70,7 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 			parameter('entrant, 'count ? 0) { (entrant, count) =>
 				complete(lb flatMap { _ -> Nearby(entrant, count) })
 			}
-		} ~ path("get") {
+		} ~ path("lookup") {
 			parameterMultiMap { map =>
 				complete(lb flatMap { _ -> Lookup(map getOrElse ("entrant", Seq()): _*) })
 			}
@@ -81,8 +81,8 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 		} ~ path("size") {
 			complete(lb flatMap { _ -> Size() } map { _.toString })
 		} ~ path("around") {
-			parameters('score, 'length ? 1) { (score, length) =>
-				complete(lb flatMap { _ -> Around(score.toLong, length.toInt) })
+			parameters('score, 'count ? 1) { (score, count) =>
+				complete(lb flatMap { _ -> Around(score.toLong, count.toInt) })
 			}
 		} ~ path("page") {
 			parameters('start ? 0, 'length ? 10) { (start, length) =>
