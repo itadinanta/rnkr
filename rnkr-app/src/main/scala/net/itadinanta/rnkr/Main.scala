@@ -70,7 +70,7 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		cfg.getString("persistence.type") match {
 			case "cassandra" =>
 				val defaultKeyspace = cfg.getString("cassandra.default.keyspace")
-				new Cassandra.Datastore(cassandra(), defaultKeyspace)
+				new Cassandra.Datastore(cassandra(), defaultKeyspace, None)
 			case "blackhole" =>
 				new BlackHole.Datastore()
 		}
@@ -80,9 +80,26 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		new Partition(defaultDatastore())(actorSystem())
 	}
 
-	// "default" partition must exist
 	val partitionMap = bean("partitionMap") {
-		Map("default" -> defaultPartition())
+		val system = actorSystem()
+		val partitionEntries = for (pcfg <- cfg.getConfigList("partitions")) yield {
+			val name = pcfg.getString("name")
+
+			val hosts = pcfg.getStringList("cassandra.hosts").toList
+			val port = pcfg.getInt("cassandra.port")
+			val cassandra = new Cassandra(hosts, port)
+			val keyspace = pcfg.getString("cassandra.keyspace")
+			val prefix = if (pcfg.hasPath("cassandra.prefix")) Some(pcfg.getString("cassandra.prefix")) else None
+			val datastore = new Cassandra.Datastore(cassandra, keyspace, prefix)
+			
+			val auth = for (authCfg <- pcfg.getConfigList("auth")) yield (authCfg.getString("user"), authCfg.getString("pass"))
+
+			val partition = new Partition(datastore, Map(auth: _*))(system)
+			(name, partition)
+		}
+
+		// "default" partition must exist
+		Map(partitionEntries: _*) + ("default" -> defaultPartition())
 	}
 
 	val cluster = bean("cluster") {

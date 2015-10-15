@@ -24,7 +24,8 @@ class Cassandra(val hosts: Seq[String] = Seq("localhost"), val port: Int = 9042)
 }
 
 object Cassandra {
-	class Datastore(val cassandra: Cassandra, val keyspace: String) extends net.itadinanta.rnkr.backend.Datastore with Logging {
+	class Datastore(val cassandra: Cassandra, val keyspace: String, val prefix: Option[String])
+			extends net.itadinanta.rnkr.backend.Datastore with Logging {
 		val autoCreate = true // TODO: configure me
 		val replicationFactor = 1 // TODO: configure me!
 		val replicationStrategy = "SimpleStrategy" // TODO: configure me!
@@ -43,6 +44,7 @@ object Cassandra {
 
 				def create(name: String, compact: Boolean = true)(addColumns: Create => Create) = {
 					info(s"Creating ${name}")
+					val tableName = Seq(prefix, Some(name)).flatten.mkString("_")
 					val statement = addColumns(createTable(name).ifNotExists())
 					// TODO: replication
 					val options = statement.withOptions().compressionOptions(lz4())

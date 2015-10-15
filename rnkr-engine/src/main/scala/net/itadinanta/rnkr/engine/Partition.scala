@@ -11,7 +11,7 @@ import akka.pattern._
 import net.itadinanta.rnkr.backend.Datastore
 import scala.language.postfixOps
 
-class Partition(val datastore: Datastore)(implicit actorRefFactory: ActorRefFactory) {
+class Partition(val datastore: Datastore, val credentials: Map[String, String] = Map())(implicit actorRefFactory: ActorRefFactory) {
 	implicit val executionContext = actorRefFactory.dispatcher
 	implicit val timeout: Timeout = new Timeout(30 seconds)
 
