@@ -9,6 +9,6 @@
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="net.itadinanta.rnkr.Main"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="rnkr-app"/>
-<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx4G&#10;-Dakka.remote.netty.tcp.port=2552&#10;-Dnet.itadinanta.rnkr.listen.port=8081"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx4G&#10;-Dakka.remote.netty.tcp.port=2552&#10;-Dnet.itadinanta.rnkr.listen.port=8081&#10;-Dnet.itadinanta.rnkr.cassandra.embedded=false"/>
 <stringAttribute key="pde.version" value="3.2a"/>
 </launchConfiguration>
