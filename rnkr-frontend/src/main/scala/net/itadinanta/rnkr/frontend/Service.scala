@@ -31,7 +31,7 @@ import scala.language.postfixOps
 
 protected trait Authenticator {
 	case class Role(name: String)
-	def authenticator(implicit ec: ExecutionContext): AuthMagnet[Role]
+	def authenticator(partitionName: String)(implicit ec: ExecutionContext): AuthMagnet[Role]
 }
 
 trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol with Authenticator {
@@ -90,7 +90,7 @@ trait Service extends HttpService with SprayJsonSupport with DefaultJsonProtocol
 			}
 		}
 
-		authenticate(authenticator) { role =>
+		authenticate(authenticator(partitionName)) { role =>
 			pathPrefix("""[a-zA-Z0-9]+""".r) { treeId =>
 				routeForLeaderboard(cluster.find(partitionName, treeId))
 			}
@@ -104,9 +104,18 @@ object ServiceActor {
 
 class ServiceActor(override val cluster: Cluster) extends Actor with Service {
 
-	override def authenticator(implicit ec: ExecutionContext): AuthMagnet[Role] = {
-		def authenticator(userPass: Option[UserPass]): Future[Option[Role]] =
-			Future.successful(userPass map { u => Role(u.user) })
+	override def authenticator(partitionName: String)(implicit ec: ExecutionContext): AuthMagnet[Role] = {
+		val credentials = cluster.partitions.get(partitionName).get.credentials
+		def authenticator(userPass: Option[UserPass]): Future[Option[Role]] = {
+			if (credentials.isEmpty)
+				Future.successful(Some(Role("guest")))
+			else userPass match {
+				case Some(UserPass(user, pass)) if (credentials.get(user) == Some(pass)) =>
+					Future.successful(Some(Role(user)))
+				case _ =>
+					Future.successful(None)
+			}
+		}
 		BasicAuth(authenticator _, realm = "rnkr")
 	}
 
