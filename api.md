@@ -20,13 +20,14 @@ Tcp coordinates of the frontend server. These can be configured in application.c
 
 #### VERSION
 
-HTTP Protocol version. This is currently set to the reserved word ```rnkr``` TODO: set it to ```v0```. It will be set to v1 on release 1.0 and then updated if and when breaking changes are introduced.
+HTTP Protocol version.  It is currently ```v0```, and planned to stay like that for the whole lifecycle of release series 0.x. 
+It will be set to v1 on release 1.0 and then updated if and when breaking changes are introduced.
 A node can refuse a request if the protocol major version is not available (for instance, requiring version v2 when a node can only respond to version v1).
 
 #### PARTITION
 
 Each leaderboard ID is unique per partitions. Partitions can be thought as logical namespaces.
-Parititioning can be used to isolate development stages (dev, staging, production) behind the same front end, or even different clients, for instance if cutting costs by sharing environments across multiple games.
+Partitioning can be used to isolate development stages (dev, staging, production) behind the same front end, or even different clients, for instance if cutting costs by sharing environments across multiple games.
 Partitions can be set up to share: 
 
 - **nothing**: each partition has its own separate backend. 
@@ -41,6 +42,28 @@ but all table names in partition are prefixed by "A_", all tables in partition "
 - **all**: partitions share all tables, internally all leaderboard keys are remapped by f name prefix.
 Example: partition A and B share everything, all leaderboard keys in partition 
 A are transparently prefixed by "A:", all leaderboard keys in partition B are transparently prefixed by "B:"
+
+Here's how the "default" partition is configured:
+
+	partitions {
+		"default" {
+			persistence {
+				// type = "blackhole"
+				type = "cassandra"
+			}
+			
+			cassandra {
+				hosts = [ "127.0.0.1" ]
+				port = 9042
+				keyspace = "rnkr"
+				// prefix = null
+			}
+			
+			auth {
+				"user": "pass"
+			}
+		}
+	}
 
 #### ID
 
