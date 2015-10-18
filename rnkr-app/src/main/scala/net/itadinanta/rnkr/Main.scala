@@ -31,6 +31,8 @@ import com.google.common.collect.Sets
 import net.itadinanta.common.Constants
 import com.typesafe.config.ConfigFactory
 import scala.collection.JavaConversions._
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigObject
 
 class ApplicationConfiguration extends FunctionalConfiguration {
 	implicit val ctx = beanFactory.asInstanceOf[ApplicationContext]
@@ -43,63 +45,46 @@ class ApplicationConfiguration extends FunctionalConfiguration {
 		s => Await.ready(s.terminate(), 1.minute)
 	}
 
-	val embeddedCassandra = bean(name = "cassandraServer", lazyInit = true) {
+	val embeddedCassandra = bean(name = "cassandraServer") {
 		val cassandraCfg = new File(cfg.getString("cassandra.config"))
 		System.setProperty("cassandra.config", "file://" + cassandraCfg.getAbsolutePath())
 		System.setProperty("cassandra-foreground", "true")
 		System.setProperty("cassandra.storagedir", "target/cassandra")
 		val cassandraDaemon = new CassandraDaemon()
-		cassandraDaemon.activate()
+		if (cfg.getBoolean("cassandra.embedded")) {
+			cassandraDaemon.activate()
+		}
 		cassandraDaemon
 	} destroy {
 		_.destroy()
 	}
 
-	val cassandra = bean(name = "cassandra", lazyInit = true) {
-		if (cfg.getBoolean("cassandra.embedded")) {
-			embeddedCassandra()
-		}
-		val hosts = cfg.getStringList("cassandra.hosts").toList
-		val port = cfg.getInt("cassandra.port")
-		new Cassandra(hosts, port)
-	} destroy {
-		_.shutdown()
-	}
-
-	val defaultDatastore = bean[Datastore]("defaultDatastore") {
-		cfg.getString("persistence.type") match {
-			case "cassandra" =>
-				val defaultKeyspace = cfg.getString("cassandra.default.keyspace")
-				new Cassandra.Datastore(cassandra(), defaultKeyspace, None)
-			case "blackhole" =>
-				new BlackHole.Datastore()
-		}
-	}
-
-	val defaultPartition = bean("defaultPartition") {
-		new Partition(defaultDatastore())(actorSystem())
-	}
-
 	val partitionMap = bean("partitionMap") {
 		val system = actorSystem()
-		val partitionEntries = for (pcfg <- cfg.getConfigList("partitions")) yield {
-			val name = pcfg.getString("name")
+		val partitionEntries = for {
+			entry <- cfg.getObject("partitions").entrySet
+			name = entry.getKey
+			pcfg = entry.getValue.atPath("root").getConfig("root")
+		} yield {
+			val datastore = pcfg.getString("persistence.type") match {
+				case "cassandra" =>
+					val hosts = pcfg.getStringList("cassandra.hosts").toList
+					val port = pcfg.getInt("cassandra.port")
+					val cassandra = new Cassandra(hosts, port)
+					val keyspace = pcfg.getString("cassandra.keyspace")
+					val prefix = if (pcfg.hasPath("cassandra.prefix")) Some(pcfg.getString("cassandra.prefix")) else None
+					new Cassandra.Datastore(cassandra, keyspace, prefix)
+				case "blackhole" =>
+					new BlackHole.Datastore()
+			}
 
-			val hosts = pcfg.getStringList("cassandra.hosts").toList
-			val port = pcfg.getInt("cassandra.port")
-			val cassandra = new Cassandra(hosts, port)
-			val keyspace = pcfg.getString("cassandra.keyspace")
-			val prefix = if (pcfg.hasPath("cassandra.prefix")) Some(pcfg.getString("cassandra.prefix")) else None
-			val datastore = new Cassandra.Datastore(cassandra, keyspace, prefix)
-			
-			val auth = for (authCfg <- pcfg.getConfigList("auth")) yield (authCfg.getString("user"), authCfg.getString("pass"))
+			val auth = for (authCfg <- pcfg.getObject("auth").entrySet) yield (authCfg.getKey, authCfg.getValue.atPath("value").getString("value"))
 
-			val partition = new Partition(datastore, Map(auth: _*))(system)
+			val partition = new Partition(datastore, Map(auth.toSeq: _*))(system)
 			(name, partition)
 		}
-
 		// "default" partition must exist
-		Map(partitionEntries: _*) + ("default" -> defaultPartition())
+		Map(partitionEntries.toSeq: _*)
 	}
 
 	val cluster = bean("cluster") {
